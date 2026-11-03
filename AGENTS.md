@@ -1,18 +1,18 @@
 # AGENTS.md
 
 面向在本仓库迭代 `x-paper` 的 agent。先读本文件，再读 `README.md` 与
-`docs/selectors.md`；`specs/` 是初版设计记录，部分决策已被后续迭代覆盖。
+`docs/selectors.md`。
 
 ## 项目事实
 
 - 插件名是 `x-paper`（userscript 头部的 `@name` / `@namespace`、Tampermonkey 菜单、
   控制台前缀）。文件名保留历史命名 `x-morning-paper.user.js`。
 - 入口：`x-morning-paper.user.js`。文档：`README.md`、`docs/selectors.md`。测试：
-  `test/fixture.html`。截图：`screenshots/`。规划：`projects/`。历史设计：`specs/`。
+  `test/fixture.html`。截图：`screenshots/`。
 - 只使用 `GM_getValue`、`GM_setValue`、`GM_registerMenuCommand`、`GM_addStyle`；不发起
   网络请求，不读取账号数据，不发布、点赞、关注、私信或修改任何账号状态。
-- 当前行为以代码、README 和 `docs/selectors.md` 为准。`specs/morning-paper-home/` 与
-  `projects/` 保留旧项目名和旧决策，不能作为命名或 AC 的依据。
+- 当前行为以代码、README 和 `docs/selectors.md` 为准。不要按已删除的旧设计记录回退
+  当前行为。
 - 已经落地的、与初版设计不同的行为：无日期刊头、无操作栏上分割线、无正文列左右框线、
   无头像框线、引用帖媒体折叠、帖子时间显示具体时刻、通知/Toast 纸面化。不要按旧设计回退。
 
@@ -26,8 +26,7 @@
 - CSS 优先使用稳定的 `data-testid`、`role`、ARIA 和结构选择器；禁止依赖生成的
   `r-*` class 或界面文字做匹配。确实无法选择时，用运行时标记（见“已踩过的坑”）。
 - 适配器必须幂等、可重复执行、捕获异常；异常不能冒泡到 X。
-- 行为变化同步更新 README / `docs/selectors.md` / 截图；`specs/` 和 `projects/` 是历史
-  记录，除非用户要求不要改写。不要重新引入旧插件名。
+- 行为变化同步更新 README / `docs/selectors.md` / 截图。不要重新引入旧插件名。
 - 提交前 review diff；不要提交临时脚本、Playwright 产物、cookie/会话文件或调试截图。
 
 ## 验证循环

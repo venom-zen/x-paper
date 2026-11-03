@@ -60,7 +60,7 @@ fixture 默认切到 `/home`；`?theme=light` 模拟 X 浅色设置，否则为�
 `ScrollSnap-List` 轮播。更新 `x-morning-paper.user.js` 后，在 Tampermonkey 编辑器中用最新文件
 覆盖，保存并刷新 `x.com/home`。
 
-真实 X 的手动检查按 `specs/morning-paper-home/design.md` 的 Testing 章节执行：1440×900 和
+真实 X 的手动检查按 `AGENTS.md` 的验证矩阵执行：1440×900 和
 1920×953、X 深色/浅色、单图/4 图/视频/引用帖/链接卡片/推广/混合媒体、首页/详情/搜索/通知、
 999/1000px 边界、菜单关闭/开启和存储失败。
 
@@ -72,7 +72,6 @@ fixture 默认切到 `/home`；`?theme=light` 模拟 X 浅色设置，否则为�
 - `screenshots/`：fixture 的 1920/1440 截图，以及真实 X（2026-11-03，X 深色设置）的 1920/1440
   折叠与展开截图。
 - `docs/selectors.md`：选择器、状态属性和降级参考。
-- `specs/morning-paper-home/`：设计、评审、任务和执行证据。
 
 ## 已知限制
 
@@ -81,4 +80,4 @@ fixture 默认切到 `/home`；`?theme=light` 模拟 X 浅色设置，否则为�
   脚本降级，不保证所有实验性布局和媒体类型都被覆盖。
 - 主题覆盖阅读路径和常见表面；X 的临时菜单、弹窗和对话框保持原生样式。
 - 真实 X 截图覆盖 1920/1440 和 X 深色设置；浅色设置、999/1000px 边界和完整媒体矩阵
-  仍需按 design.md 的 Testing 章节手动检查。
+  仍需按 `AGENTS.md` 的验证矩阵手动检查。
