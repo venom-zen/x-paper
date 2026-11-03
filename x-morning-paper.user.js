@@ -38,6 +38,7 @@
       --xmp-ink-secondary: #5C5A52;
       --xmp-hairline: #D8D4C8;
       --xmp-pine: #2F5D50;
+      --xmp-pine-deep: #264C42;
       --xmp-pine-soft: #E6ECE7;
       --xmp-like: #A8442E;
       --xmp-ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
@@ -85,6 +86,10 @@
     }
 
     html[data-xmp-enabled="1"] [data-testid="tweetText"] a {
+      color: var(--xmp-pine) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="tweet"] [style*="color: rgb(29, 155, 240)"] {
       color: var(--xmp-pine) !important;
     }
 
@@ -146,6 +151,21 @@
     html[data-xmp-enabled="1"] [data-testid="like"][aria-pressed="true"] svg {
       color: var(--xmp-like) !important;
       fill: var(--xmp-like) !important;
+    }
+
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="retweet"][aria-pressed="true"] svg,
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="bookmark"][aria-pressed="true"] svg {
+      color: var(--xmp-pine) !important;
+      fill: var(--xmp-pine) !important;
+    }
+
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="like"][aria-pressed="true"] span {
+      color: var(--xmp-like) !important;
+    }
+
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="retweet"][aria-pressed="true"] span,
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="bookmark"][aria-pressed="true"] span {
+      color: var(--xmp-pine) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="SearchBox_Search_Input"] {
@@ -317,17 +337,76 @@
       background-color: transparent !important;
     }
 
+    html[data-xmp-enabled="1"] [data-xmp-tabbar] [data-testid="ScrollSnap-prevButtonWrapper"] button,
+    html[data-xmp-enabled="1"] [data-xmp-tabbar] [data-testid="ScrollSnap-nextButtonWrapper"] button,
+    html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="ScrollSnap-prevButtonWrapper"] button,
+    html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="ScrollSnap-nextButtonWrapper"] button {
+      background-color: var(--xmp-paper-raised) !important;
+      border: 1px solid var(--xmp-hairline) !important;
+      color: var(--xmp-ink) !important;
+      backdrop-filter: none !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-tabbar] [data-testid="ScrollSnap-prevButtonWrapper"] svg,
+    html[data-xmp-enabled="1"] [data-xmp-tabbar] [data-testid="ScrollSnap-nextButtonWrapper"] svg,
+    html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="ScrollSnap-prevButtonWrapper"] svg,
+    html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="ScrollSnap-nextButtonWrapper"] svg {
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="toolBar"] button:hover,
+    html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="toolBar"] button:focus-visible {
+      background-color: var(--xmp-pine-soft) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-composer] button:has(span):not([data-testid="tweetButtonInline"]):hover {
+      background-color: var(--xmp-pine-soft) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="tweetButtonInline"]:not(:disabled):hover {
+      background-color: var(--xmp-pine-deep) !important;
+      border-color: var(--xmp-pine-deep) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-tabbar] [role="status"] button:hover {
+      background-color: var(--xmp-pine-deep) !important;
+    }
+
+    html[data-xmp-enabled="1"] :is(main, header[role="banner"]) :is(a, button, [role="button"], [role="tab"], [role="link"]):focus-visible {
+      outline: 2px solid var(--xmp-pine) !important;
+      outline-offset: 2px;
+    }
+
     #xmp-date-masthead {
       position: static !important;
-      padding: 18px 16px 9px !important;
+      display: flex !important;
+      align-items: baseline !important;
+      justify-content: flex-start !important;
+      gap: 6px !important;
+      width: 100% !important;
+      box-sizing: border-box !important;
+      padding: 18px 16px 10px !important;
       border-bottom: 1px solid var(--xmp-hairline) !important;
       background: var(--xmp-paper) !important;
       color: var(--xmp-ink) !important;
       font-family: var(--xmp-display-font) !important;
-      font-size: 21px !important;
       font-weight: 400 !important;
       line-height: 1.25 !important;
-      letter-spacing: 0.02em;
+    }
+
+    #xmp-date-masthead .xmp-masthead-name {
+      font-family: var(--xmp-display-font) !important;
+      font-size: 22px !important;
+      letter-spacing: 0.03em;
+    }
+
+    #xmp-date-masthead .xmp-masthead-date {
+      font-family: var(--xmp-ui-font) !important;
+      font-size: 13px !important;
+      line-height: 1.4 !important;
+      letter-spacing: 0.05em;
+      color: var(--xmp-ink-secondary) !important;
       font-variant-numeric: tabular-nums;
     }
 
@@ -562,6 +641,12 @@
       outline: 2px solid var(--xmp-pine);
       outline-offset: 2px;
     }
+
+    html[data-xmp-enabled="1"] [data-xmp-media-state="expanded"] .xmp-media-toggle {
+      color: var(--xmp-pine);
+      border-color: var(--xmp-pine);
+      background: var(--xmp-pine-soft);
+    }
   `;
 
   let enabled = true;
@@ -762,8 +847,19 @@
       masthead.setAttribute('role', 'heading');
       masthead.setAttribute('aria-level', '1');
     }
-    const text = `晨报 · ${formatMastheadDate()}`;
-    if (masthead.textContent !== text) masthead.textContent = text;
+    const date = formatMastheadDate();
+    const text = `晨报 · ${date}`;
+    if (masthead.dataset.xmpMasthead !== text) {
+      const name = document.createElement('span');
+      name.className = 'xmp-masthead-name';
+      name.textContent = '晨报';
+      const dateline = document.createElement('span');
+      dateline.className = 'xmp-masthead-date';
+      dateline.textContent = `· ${date}`;
+      masthead.replaceChildren(name, dateline);
+      masthead.dataset.xmpMasthead = text;
+      masthead.setAttribute('aria-label', text);
+    }
     if (masthead.parentElement !== primary || primary.firstElementChild !== masthead) {
       primary.prepend(masthead);
     }
@@ -1057,10 +1153,10 @@
     return false;
   }
 
-  // A photo's nearest wrapper is often an inner absolute layer with no height;
-  // hiding only that leaves the sized figure shell behind. Lift the block to the
-  // outermost rounded, clipped wrapper that still contains media and no text,
-  // author row, quoted tweet, card, or action bar.
+  // The nearest media wrapper often carries no height; the sized figure shell
+  // sits higher up. Lift the block to the highest ancestor that still contains
+  // only media: text, the author row, cards, quoted tweets and the action bar
+  // all stop the climb before it reaches the rest of the tweet.
   function liftMediaBlock(tweet, block) {
     let lifted = block;
     let probe = block;
@@ -1068,10 +1164,7 @@
       const parent = probe.parentElement;
       if (parent.querySelector(MEDIA_BLOCK_STOP)) break;
       if (parent.querySelector('.xmp-media-toggle')) break;
-      const style = window.getComputedStyle(parent);
-      const rounded = parseFloat(style.borderTopLeftRadius) >= 8;
-      const clips = style.overflowX === 'hidden' || style.overflowY === 'hidden';
-      if (rounded && clips) lifted = parent;
+      lifted = parent;
       probe = parent;
     }
     return lifted;
