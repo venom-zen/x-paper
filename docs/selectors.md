@@ -13,6 +13,7 @@
 | `data-xmp-inner-timeline` | 空 | 标记 primary 内的 600px 时间线容器，供版面 CSS 放宽到 100% |
 | `data-xmp-media-block` | 空 | 媒体块标记；折叠态 CSS 的隐藏目标 |
 | `data-xmp-media-state` | `collapsed` / `expanded` | 顶层帖子的媒体状态 |
+| `data-xmp-media-loading` | 空 | 展开后的短暂存态；媒体块移出文档流并隐藏，可见媒体图就绪后移除并一次性显示 |
 | `data-xmp-tabbar` | 空 | 首页主内容容器内的 tab 栏容器；主题背景标记 |
 | `data-xmp-composer` | 空 | 首页主内容容器内的发帖框包装层；主题背景标记 |
 | `data-xmp-divider` | 空 | 首页发帖框后的 1–2px 分隔条；背景透明，由发帖框下边框提供线条 |
@@ -80,6 +81,13 @@
 - 单图 `🖼️ 图片`；多图 `🖼️ 图片 · N 张`；视频 `🎬 视频`；混合 `🎬 媒体 · N 项`。
 - 引用帖内的媒体块和按钮各自左右缩进 12px，媒体块底部再留 12px，和引用卡正文对齐；展开时
   媒体不会覆盖引用卡的左右或底部边框，图片/视频圆角 12px。
+- 折叠态 `display:none` 会让 X 延后加载展开后的大图/网格变体；点击后直接显示会闪空。
+  按钮的 `pointerenter`/`focus` 先预热当前块里的图片和背景图 URL。点击展开时给块加
+  `data-xmp-media-loading`：块以 `position: absolute` 移出文档流并 `visibility: hidden`，
+  保持页面高度不变，让 X 渲染并加载真实媒体。轮询块内**可见**的 inline
+  `background-image` URL（这是实际绘制层；`<img>` 多为 opacity 0 的命中层）并在
+  `Image` 缓存中加载；全部就绪或 700ms 超时后移除标记，块恢复文档流并一次性显示。
+  网格需要等所有可见单元，轮播只等当前可见 slide；不显示空白占位，也不触发内部滚动条。
 - 媒体块或公共祖先找不到时不插入按钮，原媒体保持可见。
 
 ## 降级
@@ -122,8 +130,8 @@
 - X 文章预览卡是 `div:has(> [data-testid="article-cover-image"])`：外框在该 div 的
   `border`，标题/摘要在其最后一个子 div 内。主题把外框设为透明，并把最后子 div 的文字
   改为墨色；“X 文章”角标在封面图内，不能被这条规则覆盖。
-- 头像框来自头像容器内部的黑色底层和 inset 白色 `box-shadow`；主题清空头像后代的背景和阴影，
-  但 `header[role="banner"]` 内的轨道账号头像保留原生渲染。
+- 头像框来自头像容器内部的黑色底层和 inset 白色 `box-shadow`；主题清空所有头像后代的背景和
+  阴影，包括 `header[role="banner"]` 内的轨道账号头像，避免底部账号 logo 外多出一圈边框。
 - 正文列左右框线是 `primaryColumn` 的 1px `border-left/right`；版面主题将其设为 0。
 - 操作栏上分割线是 `[role="group"]` 的 `border-top`；主题不再绘制。
 - 新帖提示是 `[role="status"][data-keep-composer-open]` 内的按钮；按钮需要 `width: auto`、
@@ -131,13 +139,15 @@
   （与箭头/头像行并列），而按钮的 View 默认是 column；不强制 row 时文案会换到第二行。提示在
   `[data-xmp-tabbar]` 内，tab 栏规则不能把带内联 `background-image` 的头像照片层设为
   `none`，否则脸谱头像只剩轮廓。头像在 `[data-testid="userAvatars"]` 内，清空头像背景后要用
-  1px 细线圆环保留轮廓；`header[role="banner"]` 内的账号头像不参与头像框清理。
+  1px 细线圆环保留轮廓；头像框清理也覆盖 `header[role="banner"]` 内的轨道账号头像，避免
+  底部账号 logo 外多出一圈原生边框。
 - Toast 是 `[data-testid="toast"]`；原为 X 蓝/绿色块，主题改为纸面浮起色和墨色文字。
 - 左栏 nav 的标签包装层带 20px/16px 水平外边距；只隐藏文字会让图标被外边距拉向左边缘，
   收起时必须同时隐藏标签包装层。展开改由 `.xmp-nav-toggle` 点击驱动（`data-xmp-nav-expanded`）。
   账号入口在独立的 fixed 275px 侧栏层里，不在 nav 内；只改 nav 宽度会让账号入口和它的菜单
   跑到视口左侧。脚本给该固定层加 `data-xmp-rail-panel` 并收回到 88/240px，按钮 72/224px；
-  展开按钮放在「更多」项下方，账号菜单打开时隐藏。
+  收起时隐藏文案和末尾省略号，只保留居中的账号头像；展开按钮放在「更多」项下方，账号菜单
+  打开时隐藏。
 - 当前 X 把 logo 放在 nav 外，nav 原生从 logo 下方开始；把 nav 固定在 top:0 会让首页/详情页
   的 Home 项压在 logo 上。脚本测量 logo 底部写入 `--xmp-nav-top`，nav 用该变量设置 top 和
   height，导航项从 logo 下方开始。

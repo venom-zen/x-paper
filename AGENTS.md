@@ -83,6 +83,12 @@
   按钮左右各 12px 内缩，媒体块底部再留 12px，并对媒体元素设 12px 圆角。引用卡作者行保持透明。
 - X 文章预览卡是 `div:has(> [data-testid="article-cover-image"])`：外框在它的 border，标题/
   摘要在最后一个子 div。去掉外框并只给最后子 div 设墨色；“X 文章”角标在封面图内，保持原样。
+- 折叠媒体用 `display:none` 时，X 会延后加载展开后的大图/网格节点；只预热折叠 DOM 的旧 URL
+  不够，展开会先闪空。展开时给块加 `data-xmp-media-loading`：块 absolute + visibility hidden
+  移出文档流，页面高度不变，让 X 渲染真实媒体；轮询块内可见的 inline `background-image`
+  URL（实际绘制层，`<img>` 常是 opacity 0 的命中层），全部就绪后恢复文档流并一次性显示。
+  网格等全部可见单元，轮播只等当前 slide；不要用纸面占位/隐藏子元素那套，会看起来像加载
+  帖子并带出滚动条。按钮 hover/focus 时先预热 URL 缩短等待。
 - 操作栏的上分割线在 `[role="group"]` 的 `border-top`；移除时不要误删媒体/正文的边框。
 - 发帖编辑器的背景会盖住 Draft.js placeholder；编辑器必须保持透明。
 - 左轨图标左偏是 nav 标签包装层的 20px/16px 外边距造成的；收起时同时隐藏包装层，并用
@@ -90,7 +96,8 @@
   偏在屏幕左侧，收起为 88px 后会在轨道里露出一角，版面模式需要隐藏。账号入口在独立的
   fixed 275px 侧栏层，不在 nav 里；只收窄 nav 会让账号入口和菜单跑到视口左侧。用
   `data-xmp-rail-panel` 标记那个固定层并设 88/240px，账号按钮设 72/224px，菜单才能完整弹出。
-  展开只由 `.xmp-nav-toggle` 的点击切换 `html[data-xmp-nav-expanded]`，不要恢复
+  收起时账号按钮只保留第一个子元素（头像）并居中，隐藏文案和末尾省略号，否则头像与 `···`
+  会挤在一起。展开只由 `.xmp-nav-toggle` 的点击切换 `html[data-xmp-nav-expanded]`，不要恢复
   hover/focus-within；按钮放在「更多」项下方，账号悬浮卡打开时隐藏。当前 X 的 logo 在 nav
   外，nav 固定在 top:0 会压住 Home；测量 logo 底部写入 `--xmp-nav-top`，nav 用该变量设置
   top/height。
@@ -99,8 +106,9 @@
   View 的 column 排成两行。提示在 `[data-xmp-tabbar]` 内；tab 栏/发帖框的
   `background-image: none` 必须排除带内联 `background-image` 的元素，否则脸谱头像的照片层
   被清空，只剩轮廓。头像在 `[data-testid="userAvatars"]` 里，清空背景后要用 1px 细线圆环
-  保留轮廓；`header[role="banner"]` 里的账号头像要排除清理。Toast 是
-  `[data-testid="toast"]`；两者都使用纸面浮起色，不要沿用 X 的蓝/绿大色块。
+  保留轮廓；头像清理同时覆盖 `header[role="banner"]` 里的账号头像，否则底部账号 logo 外
+  会多出一圈原生边框。Toast 是 `[data-testid="toast"]`；两者都使用纸面浮起色，不要沿用
+  X 的蓝/绿大色块。
 - tab 栏和发帖工具栏的滚动箭头是深色圆形按钮；在纸面主题中要改成 paper-raised + 细线。
 - 推文里的「显示更多」可能是内联 X 蓝色，不是 `<a>`；用推文范围内的内联颜色选择器改为松绿。
 - 不要做宽泛的 `!important` 覆盖；先看元素是否被按钮/链接/媒体共享。必要时用 `:has()` 精确

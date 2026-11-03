@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         x-paper
 // @namespace    x-paper
-// @version      0.3.2
+// @version      0.3.3
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @match        https://x.com/*
 // @run-at       document-start
@@ -78,8 +78,8 @@
       border-right: 0 !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"]:not(header[role="banner"] *) div,
-    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"]:not(header[role="banner"] *) img,
+    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"] div,
+    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"] img,
     html[data-xmp-enabled="1"] [data-testid="Tweet-User-Avatar"] div,
     html[data-xmp-enabled="1"] [data-testid="Tweet-User-Avatar"] img {
       background-color: transparent !important;
@@ -682,6 +682,14 @@
         justify-content: flex-start !important;
       }
 
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:last-child {
+        display: none !important;
+      }
+
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):not([data-xmp-nav-expanded="1"]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:not(:first-child) {
+        display: none !important;
+      }
+
       .xmp-nav-toggle {
         display: none;
         position: fixed;
@@ -801,6 +809,16 @@
       color: var(--xmp-pine);
     }
 
+    html[data-xmp-enabled="1"] [data-xmp-media-block][data-xmp-media-loading] {
+      position: absolute !important;
+      left: 0 !important;
+      right: 0 !important;
+      top: 0 !important;
+      width: 100% !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+
     html[data-xmp-enabled="1"] .xmp-media-toggle:focus-visible {
       outline: 2px solid var(--xmp-pine);
       outline-offset: 2px;
@@ -843,6 +861,9 @@
   let navExpanded = false;
   let railTimer = null;
   const warned = new Set();
+  const mediaWarmups = new WeakMap();
+  const mediaReveals = new WeakMap();
+  const mediaImageCache = new Map();
   const widthQuery = window.matchMedia(`(min-width: ${MIN_LAYOUT_WIDTH}px)`);
 
   function warnOnce(key, message) {
@@ -1482,6 +1503,131 @@
     button.dataset.xmpCount = String(info.count);
   }
 
+  function collectMediaUrls(block) {
+    const urls = new Set();
+    for (const image of block.querySelectorAll('img[src]')) {
+      const src = image.currentSrc || image.src;
+      if (src) urls.add(src);
+    }
+    for (const node of block.querySelectorAll('[style*="background-image"]')) {
+      const match = (node.getAttribute('style') || '').match(/url\((["']?)(.*?)\1\)/);
+      if (match && match[2]) urls.add(match[2]);
+    }
+    for (const video of block.querySelectorAll('video[poster]')) {
+      if (video.poster) urls.add(video.poster);
+    }
+    return [...urls];
+  }
+
+  // Warm images while the media block is still collapsed, so expanding it
+  // paints the decoded media instead of a placeholder that pops in later.
+  function warmMedia(block) {
+    if (!block) return Promise.resolve();
+    let promise = mediaWarmups.get(block);
+    if (promise) return promise;
+    promise = Promise.all(collectMediaUrls(block).map(url => new Promise(resolve => {
+      const image = new Image();
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        const decoded = typeof image.decode === 'function' ? image.decode() : Promise.resolve();
+        decoded.catch(() => {}).finally(resolve);
+      };
+      image.onload = finish;
+      image.onerror = () => {
+        if (!settled) { settled = true; resolve(); }
+      };
+      window.setTimeout(() => {
+        if (!settled) { settled = true; resolve(); }
+      }, 1200);
+      image.src = url;
+      if (image.complete && image.naturalWidth > 0) finish();
+    })));
+    mediaWarmups.set(block, promise);
+    return promise;
+  }
+
+  function mediaImageReady(url) {
+    let entry = mediaImageCache.get(url);
+    if (!entry) {
+      entry = { ready: false };
+      const image = new Image();
+      image.onload = () => { entry.ready = true; };
+      image.onerror = () => { entry.ready = true; };
+      image.src = url;
+      mediaImageCache.set(url, entry);
+    }
+    return entry.ready;
+  }
+
+  function visibleMediaUrls(block) {
+    const bounds = block.getBoundingClientRect();
+    const visible = rect => rect.width > 0 && rect.height > 0 &&
+      rect.right > bounds.left && rect.left < bounds.right &&
+      rect.bottom > bounds.top && rect.top < bounds.bottom;
+    const urls = new Set();
+    for (const node of block.querySelectorAll('[style*="background-image"]')) {
+      if (!visible(node.getBoundingClientRect())) continue;
+      const match = (node.getAttribute('style') || '').match(/url\((["']?)(.*?)\1\)/);
+      if (match && match[2]) urls.add(match[2]);
+    }
+    if (urls.size > 0) return [...urls];
+    return [...block.querySelectorAll('img[src]')]
+      .filter(image => visible(image.getBoundingClientRect()))
+      .map(image => image.currentSrc || image.src)
+      .filter(Boolean);
+  }
+
+  function waitForMediaPaint(block) {
+    return new Promise(resolve => {
+      const started = performance.now();
+      const check = () => {
+        const elapsed = performance.now() - started;
+        const urls = visibleMediaUrls(block);
+        const minimumWait = urls.length === 0 ? 160 : 0;
+        const loaded = urls.every(url => mediaImageReady(url));
+        if ((loaded && elapsed >= minimumWait) || elapsed >= 700) {
+          window.setTimeout(resolve, 30);
+        } else {
+          window.setTimeout(check, 40);
+        }
+      };
+      window.setTimeout(check, 0);
+    });
+  }
+
+  function toggleMedia(tweet, toggle) {
+    const currentMedia = selectMedia(tweet, collectMedia(tweet));
+    if (currentMedia.length === 0) return;
+    const currentInfo = describeMedia(currentMedia);
+    const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
+    if (tweet.dataset.xmpMediaState === 'expanded') {
+      tweet.dataset.xmpMediaState = 'collapsed';
+      if (block) {
+        mediaReveals.set(block, (mediaReveals.get(block) || 0) + 1);
+        block.removeAttribute('data-xmp-media-loading');
+      }
+      renderButton(toggle, currentInfo, 'collapsed');
+      return;
+    }
+    if (!block || !tweet.contains(block)) {
+      tweet.dataset.xmpMediaState = 'expanded';
+      renderButton(toggle, currentInfo, 'expanded');
+      return;
+    }
+    const reveal = (mediaReveals.get(block) || 0) + 1;
+    mediaReveals.set(block, reveal);
+    block.setAttribute('data-xmp-media-loading', '');
+    tweet.dataset.xmpMediaState = 'expanded';
+    renderButton(toggle, currentInfo, 'expanded');
+    warmMedia(block);
+    waitForMediaPaint(block).then(() => {
+      if (mediaReveals.get(block) !== reveal || !block.isConnected) return;
+      block.removeAttribute('data-xmp-media-loading');
+    });
+  }
+
   function annotateTweet(tweet) {
     const media = selectMedia(tweet, collectMedia(tweet));
     if (media.length === 0) {
@@ -1520,13 +1666,14 @@
     toggle.type = 'button';
     toggle.className = 'xmp-media-toggle';
     toggle.setAttribute('aria-controls', id);
-    toggle.addEventListener('click', () => {
-      const currentMedia = selectMedia(tweet, collectMedia(tweet));
-      if (currentMedia.length === 0) return;
-      const currentInfo = describeMedia(currentMedia);
-      const nextState = tweet.dataset.xmpMediaState === 'expanded' ? 'collapsed' : 'expanded';
-      tweet.dataset.xmpMediaState = nextState;
-      renderButton(toggle, currentInfo, nextState);
+    toggle.addEventListener('click', () => toggleMedia(tweet, toggle));
+    toggle.addEventListener('pointerenter', () => {
+      const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
+      if (block) warmMedia(block);
+    });
+    toggle.addEventListener('focus', () => {
+      const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
+      if (block) warmMedia(block);
     });
     tweet.dataset.xmpMediaState = 'collapsed';
     renderButton(toggle, info, 'collapsed');
@@ -1538,6 +1685,7 @@
     delete tweet.dataset.xmpMediaState;
     tweet.querySelectorAll('[data-xmp-media-block]').forEach(block => {
       block.removeAttribute('data-xmp-media-block');
+      block.removeAttribute('data-xmp-media-loading');
       if (block.id.startsWith('xmp-media-block-')) block.removeAttribute('id');
     });
   }
@@ -1546,6 +1694,7 @@
     document.querySelectorAll('.xmp-media-toggle').forEach(button => button.remove());
     document.querySelectorAll('[data-xmp-media-block]').forEach(block => {
       block.removeAttribute('data-xmp-media-block');
+      block.removeAttribute('data-xmp-media-loading');
       if (block.id.startsWith('xmp-media-block-')) block.removeAttribute('id');
     });
     document.querySelectorAll('[data-xmp-media-state]').forEach(tweet => {
