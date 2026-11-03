@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         X 晨报
-// @namespace    x-morning-paper
-// @version      0.2.0
-// @description  把 X 首页改成清爽晨报版面：图标轨、宽正文、日期刊头、媒体 emoji 入口
+// @name         x-paper
+// @namespace    x-paper
+// @version      0.3.0
+// @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @match        https://x.com/*
 // @run-at       document-start
 // @grant        GM_getValue
@@ -43,7 +43,6 @@
       --xmp-pine-soft: #E6ECE7;
       --xmp-like: #A8442E;
       --xmp-ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
-      --xmp-display-font: Georgia, "Times New Roman", "Songti SC", "SimSun", serif;
       background-color: var(--xmp-paper) !important;
       color-scheme: light !important;
       color: var(--xmp-ink) !important;
@@ -233,16 +232,18 @@
     }
 
     html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button {
-      background-color: var(--xmp-pine) !important;
-      color: var(--xmp-paper) !important;
+      background-color: var(--xmp-paper-raised) !important;
+      color: var(--xmp-ink) !important;
+      border: 1px solid var(--xmp-hairline) !important;
+      box-shadow: 0 2px 8px rgba(27, 27, 27, 0.08);
       width: auto !important;
       min-width: 0 !important;
       justify-content: center !important;
     }
 
     html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button * {
-      color: var(--xmp-paper) !important;
-      fill: var(--xmp-paper) !important;
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
     }
 
     html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button > div {
@@ -420,44 +421,18 @@
     }
 
     html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button:hover {
-      background-color: var(--xmp-pine-deep) !important;
+      background-color: var(--xmp-pine-soft) !important;
+      border-color: var(--xmp-pine) !important;
+    }
+
+    html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button:hover * {
+      color: var(--xmp-pine) !important;
+      fill: var(--xmp-pine) !important;
     }
 
     html[data-xmp-enabled="1"] :is(main, header[role="banner"]) :is(a, button, [role="button"], [role="tab"], [role="link"]):focus-visible {
       outline: 2px solid var(--xmp-pine) !important;
       outline-offset: 2px;
-    }
-
-    #xmp-date-masthead {
-      position: static !important;
-      display: flex !important;
-      align-items: baseline !important;
-      justify-content: flex-start !important;
-      gap: 6px !important;
-      width: 100% !important;
-      box-sizing: border-box !important;
-      padding: 18px 16px 10px !important;
-      border-bottom: 1px solid var(--xmp-hairline) !important;
-      background: var(--xmp-paper) !important;
-      color: var(--xmp-ink) !important;
-      font-family: var(--xmp-display-font) !important;
-      font-weight: 400 !important;
-      line-height: 1.25 !important;
-    }
-
-    #xmp-date-masthead .xmp-masthead-name {
-      font-family: var(--xmp-display-font) !important;
-      font-size: 22px !important;
-      letter-spacing: 0.03em;
-    }
-
-    #xmp-date-masthead .xmp-masthead-date {
-      font-family: var(--xmp-ui-font) !important;
-      font-size: 13px !important;
-      line-height: 1.4 !important;
-      letter-spacing: 0.05em;
-      color: var(--xmp-ink-secondary) !important;
-      font-variant-numeric: tabular-nums;
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -706,6 +681,7 @@
   let observer = null;
   let observedPrimary = null;
   let scanTimer = null;
+  let timestampTimer = null;
   let bootObserver = null;
   let bootTimer = null;
   let mediaBlockCounter = 0;
@@ -716,7 +692,7 @@
   function warnOnce(key, message) {
     if (warned.has(key)) return;
     warned.add(key);
-    console.warn(`[X 晨报] ${message}`);
+    console.warn(`[x-paper] ${message}`);
   }
 
   function readEnabled() {
@@ -739,8 +715,8 @@
 
   function registerMenu() {
     if (typeof GM_registerMenuCommand !== 'function') return;
-    GM_registerMenuCommand('关闭晨报', () => setEnabled(false));
-    GM_registerMenuCommand('开启晨报', () => setEnabled(true));
+    GM_registerMenuCommand('关闭 x-paper', () => setEnabled(false));
+    GM_registerMenuCommand('开启 x-paper', () => setEnabled(true));
   }
 
   function injectStyle(id, css) {
@@ -792,7 +768,6 @@
     enabled = false;
     stopObserver();
     cleanupAllMedia();
-    document.getElementById('xmp-date-masthead')?.remove();
     removeStyles();
     const root = document.documentElement;
     delete root.dataset.xmpEnabled;
@@ -812,7 +787,8 @@
       return;
     }
     checkSelectorHealth();
-    ensureMasthead();
+    formatTimestamps();
+    scheduleTimestampFormat();
     markTabbar();
     markComposer();
     if (route === 'home' && !degraded) {
@@ -869,7 +845,8 @@
       return;
     }
     checkSelectorHealth();
-    ensureMasthead();
+    formatTimestamps();
+    scheduleTimestampFormat();
     markTabbar();
     markComposer();
     if (route === 'home' && !degraded) {
@@ -880,50 +857,41 @@
     }
   }
 
-  function ensureMasthead() {
-    let masthead = document.getElementById('xmp-date-masthead');
-    if (!enabled || route !== 'home' || degraded || !widthQuery.matches) {
-      masthead?.remove();
-      return;
-    }
+  function formatPostTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return null;
+    const now = new Date();
+    const midnight = day => new Date(day.getFullYear(), day.getMonth(), day.getDate());
+    const days = Math.round((midnight(now) - midnight(date)) / 86400000);
+    const clock = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    if (days === 0) return clock;
+    if (days === 1) return `昨天·${clock}`;
+    const month = date.getMonth() + 1;
+    const dateText = date.getFullYear() === now.getFullYear()
+      ? `${month}月${date.getDate()}日`
+      : `${date.getFullYear()}年${month}月${date.getDate()}日`;
+    return `${dateText}·${clock}`;
+  }
+
+  function formatTimestamps() {
+    if (!enabled) return;
     const primary = document.querySelector(PRIMARY);
-    if (!primary) {
-      masthead?.remove();
-      return;
-    }
-    if (!masthead) {
-      masthead = document.createElement('div');
-      masthead.id = 'xmp-date-masthead';
-      masthead.setAttribute('role', 'heading');
-      masthead.setAttribute('aria-level', '1');
-    }
-    const date = formatMastheadDate();
-    const text = `晨报 · ${date}`;
-    if (masthead.dataset.xmpMasthead !== text) {
-      const name = document.createElement('span');
-      name.className = 'xmp-masthead-name';
-      name.textContent = '晨报';
-      const dateline = document.createElement('span');
-      dateline.className = 'xmp-masthead-date';
-      dateline.textContent = `· ${date}`;
-      masthead.replaceChildren(name, dateline);
-      masthead.dataset.xmpMasthead = text;
-      masthead.setAttribute('aria-label', text);
-    }
-    if (masthead.parentElement !== primary || primary.firstElementChild !== masthead) {
-      primary.prepend(masthead);
+    if (!primary) return;
+    for (const element of primary.querySelectorAll('time[datetime]')) {
+      const text = formatPostTime(element.getAttribute('datetime'));
+      if (!text || element.textContent.trim() === text) continue;
+      element.textContent = text;
+      const link = element.closest('a');
+      if (link && link.hasAttribute('aria-label')) link.setAttribute('aria-label', text);
     }
   }
 
-  function formatMastheadDate() {
-    const parts = new Intl.DateTimeFormat('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      weekday: 'long',
-    }).formatToParts(new Date());
-    const value = type => parts.find(part => part.type === type)?.value || '';
-    return `${value('year')}.${value('month')}.${value('day')} ${value('weekday')}`;
+  function scheduleTimestampFormat() {
+    if (timestampTimer) window.clearTimeout(timestampTimer);
+    timestampTimer = window.setTimeout(() => {
+      timestampTimer = null;
+      formatTimestamps();
+    }, 1200);
   }
 
   function markTabbar() {
@@ -1005,7 +973,8 @@
       bootTimer = null;
     }
     checkSelectorHealth();
-    ensureMasthead();
+    formatTimestamps();
+    scheduleTimestampFormat();
     markTabbar();
     markComposer();
     if (route === 'home' && !degraded) {
@@ -1084,7 +1053,6 @@
     warnOnce(`degraded-${reason}`, `选择器降级（${reason}）`);
     stopObserver();
     cleanupAllMedia();
-    document.getElementById('xmp-date-masthead')?.remove();
   }
 
   function clearDegraded() {
@@ -1139,7 +1107,7 @@
     if (!enabled || degraded || route !== 'home' || !widthQuery.matches) return;
     const primary = document.querySelector(PRIMARY);
     if (!primary) return;
-    ensureMasthead();
+    formatTimestamps();
     markTabbar();
     markComposer();
     const cells = [...primary.querySelectorAll(CELL)];
@@ -1349,7 +1317,6 @@
       stopObserver();
       cleanupAllMedia();
     }
-    ensureMasthead();
     if (widthQuery.matches && route === 'home' && !degraded) {
       startObserver();
       scanTimeline();
