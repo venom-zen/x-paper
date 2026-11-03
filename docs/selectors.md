@@ -54,7 +54,7 @@
 | 帖子 / 正文 | `[data-testid="tweet"]` / `[data-testid="tweetText"]` | 顶层帖子没有祖先 `tweet` |
 | 图片 / 视频预览 | `[data-testid="tweetPhoto"]` / `[data-testid="previewInterstitial"]` | 媒体收集目标 |
 | 链接卡片 | `[data-testid="card.wrapper"]` | 卡片内媒体不折叠 |
-| 推广单元格 | `[data-testid="placementTracking"]` | 首页 `cellInnerDiv:has(...)` 隐藏 |
+| 推广单元格 | `[data-testid="placementTracking"]` | 首页和详情/文章页 `cellInnerDiv:has(...)` 隐藏；详情页的推广回复用同一标记 |
 | 推荐关注 | `[data-testid="UserCell"]` | 首页隐藏；搜索/通知页保持可见 |
 | 操作组 | `[role="group"]` | 媒体块祖先不得包含它；图标 16px、计数 13px |
 | 搜索框 / 趋势 | `SearchBox_Search_Input` / `trend` | 其他页面主题表面 |

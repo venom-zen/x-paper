@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         x-paper
 // @namespace    x-paper
-// @version      0.4.1
+// @version      0.4.2
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @match        https://x.com/*
 // @run-at       document-start
@@ -864,7 +864,7 @@
   `;
 
   const NOISE_CSS = `
-    html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="cellInnerDiv"]:has([data-testid="placementTracking"]),
+    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="cellInnerDiv"]:has([data-testid="placementTracking"]),
     html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="cellInnerDiv"]:has([data-testid="UserCell"]) {
       display: none !important;
     }
