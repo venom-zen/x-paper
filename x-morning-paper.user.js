@@ -37,6 +37,7 @@
       --xmp-ink: #1B1B1B;
       --xmp-ink-secondary: #5C5A52;
       --xmp-hairline: #D8D4C8;
+      --xmp-rule: #E6E1D5;
       --xmp-pine: #2F5D50;
       --xmp-pine-deep: #264C42;
       --xmp-pine-soft: #E6ECE7;
@@ -70,6 +71,19 @@
     html[data-xmp-enabled="1"] [data-testid="sidebarColumn"] {
       background-color: var(--xmp-paper) !important;
       border-color: var(--xmp-hairline) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] {
+      border-left: 0 !important;
+      border-right: 0 !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"] div,
+    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"] img,
+    html[data-xmp-enabled="1"] [data-testid="Tweet-User-Avatar"] div,
+    html[data-xmp-enabled="1"] [data-testid="Tweet-User-Avatar"] img {
+      background-color: transparent !important;
+      box-shadow: none !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="tweetText"],
@@ -122,7 +136,6 @@
 
     html[data-xmp-enabled="1"] [role="group"] {
       color: var(--xmp-ink-secondary) !important;
-      border-top: 1px solid var(--xmp-hairline) !important;
       padding-bottom: 8px !important;
     }
 
@@ -219,14 +232,22 @@
       background-color: var(--xmp-pine) !important;
     }
 
-    [data-xmp-tabbar] [role="status"] button {
+    html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button {
       background-color: var(--xmp-pine) !important;
       color: var(--xmp-paper) !important;
+      width: auto !important;
+      min-width: 0 !important;
+      justify-content: center !important;
     }
 
-    [data-xmp-tabbar] [role="status"] button * {
+    html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button * {
       color: var(--xmp-paper) !important;
       fill: var(--xmp-paper) !important;
+    }
+
+    html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button > div {
+      gap: 6px !important;
+      justify-content: center !important;
     }
 
     [data-xmp-composer] {
@@ -333,8 +354,37 @@
       fill: var(--xmp-ink) !important;
     }
 
+    html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"] > div {
+      border-bottom-color: var(--xmp-rule) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"] [data-testid="Tweet-User-Avatar"] ~ div:last-child {
+      background-color: var(--xmp-rule) !important;
+      border-radius: 1px !important;
+    }
+
     [data-xmp-divider] {
       background-color: transparent !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="toast"] {
+      background-color: var(--xmp-paper-raised) !important;
+      color: var(--xmp-ink) !important;
+      border: 1px solid var(--xmp-hairline) !important;
+      box-shadow: 0 2px 8px rgba(27, 27, 27, 0.08) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="toast"] * {
+      color: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="toast"] svg {
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="toast"] a {
+      color: var(--xmp-pine) !important;
     }
 
     html[data-xmp-enabled="1"] [data-xmp-tabbar] [data-testid="ScrollSnap-prevButtonWrapper"] button,
@@ -369,7 +419,7 @@
       border-color: var(--xmp-pine-deep) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-xmp-tabbar] [role="status"] button:hover {
+    html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button:hover {
       background-color: var(--xmp-pine-deep) !important;
     }
 
@@ -1101,12 +1151,32 @@
 
   function collectMedia(tweet) {
     return [...tweet.querySelectorAll(MEDIA_SELECTOR)].filter(element => {
-      if (element.closest('[data-testid="card.wrapper"]')) return false;
       if (element.closest(TWEET) !== tweet) return false;
+      if (element.closest('[data-testid="card.wrapper"]') && !isQuoteMedia(tweet, element)) return false;
       if (element.getAttribute('data-testid') === 'tweetPhoto' &&
           element.closest('[data-testid="previewInterstitial"]')) return false;
       return true;
     });
+  }
+
+  function isQuoteMedia(tweet, element) {
+    let node = element.parentElement;
+    while (node && node !== tweet) {
+      if (node.getAttribute('role') === 'link' &&
+          node.querySelector('[data-testid="User-Name"]') &&
+          node.querySelector('[data-testid="tweetText"]')) {
+        return true;
+      }
+      node = node.parentElement;
+    }
+    return false;
+  }
+
+  // Collapse the tweet's own media first. Quoted media is only promoted when
+  // the tweet itself carries no media, so a quote's image can also be folded.
+  function selectMedia(tweet, media) {
+    const own = media.filter(element => !isQuoteMedia(tweet, element));
+    return own.length > 0 ? own : media;
   }
 
   const MEDIA_BLOCK_STOP =
@@ -1114,43 +1184,23 @@
     '[data-testid="tweet"], [role="group"]';
 
   function findMediaBlock(tweet, media) {
-    const mainName = tweet.querySelector('[data-testid="User-Name"]');
-    const accept = block => {
-      if (!block) return null;
-      if (hasForeignAuthor(tweet, block, mainName)) return null;
-      return liftMediaBlock(tweet, block);
-    };
     const carousel = media[0].closest('[data-testid="ScrollSnap-List"]');
     if (carousel && tweet.contains(carousel) &&
         media.every(item => carousel.contains(item)) &&
         !carousel.querySelector('[data-testid="tweetText"]') &&
         !carousel.querySelector('[role="group"]')) {
-      return accept(carousel);
+      return liftMediaBlock(tweet, carousel);
     }
     let candidate = media[0].parentElement;
     while (candidate && candidate !== tweet) {
       if (media.every(item => candidate.contains(item)) &&
           !candidate.querySelector('[data-testid="tweetText"]') &&
           !candidate.querySelector('[role="group"]')) {
-        return accept(candidate);
+        return liftMediaBlock(tweet, candidate);
       }
       candidate = candidate.parentElement;
     }
     return null;
-  }
-
-  // Quote cards render a second author row but their media are not nested in a
-  // second [data-testid="tweet"]. Media whose enclosing block carries an author
-  // row other than this tweet's own belongs to the quote and stays untouched.
-  function hasForeignAuthor(tweet, block, mainName) {
-    let node = block;
-    while (node && node !== tweet) {
-      for (const name of node.querySelectorAll('[data-testid="User-Name"]')) {
-        if (name !== mainName) return true;
-      }
-      node = node.parentElement;
-    }
-    return false;
   }
 
   // The nearest media wrapper often carries no height; the sized figure shell
@@ -1223,7 +1273,7 @@
   }
 
   function annotateTweet(tweet) {
-    const media = collectMedia(tweet);
+    const media = selectMedia(tweet, collectMedia(tweet));
     if (media.length === 0) {
       cleanupTweet(tweet);
       return;
@@ -1261,7 +1311,7 @@
     toggle.className = 'xmp-media-toggle';
     toggle.setAttribute('aria-controls', id);
     toggle.addEventListener('click', () => {
-      const currentMedia = collectMedia(tweet);
+      const currentMedia = selectMedia(tweet, collectMedia(tweet));
       if (currentMedia.length === 0) return;
       const currentInfo = describeMedia(currentMedia);
       const nextState = tweet.dataset.xmpMediaState === 'expanded' ? 'collapsed' : 'expanded';

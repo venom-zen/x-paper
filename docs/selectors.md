@@ -51,8 +51,9 @@
 - 非轮播媒体块是包含全部本次媒体、且不含 `tweetText` 和 `[role="group"]` 的最近祖先。确定后
   继续向上提升到仍只包含媒体的最高祖先；遇到 `tweetText`、作者行、引用帖、卡片、操作组或
   媒体按钮即停止。X 的单图和轮播都会在内层绝对定位层之外保留定高外壳，只隐藏内层会留下空白。
-- 引用帖不嵌套为第二个 `[data-testid="tweet"]`；媒体块或其祖先链上出现非本帖作者的
-  `[data-testid="User-Name"]` 行时，视为引用帖媒体，保留原媒体、不插入按钮。
+- 引用帖媒体不嵌套为第二个 `[data-testid="tweet"]`，媒体收集同时覆盖引用帖内容，包括引用帖
+  内的卡片媒体。帖子有自有媒体时优先折叠自有媒体；只有引用帖媒体时折叠引用帖内的媒体。
+  帖子外层的链接卡片媒体仍排除。
 - 按钮 `button.xmp-media-toggle` 按内容宽度显示（`align-self: flex-start`），带 `aria-expanded`、
   `aria-controls` 和可访问名称；`aria-controls` 指向媒体块 id。媒体块已有 id 时复用它，
   否则生成 `xmp-media-block-<n>`。
@@ -84,8 +85,19 @@
   脚本用 `data-xmp-tabbar`/`data-xmp-composer` 标记并覆盖其子 div/nav 背景。
 - 多图帖子使用 `[data-testid="ScrollSnap-List"]` 滚动轮播；轮播包含全部收集到的媒体时作为
   媒体块，否则退回公共祖先算法，避免只折叠轮播而留下其余媒体。
-- 引用帖不是嵌套的 `[data-testid="tweet"]`，而是包含第二行 `User-Name` 的容器；媒体适配按
-  作者行排除引用帖媒体，否则会折叠引用内容。
+- 引用帖不是嵌套的 `[data-testid="tweet"]`，而是包含 `User-Name` 和 `tweetText` 的
+  `div[role="link"]` 容器；媒体适配用它区分引用帖媒体：有自有媒体时优先自有，只有引用媒体
+  时折叠引用媒体的图片。
+- 帖子分隔线是 `[data-testid="cellInnerDiv"] > div` 的深色 `border-bottom`；主题改为
+  `--xmp-rule` 浅纸色。
+- 详情页线程竖线是 `cellInnerDiv` 内头像列最后一个 div（2×57px、深色背景）；主题用
+  `[data-testid="Tweet-User-Avatar"] ~ div:last-child` 改为同一浅纸色。
+- 头像框来自头像容器内部的黑色底层和 inset 白色 `box-shadow`；主题清空头像后代的背景和阴影。
+- 正文列左右框线是 `primaryColumn` 的 1px `border-left/right`；版面主题将其设为 0。
+- 操作栏上分割线是 `[role="group"]` 的 `border-top`；主题不再绘制。
+- 新帖提示是 `[role="status"][data-keep-composer-open]` 内的按钮；按钮需要 `width: auto`、
+  `gap: 6px`，否则短文案「已发布」会留下大间隔。
+- Toast 是 `[data-testid="toast"]`；原为 X 蓝/绿色块，主题改为纸面浮起色和墨色文字。
 - 左栏 nav 的标签包装层带 20px/16px 水平外边距；只隐藏文字会让图标被外边距拉向左边缘，
   收起时必须同时隐藏标签包装层。
 - 发帖入口 `SideNav_NewTweet_Button` 位于屏幕左侧 275px 容器内，收起为 88px 轨道后会在
