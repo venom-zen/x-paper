@@ -36,6 +36,9 @@
 
 ## 开发与验证
 
+迭代前先读 `AGENTS.md`：其中记录了真实 X 的取证方式、验证矩阵和已踩过的选择器/主题坑。
+最基本的语法检查：
+
 ```bash
 node --check x-morning-paper.user.js
 ```
@@ -64,6 +67,7 @@ fixture 默认切到 `/home`；`?theme=light` 模拟 X 浅色设置，否则为�
 ## 文件
 
 - `x-morning-paper.user.js`：userscript 本体。
+- `AGENTS.md`：迭代约束、真实 X 验证循环和已踩过的坑。
 - `test/fixture.html`：本地 mock 页面和 `GM_*` mock。
 - `screenshots/`：fixture 的 1920/1440 截图，以及真实 X（2026-11-03，X 深色设置）的 1920/1440
   折叠与展开截图。
