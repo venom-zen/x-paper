@@ -1,0 +1,73 @@
+# X 晨报
+
+把 X 首页改成清爽晨报版面的 Tampermonkey userscript：88px 图标轨、无右栏、居中宽正文、
+日期刊头、轻量操作栏和媒体 emoji 入口。主题固定浅色纸感，帖子详情复用同一主题和外壳。
+
+## 安装
+
+1. 在 Windows Chrome 中安装 Tampermonkey。
+2. 新建用户脚本，把 `x-morning-paper.user.js` 的内容粘贴进去并保存。
+3. 打开 `https://x.com/home`。Tampermonkey 菜单提供“关闭晨报”和“开启晨报”。
+
+脚本只申请 `GM_getValue`、`GM_setValue`、`GM_registerMenuCommand` 和 `GM_addStyle`；
+不发起网络请求，不读取账号数据，状态保存在本机。
+
+## 行为
+
+- 视口 ≥1000px：左轨 88px、右栏隐藏、正文列 680/720/760px 居中、首页日期刊头。
+- 视口 <1000px：只应用浅色主题，保留 X 原生布局和媒体行为。
+- 首页顶层帖子的图片/视频默认折叠为 🖼️/🎬 按钮，点击就地展开；多图保持原生网格；
+  X 当前的多图滚动轮播（`ScrollSnap-List`）作为媒体块折叠；引用帖和链接卡片媒体不折叠，
+  引用帖按第二行作者信息识别。
+- 首页隐藏推广帖、推荐关注和右栏；搜索、通知等页面保留用户列表，只做主题换肤。
+- 操作栏图标 16px、墨色计数、细线分隔；点赞激活使用暖红；认证徽章使用松绿，引用卡和
+  分隔线使用细线。
+- 选择器缺失时降级为主题模式：primary 或版面锚点缺失时只应用主题；时间线暂时为空时保留
+  刊头和观察器；详情页不显示刊头和媒体按钮。
+- 观察器只观察 primary，150ms 防抖；不添加滚动监听。扫描不依赖 `requestAnimationFrame`，
+  窗口不可见时仍会执行，但受浏览器后台节流影响。
+
+## 开发与验证
+
+```bash
+node --check x-morning-paper.user.js
+```
+
+`test/fixture.html` 是本地 mock X DOM，内置 `GM_*` mock，可验证布局、媒体、路由、降级和
+存储回退。用任意静态服务器打开，例如：
+
+```bash
+python -m http.server 8765
+# http://127.0.0.1:8765/test/fixture.html
+```
+
+fixture 默认切到 `/home`；`?theme=light` 模拟 X 浅色设置，否则为深色设置。
+`node --check` 只校验语法；fixture 验证 DOM 行为和样式，不替代真实 X 检查。
+
+真实 X 当前（2026-11-03）与设计探针有结构差异：`main` 是 column，主列需要
+`main { align-items: center }` 加主内容行居中；首页 tab 栏和发帖框是主内容容器的第一/第三个
+子元素，脚本用 `data-xmp-tabbar`/`data-xmp-composer` 标记并覆盖其子 div 背景；多图帖子是
+`ScrollSnap-List` 轮播。更新 `x-morning-paper.user.js` 后，在 Tampermonkey 编辑器中用最新文件
+覆盖，保存并刷新 `x.com/home`。
+
+真实 X 的手动检查按 `specs/morning-paper-home/design.md` 的 Testing 章节执行：1440×900 和
+1920×953、X 深色/浅色、单图/4 图/视频/引用帖/链接卡片/推广/混合媒体、首页/详情/搜索/通知、
+999/1000px 边界、菜单关闭/开启和存储失败。
+
+## 文件
+
+- `x-morning-paper.user.js`：userscript 本体。
+- `test/fixture.html`：本地 mock 页面和 `GM_*` mock。
+- `screenshots/`：fixture 的 1920/1440 截图，以及真实 X（2026-11-03，X 深色设置）的 1920/1440
+  折叠与展开截图。
+- `docs/selectors.md`：选择器、状态属性和降级参考。
+- `specs/morning-paper-home/`：设计、评审、任务和执行证据。
+
+## 已知限制
+
+- X 的 DOM 和 `data-testid` 会变化；精确选择器以现场 DOM 为准。当前实现按 2026-11-03 的
+  真实 X 调整过主列、tab 栏、发帖框和多图轮播；X 再次改版后需要更新选择器。选择器缺失时
+  脚本降级，不保证所有实验性布局和媒体类型都被覆盖。
+- 主题覆盖阅读路径和常见表面；X 的临时菜单、弹窗和对话框保持原生样式。
+- 真实 X 截图覆盖 1920/1440 和 X 深色设置；浅色设置、999/1000px 边界和完整媒体矩阵
+  仍需按 design.md 的 Testing 章节手动检查。

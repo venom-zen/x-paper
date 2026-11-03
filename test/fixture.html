@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>X 晨报 fixture</title>
+<style>
+  :root {
+    --x-bg: #000;
+    --x-fg: #e7e9ea;
+    --x-muted: #71767b;
+    --x-line: #2f3336;
+  }
+  body.light {
+    --x-bg: #fff;
+    --x-fg: #0f1419;
+    --x-muted: #536471;
+    --x-line: #eff3f4;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; display: flex; min-height: 100vh; background: var(--x-bg); color: var(--x-fg); font-family: "Segoe UI", sans-serif; }
+  header[role="banner"] { width: 595px; min-width: 595px; border-right: 1px solid var(--x-line); background: var(--x-bg); }
+  header nav { position: fixed; left: 320px; top: 0; width: 275px; padding: 8px; }
+  header nav a, header nav button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; color: var(--x-fg); text-decoration: none; background: transparent; border: 0; font: inherit; cursor: pointer; }
+  header nav a span, header nav button span { white-space: nowrap; }
+  main { flex: 1; min-width: 0; background: var(--x-bg); }
+  #main-row { display: flex; justify-content: flex-start; min-height: 100vh; }
+  [data-testid="primaryColumn"] { width: 600px; min-width: 600px; border-right: 1px solid var(--x-line); background: var(--x-bg); }
+  [data-testid="sidebarColumn"] { width: 350px; min-width: 350px; padding: 8px; background: var(--x-bg); }
+  #tabs { position: sticky; top: 0; background: var(--x-bg); border-bottom: 1px solid var(--x-line); z-index: 2; }
+  [role="tablist"] { display: flex; }
+  [role="tab"] { padding: 14px 16px; flex: 1; text-align: center; border-bottom: 2px solid transparent; cursor: pointer; background: transparent; border-top: 0; border-left: 0; border-right: 0; font: inherit; }
+  [role="tab"][aria-selected="true"] { border-bottom-color: #1d9bf0; }
+  #inner { max-width: 600px; width: 100%; }
+  [data-testid="cellInnerDiv"] { border-bottom: 1px solid var(--x-line); padding: 12px 16px; }
+  [data-testid="tweet"] { display: block; }
+  [data-testid="tweetText"] { font-size: 15px; line-height: 1.5; margin: 0 0 8px; white-space: pre-wrap; }
+  [data-testid="User-Name"] { display: flex; gap: 6px; margin-bottom: 4px; font-weight: 600; }
+  [data-testid="User-Name"] [dir="ltr"] { color: var(--x-muted); font-weight: 400; }
+  .media { margin: 8px 0; }
+  .media img, .media video { display: block; width: 100%; height: 180px; object-fit: cover; background: #333; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 120px 120px; gap: 2px; }
+  .grid [data-testid="tweetPhoto"] { height: 120px; overflow: hidden; }
+  .grid img { height: 120px; }
+  .video-preview { display: flex; align-items: center; justify-content: center; height: 220px; background: #222; }
+  [role="group"] { display: flex; gap: 24px; padding: 8px 0 0; color: var(--x-muted); }
+  [role="group"] button { display: flex; align-items: center; gap: 4px; background: transparent; border: 0; color: var(--x-muted); font: inherit; cursor: pointer; }
+  [role="group"] svg { width: 18px; height: 18px; fill: currentColor; }
+  .quote { border: 1px solid var(--x-line); border-radius: 12px; padding: 10px; margin-top: 8px; }
+  .card.wrapper { border: 1px solid var(--x-line); border-radius: 12px; padding: 10px; margin-top: 8px; }
+  .card.wrapper img { height: 100px; }
+  [data-testid="SearchBox_Search_Input"] { display: block; width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 999px; border: 1px solid var(--x-line); background: var(--x-bg); color: var(--x-fg); }
+  [data-testid="trend"], [data-testid="UserCell"] { padding: 10px 0; border-bottom: 1px solid var(--x-line); }
+  .spacer { height: 40px; }
+</style>
+</head>
+<body class="dark">
+<header role="banner">
+  <nav aria-label="Primary">
+    <a data-testid="AppTabBar_Home_Link" href="/home"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z"/></svg><span>Home</span></a>
+    <a data-testid="AppTabBar_Explore_Link" href="/explore"><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9"/></svg><span>Explore</span></a>
+    <a data-testid="AppTabBar_Notifications_Link" href="/notifications"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 18h12l-2-3V8a4 4 0 0 0-8 0v7z"/></svg><span>Notifications</span></a>
+    <button data-testid="SideNav_NewTweet_Button" type="button"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 20h4L20 8l-4-4L4 16z"/></svg><span>Post</span></button>
+    <button data-testid="SideNav_AccountSwitcher_Button" type="button"><span>Reader</span></button>
+  </nav>
+</header>
+<main>
+  <div id="main-row">
+    <div data-testid="primaryColumn">
+      <div id="tabs">
+        <div role="tablist" aria-label="Home timelines">
+          <button role="tab" aria-selected="true" type="button">For you</button>
+          <button role="tab" aria-selected="false" type="button">Following</button>
+        </div>
+      </div>
+      <div id="inner">
+        <div data-testid="cellInnerDiv" id="cell-single">
+          <article data-testid="tweet" id="tweet-single">
+            <div data-testid="User-Name"><span>Morning Reader</span><span dir="ltr">@morning</span><time>1h</time></div>
+            <p data-testid="tweetText">A quiet morning timeline.</p>
+            <div class="media" id="media-single"><div data-testid="tweetPhoto"><img alt="" style="height:800px" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect width='600' height='400' fill='%23888'/%3E%3C/svg%3E"></div></div>
+            <div role="group" aria-label="Actions">
+              <button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>2</span></button>
+              <button type="button" data-testid="retweet"><svg viewBox="0 0 24 24"><path d="M7 7h10v4l4-5-4-5v4H3v6h4z"/></svg><span>4</span></button>
+              <button type="button" data-testid="like" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M12 21 3 12a5 5 0 0 1 7-7l2 2 2-2a5 5 0 0 1 7 7z"/></svg><span>9</span></button>
+            </div>
+          </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-grid">
+          <article data-testid="tweet" id="tweet-grid">
+            <div data-testid="User-Name"><span>Grid Reader</span><span dir="ltr">@grid</span><time>2h</time></div>
+            <p data-testid="tweetText">Four pictures.</p>
+            <div class="media grid" id="media-grid">
+              <div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='120'%3E%3Crect width='300' height='120' fill='%23666'/%3E%3C/svg%3E"></div>
+              <div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='120'%3E%3Crect width='300' height='120' fill='%23777'/%3E%3C/svg%3E"></div>
+              <div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='120'%3E%3Crect width='300' height='120' fill='%23888'/%3E%3C/svg%3E"></div>
+              <div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='120'%3E%3Crect width='300' height='120' fill='%23999'/%3E%3C/svg%3E"></div>
+            </div>
+            <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
+          </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-video">
+          <article data-testid="tweet" id="tweet-video">
+            <div data-testid="User-Name"><span>Video Reader</span><span dir="ltr">@video</span><time>3h</time></div>
+            <p data-testid="tweetText">A short clip.</p>
+            <div class="media" id="media-video"><div data-testid="previewInterstitial"><div class="video-preview">▶</div></div></div>
+            <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
+          </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-mixed">
+          <article data-testid="tweet" id="tweet-mixed">
+            <div data-testid="User-Name"><span>Mixed Reader</span><span dir="ltr">@mixed</span><time>3h</time></div>
+            <p data-testid="tweetText">An image and a clip.</p>
+            <div class="media" id="media-mixed">
+              <div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='120'%3E%3Crect width='300' height='120' fill='%23888'/%3E%3C/svg%3E"></div>
+              <div data-testid="previewInterstitial"><div class="video-preview">▶</div></div>
+            </div>
+            <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
+          </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-carousel">
+          <article data-testid="tweet" id="tweet-carousel">
+            <div data-testid="User-Name"><span>Carousel Reader</span><span dir="ltr">@carousel</span><time>3h</time></div>
+            <p data-testid="tweetText">A media carousel.</p>
+            <div data-testid="ScrollSnap-List" role="tablist" style="display:flex; width:760px; overflow:auto hidden;">
+              <div style="min-width:380px;"><div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='380' height='240'%3E%3Crect width='380' height='240' fill='%23666'/%3E%3C/svg%3E"></div></div>
+              <div style="min-width:380px;"><div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='380' height='240'%3E%3Crect width='380' height='240' fill='%23777'/%3E%3C/svg%3E"></div></div>
+            </div>
+            <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
+          </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-quote">
+          <article data-testid="tweet" id="tweet-quote">
+            <div data-testid="User-Name"><span>Quote Reader</span><span dir="ltr">@quote</span><time>4h</time></div>
+            <p data-testid="tweetText">Look at this.</p>
+            <div class="media" id="media-quote"><div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='400'%3E%3Crect width='600' height='400' fill='%23555'/%3E%3C/svg%3E"></div></div>
+            <div class="quote">
+              <article data-testid="tweet" id="tweet-nested">
+                <div data-testid="User-Name"><span>Nested</span><span dir="ltr">@nested</span></div>
+                <p data-testid="tweetText">Nested media should stay native.</p>
+                <div class="media"><div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='120'%3E%3Crect width='300' height='120' fill='%23333'/%3E%3C/svg%3E"></div></div>
+              </article>
+            </div>
+            <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
+          </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-card">
+          <article data-testid="tweet" id="tweet-card">
+            <div data-testid="User-Name"><span>Card Reader</span><span dir="ltr">@card</span><time>5h</time></div>
+            <p data-testid="tweetText">A link card.</p>
+            <div data-testid="card.wrapper" class="card wrapper"><div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='100'%3E%3Crect width='300' height='100' fill='%23444'/%3E%3C/svg%3E"></div><span>example.com</span></div>
+            <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
+          </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-promoted">
+          <div data-testid="placementTracking">
+            <article data-testid="tweet" id="tweet-promoted">
+              <div data-testid="User-Name"><span>Promoted</span><span dir="ltr">@promo</span></div>
+              <p data-testid="tweetText">Promoted post.</p>
+            </article>
+          </div>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-user">
+          <div data-testid="UserCell">Recommended user</div>
+        </div>
+        <div class="spacer"></div>
+      </div>
+    </div>
+    <div data-testid="sidebarColumn">
+      <input data-testid="SearchBox_Search_Input" placeholder="Search">
+      <div data-testid="trend">Trending</div>
+      <div data-testid="UserCell">Who to follow</div>
+    </div>
+  </div>
+</main>
+<script>
+  const params = new URLSearchParams(location.search);
+  if (params.get('theme') === 'light') document.body.classList.add('light');
+  if (location.pathname !== '/home') history.replaceState(null, '', '/home' + location.search);
+  window.GM_getValue = (key, fallback) => fallback;
+  window.GM_setValue = (key, value) => {
+    if (window.__failStorage) throw new Error('storage unavailable');
+    window.__storedValue = value;
+  };
+  window.GM_registerMenuCommand = (name, fn) => {
+    window.__menus = window.__menus || {};
+    window.__menus[name] = fn;
+  };
+  window.GM_addStyle = css => {
+    const style = document.createElement('style');
+    style.textContent = css;
+    document.head.appendChild(style);
+    return style;
+  };
+</script>
+<script src="../x-morning-paper.user.js"></script>
+</body>
+</html>
