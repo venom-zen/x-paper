@@ -16,6 +16,15 @@
 | `data-xmp-tabbar` | 空 | 首页主内容容器内的 tab 栏容器；主题背景标记 |
 | `data-xmp-composer` | 空 | 首页主内容容器内的发帖框包装层；主题背景标记 |
 | `data-xmp-divider` | 空 | 首页发帖框后的 1–2px 分隔条；背景透明，由发帖框下边框提供线条 |
+| `data-xmp-nav-expanded` | `1` | 左轨展开状态；由 `.xmp-nav-toggle` 点击切换，路由离开或宽度不足时移除 |
+| `data-xmp-rail-panel` | 空 | 账号入口所在的固定侧栏层；脚本把它的 left/width 从 275px 收回到 88px（展开 240px），避免账号入口和菜单跑出视口 |
+
+`button.xmp-nav-toggle` 是脚本创建并挂到 `body` 的轨道展开按钮：≥1000px、home/status 且未
+降级时显示在「更多」项下方（收起 72px、展开 224px），样式与普通导航项一致，`aria-expanded`
+与文案同步；账号悬浮卡或账号菜单打开时隐藏，关闭脚本或降级时移除或隐藏。悬停和
+`:focus-within` 不再触发展开。两个位置由脚本写入 `html` 的 `--xmp-nav-top`（logo 下方的
+导航起点）和 `--xmp-toggle-top`（「更多」下方的按钮位置）两个 CSS 变量，导航和按钮通过
+它们对齐当前 X 的 logo/更多项布局。
 
 ## 时间格式
 
@@ -69,6 +78,8 @@
 - 折叠只加 `display: none` 覆盖；展开移除覆盖，恢复原 grid/flex，设 `max-height: 70vh` 和
   `overflow-y: auto`。适配器不向媒体块写内联 `display`。
 - 单图 `🖼️ 图片`；多图 `🖼️ 图片 · N 张`；视频 `🎬 视频`；混合 `🎬 媒体 · N 项`。
+- 引用帖内的媒体块和按钮各自左右缩进 12px，媒体块底部再留 12px，和引用卡正文对齐；展开时
+  媒体不会覆盖引用卡的左右或底部边框，图片/视频圆角 12px。
 - 媒体块或公共祖先找不到时不插入按钮，原媒体保持可见。
 
 ## 降级
@@ -91,7 +102,9 @@
   primary 的父链里有一层 row。水平居中需要 `main { align-items: center }` 加上
   `main > div > div > div { justify-content: center }`，不能只用 `justify-content`。
 - primary 主内容容器的第一个子元素是 tab 栏，第三个是发帖框包装层；两者都有自己的深色背景。
-  脚本用 `data-xmp-tabbar`/`data-xmp-composer` 标记并覆盖其子 div/nav 背景。
+  脚本用 `data-xmp-tabbar`/`data-xmp-composer` 标记并覆盖其子 div/nav 背景。tab 栏容器可能
+  包含新帖提示，发帖框容器可能包含媒体；子 div 的 `background-image: none` 必须排除带内联
+  `background-image` 的元素，否则提示头像和附件图片会被清空。
 - 多图帖子使用 `[data-testid="ScrollSnap-List"]` 滚动轮播；轮播包含全部收集到的媒体时作为
   媒体块，否则退回公共祖先算法，避免只折叠轮播而留下其余媒体。
 - 引用帖不是嵌套的 `[data-testid="tweet"]`，而是包含 `User-Name` 和 `tweetText` 的
@@ -100,15 +113,34 @@
 - 帖子分隔线是 `[data-testid="cellInnerDiv"] > div` 的深色 `border-bottom`；主题改为
   `--xmp-rule` 浅纸色。
 - 详情页线程竖线是 `cellInnerDiv` 内头像列最后一个 div（2×57px、深色背景）；主题用
-  `[data-testid="Tweet-User-Avatar"] ~ div:last-child` 改为同一浅纸色。
-- 头像框来自头像容器内部的黑色底层和 inset 白色 `box-shadow`；主题清空头像后代的背景和阴影。
+  `[data-testid="Tweet-User-Avatar"] ~ div:last-child` 改为同一浅纸色。引用帖头像的最后一个
+  div 兄弟可能是作者行容器（含 `User-Name`/`tweetText`），选择器必须排除这类容器，否则引用卡
+  作者行会被涂成 `--xmp-rule` 色。
+- 引用卡不是嵌套 `tweet`，而是 `div[role="link"]`；卡片内的 `card.wrapper` 和
+  `twitter-article-title`/`twitterArticleRichTextView` 等文章预览文字在 X 深色设置下是浅色，
+  主题需要改为墨色，链接使用松绿。
+- X 文章预览卡是 `div:has(> [data-testid="article-cover-image"])`：外框在该 div 的
+  `border`，标题/摘要在其最后一个子 div 内。主题把外框设为透明，并把最后子 div 的文字
+  改为墨色；“X 文章”角标在封面图内，不能被这条规则覆盖。
+- 头像框来自头像容器内部的黑色底层和 inset 白色 `box-shadow`；主题清空头像后代的背景和阴影，
+  但 `header[role="banner"]` 内的轨道账号头像保留原生渲染。
 - 正文列左右框线是 `primaryColumn` 的 1px `border-left/right`；版面主题将其设为 0。
 - 操作栏上分割线是 `[role="group"]` 的 `border-top`；主题不再绘制。
 - 新帖提示是 `[role="status"][data-keep-composer-open]` 内的按钮；按钮需要 `width: auto`、
-  `gap: 6px`，否则短文案「已发布」会留下大间隔。
+  `display: flex`、`flex-direction: row` 和 `gap: 6px`。当前版本把文案作为按钮的直接子元素
+  （与箭头/头像行并列），而按钮的 View 默认是 column；不强制 row 时文案会换到第二行。提示在
+  `[data-xmp-tabbar]` 内，tab 栏规则不能把带内联 `background-image` 的头像照片层设为
+  `none`，否则脸谱头像只剩轮廓。头像在 `[data-testid="userAvatars"]` 内，清空头像背景后要用
+  1px 细线圆环保留轮廓；`header[role="banner"]` 内的账号头像不参与头像框清理。
 - Toast 是 `[data-testid="toast"]`；原为 X 蓝/绿色块，主题改为纸面浮起色和墨色文字。
 - 左栏 nav 的标签包装层带 20px/16px 水平外边距；只隐藏文字会让图标被外边距拉向左边缘，
-  收起时必须同时隐藏标签包装层。
+  收起时必须同时隐藏标签包装层。展开改由 `.xmp-nav-toggle` 点击驱动（`data-xmp-nav-expanded`）。
+  账号入口在独立的 fixed 275px 侧栏层里，不在 nav 内；只改 nav 宽度会让账号入口和它的菜单
+  跑到视口左侧。脚本给该固定层加 `data-xmp-rail-panel` 并收回到 88/240px，按钮 72/224px；
+  展开按钮放在「更多」项下方，账号菜单打开时隐藏。
+- 当前 X 把 logo 放在 nav 外，nav 原生从 logo 下方开始；把 nav 固定在 top:0 会让首页/详情页
+  的 Home 项压在 logo 上。脚本测量 logo 底部写入 `--xmp-nav-top`，nav 用该变量设置 top 和
+  height，导航项从 logo 下方开始。
 - 发帖入口 `SideNav_NewTweet_Button` 位于屏幕左侧 275px 容器内，收起为 88px 轨道后会在
   轨道内露出一角；版面模式隐藏该按钮，发帖使用首页发帖框。
 - 发帖编辑器的背景色会覆盖 Draft.js 的 placeholder；编辑器保持透明才能显示提示文字。

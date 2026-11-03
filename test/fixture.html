@@ -21,6 +21,7 @@
   header[role="banner"] { width: 595px; min-width: 595px; border-right: 1px solid var(--x-line); background: var(--x-bg); }
   header nav { position: fixed; left: 320px; top: 0; width: 275px; padding: 8px; }
   header nav a, header nav button { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 12px; color: var(--x-fg); text-decoration: none; background: transparent; border: 0; font: inherit; cursor: pointer; }
+  header nav a > div, header nav button > div { display: flex; align-items: center; gap: 12px; }
   header nav a span, header nav button span { white-space: nowrap; }
   main { flex: 1; min-width: 0; background: var(--x-bg); }
   #main-row { display: flex; justify-content: flex-start; min-height: 100vh; }
@@ -56,11 +57,11 @@
 <body class="dark">
 <header role="banner">
   <nav aria-label="Primary">
-    <a data-testid="AppTabBar_Home_Link" href="/home"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z"/></svg><span>Home</span></a>
-    <a data-testid="AppTabBar_Explore_Link" href="/explore"><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9"/></svg><span>Explore</span></a>
-    <a data-testid="AppTabBar_Notifications_Link" href="/notifications"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 18h12l-2-3V8a4 4 0 0 0-8 0v7z"/></svg><span>Notifications</span></a>
-    <button data-testid="SideNav_NewTweet_Button" type="button"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 20h4L20 8l-4-4L4 16z"/></svg><span>Post</span></button>
-    <button data-testid="SideNav_AccountSwitcher_Button" type="button"><span>Reader</span></button>
+    <a data-testid="AppTabBar_Home_Link" href="/home"><div><svg viewBox="0 0 24 24" width="24" height="24"><path d="M3 11 12 3l9 8v10h-6v-6H9v6H3z"/></svg><div dir="ltr"><span>Home</span></div></div></a>
+    <a data-testid="AppTabBar_Explore_Link" href="/explore"><div><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9"/></svg><div dir="ltr"><span>Explore</span></div></div></a>
+    <a data-testid="AppTabBar_Notifications_Link" href="/notifications"><div><svg viewBox="0 0 24 24" width="24" height="24"><path d="M6 18h12l-2-3V8a4 4 0 0 0-8 0v7z"/></svg><div dir="ltr"><span>Notifications</span></div></div></a>
+    <button data-testid="SideNav_NewTweet_Button" type="button"><div><svg viewBox="0 0 24 24" width="24" height="24"><path d="M4 20h4L20 8l-4-4L4 16z"/></svg><div dir="ltr"><span>Post</span></div></div></button>
+    <button data-testid="SideNav_AccountSwitcher_Button" type="button"><div><svg viewBox="0 0 24 24" width="24" height="24"><circle cx="12" cy="12" r="9"/></svg><div dir="ltr"><span>Reader</span></div></div></button>
   </nav>
 </header>
 <main>
@@ -71,6 +72,19 @@
           <button role="tab" aria-selected="true" type="button">For you</button>
           <button role="tab" aria-selected="false" type="button">Following</button>
         </div>
+      </div>
+      <div role="status" data-keep-composer-open="true" id="new-posts-pill" style="display:flex; justify-content:center; margin:16px 0;">
+        <button type="button" aria-label="有新的帖子" style="padding:4px 16px;">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 3.59l7.457 7.45-1.414 1.42L13 7.41V21h-2V7.41l-5.043 5.05-1.414-1.42L12 3.59z"/></svg>
+            <div data-testid="userAvatars" style="display:flex; margin-left:4px; margin-right:2px;">
+              <div data-testid="UserAvatar-Container-a" style="width:32px;height:32px;border-radius:9999px;overflow:hidden;background:#c9c4b6;"><img alt="" style="width:100%;height:100%" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%23a8442e'/%3E%3C/svg%3E"></div>
+              <div data-testid="UserAvatar-Container-b" style="width:32px;height:32px;border-radius:9999px;overflow:hidden;margin-left:-12px;background:#c9c4b6;"><img alt="" style="width:100%;height:100%" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%232f5d50'/%3E%3C/svg%3E"></div>
+              <div data-testid="UserAvatar-Container-c" style="width:32px;height:32px;border-radius:9999px;overflow:hidden;margin-left:-12px;background:#c9c4b6;"><img alt="" style="width:100%;height:100%" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%235c5a52'/%3E%3C/svg%3E"></div>
+            </div>
+          </div>
+          <div data-testid="pillLabel"><span>已发布</span></div>
+        </button>
       </div>
       <div id="inner">
         <div data-testid="cellInnerDiv" id="cell-single">
@@ -139,6 +153,24 @@
                 <p data-testid="tweetText">Nested media should stay native.</p>
                 <div class="media"><div data-testid="tweetPhoto"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='120'%3E%3Crect width='300' height='120' fill='%23333'/%3E%3C/svg%3E"></div></div>
               </article>
+            </div>
+            <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
+          </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-quote-media">
+          <article data-testid="tweet" id="tweet-quote-media">
+            <div data-testid="User-Name"><span>Quote Media Reader</span><span dir="ltr">@qmedia</span><time>5h</time></div>
+            <p data-testid="tweetText">A quote that carries its own media.</p>
+            <div class="quote" style="padding:0; overflow:hidden;">
+              <div role="link" tabindex="0">
+                <div data-testid="User-Name" style="padding:12px 12px 0;"><span>Nested Writer</span><span dir="ltr">@nested</span><time>6h</time></div>
+                <p data-testid="tweetText" style="padding:0 12px;">Quoted media and card.</p>
+                <div class="media" id="quote-media"><div data-testid="tweetPhoto"><img alt="" style="height:160px" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='160'%3E%3Crect width='600' height='160' fill='%23444'/%3E%3C/svg%3E"></div></div>
+                <div data-testid="card.wrapper" class="card wrapper" style="margin:12px;">
+                  <span>Quoted article title</span>
+                  <span>Quoted opening paragraph.</span>
+                </div>
+              </div>
             </div>
             <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
           </article>

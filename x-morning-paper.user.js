@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         x-paper
 // @namespace    x-paper
-// @version      0.3.0
+// @version      0.3.2
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @match        https://x.com/*
 // @run-at       document-start
@@ -22,6 +22,7 @@
   const TWEET = '[data-testid="tweet"]';
   const MEDIA_SELECTOR = '[data-testid="tweetPhoto"], [data-testid="previewInterstitial"]';
   const STYLE_IDS = ['xmp-preflight', 'xmp-theme', 'xmp-layout', 'xmp-noise', 'xmp-media'];
+  const NAV_TOGGLE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 4.6 4.9 6l5.65 5.65L4.9 17.3l1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L6.3 4.6Zm8 0L12.9 6l5.65 5.65-5.65 5.65 1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L14.3 4.6Z"/></svg>';
 
   const PREFLIGHT_CSS = `
     html {
@@ -77,8 +78,8 @@
       border-right: 0 !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"] div,
-    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"] img,
+    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"]:not(header[role="banner"] *) div,
+    html[data-xmp-enabled="1"] [data-testid^="UserAvatar-Container"]:not(header[role="banner"] *) img,
     html[data-xmp-enabled="1"] [data-testid="Tweet-User-Avatar"] div,
     html[data-xmp-enabled="1"] [data-testid="Tweet-User-Avatar"] img {
       background-color: transparent !important;
@@ -214,9 +215,13 @@
     [data-xmp-tabbar] div,
     [data-xmp-tabbar] nav {
       background-color: transparent !important;
-      background-image: none !important;
       backdrop-filter: none !important;
       border-bottom-color: transparent !important;
+    }
+
+    [data-xmp-tabbar] div:not([style*="background-image"]),
+    [data-xmp-tabbar] nav {
+      background-image: none !important;
     }
 
     [data-xmp-tabbar] [role="tab"] {
@@ -236,9 +241,19 @@
       color: var(--xmp-ink) !important;
       border: 1px solid var(--xmp-hairline) !important;
       box-shadow: 0 2px 8px rgba(27, 27, 27, 0.08);
+      display: flex !important;
+      flex-direction: row !important;
+      align-items: center !important;
       width: auto !important;
       min-width: 0 !important;
+      max-width: 100% !important;
+      gap: 6px !important;
       justify-content: center !important;
+    }
+
+    html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] [data-testid="userAvatars"] [data-testid^="UserAvatar-Container"] {
+      border-radius: 9999px !important;
+      box-shadow: inset 0 0 0 1px var(--xmp-hairline) !important;
     }
 
     html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button * {
@@ -260,6 +275,9 @@
 
     [data-xmp-composer] div {
       background-color: transparent !important;
+    }
+
+    [data-xmp-composer] div:not([style*="background-image"]) {
       background-image: none !important;
     }
 
@@ -336,6 +354,41 @@
       border-color: var(--xmp-hairline) !important;
     }
 
+    html[data-xmp-enabled="1"] [data-testid="card.wrapper"],
+    html[data-xmp-enabled="1"] [data-testid="card.wrapper"] * {
+      color: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="card.wrapper"] a {
+      color: var(--xmp-pine) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="twitter-article-title"],
+    html[data-xmp-enabled="1"] [data-testid="twitter-article-title"] *,
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"],
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] *,
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"],
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"] *,
+    html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"],
+    html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"] * {
+      color: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] a,
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"] a,
+    html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"] a {
+      color: var(--xmp-pine) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="tweet"] div:has(> [data-testid="article-cover-image"]) {
+      border-color: transparent !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="tweet"] div:has(> [data-testid="article-cover-image"]) > div:last-child,
+    html[data-xmp-enabled="1"] [data-testid="tweet"] div:has(> [data-testid="article-cover-image"]) > div:last-child * {
+      color: var(--xmp-ink) !important;
+    }
+
     html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div[role="link"]:has([data-testid="User-Name"]):has([data-testid="tweetText"]) {
       border-color: var(--xmp-hairline) !important;
     }
@@ -359,7 +412,7 @@
       border-bottom-color: var(--xmp-rule) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"] [data-testid="Tweet-User-Avatar"] ~ div:last-child {
+    html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"] [data-testid="Tweet-User-Avatar"] ~ div:last-child:not([data-testid="User-Name"], [data-testid="tweetText"]):not(:has([data-testid="User-Name"], [data-testid="tweetText"])) {
       background-color: var(--xmp-rule) !important;
       border-radius: 1px !important;
     }
@@ -444,6 +497,12 @@
   `;
 
   const LAYOUT_CSS = `
+    @media (max-width: 999px) {
+      .xmp-nav-toggle {
+        display: none !important;
+      }
+    }
+
     @media (min-width: 1000px) {
       html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header[role="banner"],
       html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header[role="banner"] {
@@ -457,10 +516,11 @@
       html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav {
         position: fixed !important;
         left: 0 !important;
-        top: 0 !important;
+        top: var(--xmp-nav-top, 0px) !important;
         width: 88px !important;
-        height: 100vh !important;
-        padding: 6px 8px !important;
+        height: calc(100vh - var(--xmp-nav-top, 0px)) !important;
+        padding: 6px 8px 16px !important;
+        box-sizing: border-box !important;
         gap: 2px !important;
         overflow: hidden !important;
         background: var(--xmp-paper) !important;
@@ -510,44 +570,23 @@
         background-color: var(--xmp-pine-soft) !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:hover nav,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:focus-within nav,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:hover nav,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:focus-within nav {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav {
         width: 240px !important;
         box-shadow: 4px 0 16px rgba(27, 27, 27, 0.12);
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:hover nav a span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:hover nav button span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:focus-within nav a span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:focus-within nav button span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:hover nav a span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:hover nav button span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:focus-within nav a span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:focus-within nav button span {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav a span,
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav button span {
         display: inline !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:hover nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:hover nav button > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:focus-within nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:focus-within nav button > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:hover nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:hover nav button > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:focus-within nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:focus-within nav button > div:first-child > div[dir="ltr"] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav a > div:first-child > div[dir="ltr"],
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav button > div:first-child > div[dir="ltr"] {
         display: block !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:hover nav a,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:hover nav button,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:focus-within nav a,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header:focus-within nav button,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:hover nav a,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:hover nav button,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:focus-within nav a,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header:focus-within nav button {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav a,
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav button {
         justify-content: flex-start !important;
         align-items: flex-start !important;
       }
@@ -614,6 +653,106 @@
           flex: 0 0 680px !important;
         }
       }
+
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-xmp-rail-panel] {
+        left: 0 !important;
+        right: auto !important;
+        width: 88px !important;
+        min-width: 88px !important;
+        max-width: 88px !important;
+        z-index: 1000 !important;
+      }
+
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-xmp-rail-panel] {
+        width: 240px !important;
+        min-width: 240px !important;
+        max-width: 240px !important;
+      }
+
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="SideNav_AccountSwitcher_Button"] {
+        width: 72px !important;
+        min-width: 0 !important;
+        padding: 6px !important;
+        justify-content: center !important;
+      }
+
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="SideNav_AccountSwitcher_Button"] {
+        width: 224px !important;
+        padding: 12px !important;
+        justify-content: flex-start !important;
+      }
+
+      .xmp-nav-toggle {
+        display: none;
+        position: fixed;
+        left: 8px;
+        top: var(--xmp-toggle-top, 680px);
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 72px;
+        height: 34px;
+        padding: 0;
+        font: inherit;
+        font-family: var(--xmp-ui-font);
+        font-size: 15px;
+        line-height: 1.4;
+        color: var(--xmp-ink);
+        background-color: transparent;
+        border: 0;
+        border-radius: 9999px;
+        cursor: pointer;
+        z-index: 1001;
+        transition: width 160ms ease, background-color 160ms ease, color 160ms ease;
+      }
+
+      .xmp-nav-toggle svg {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+        fill: currentColor;
+        transition: transform 160ms ease;
+      }
+
+      .xmp-nav-toggle span {
+        display: none;
+        white-space: nowrap;
+      }
+
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] .xmp-nav-toggle,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] .xmp-nav-toggle {
+        display: inline-flex;
+      }
+
+      html[data-xmp-nav-expanded="1"] .xmp-nav-toggle {
+        width: 224px;
+        justify-content: flex-start;
+        padding: 0 12px;
+      }
+
+      html[data-xmp-nav-expanded="1"] .xmp-nav-toggle svg {
+        transform: rotate(180deg);
+      }
+
+      html[data-xmp-nav-expanded="1"] .xmp-nav-toggle span {
+        display: inline;
+      }
+
+      html[data-xmp-enabled="1"]:has([data-testid="hoverCardParent"]) .xmp-nav-toggle {
+        visibility: hidden;
+      }
+
+      .xmp-nav-toggle:hover {
+        color: var(--xmp-pine);
+        background-color: var(--xmp-pine-soft);
+      }
+
+      .xmp-nav-toggle:focus-visible {
+        color: var(--xmp-pine);
+        background-color: var(--xmp-pine-soft);
+        outline: 2px solid var(--xmp-pine);
+        outline-offset: 2px;
+      }
     }
   `;
 
@@ -672,6 +811,21 @@
       border-color: var(--xmp-pine);
       background: var(--xmp-pine-soft);
     }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div[role="link"]:has([data-testid="User-Name"]):has([data-testid="tweetText"]) .xmp-media-toggle {
+      margin-left: 12px;
+      margin-right: 12px;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div[role="link"]:has([data-testid="User-Name"]):has([data-testid="tweetText"]) [data-xmp-media-block] {
+      max-width: calc(100% - 24px) !important;
+      margin: 0 12px 12px !important;
+      border-radius: 12px !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div[role="link"]:has([data-testid="User-Name"]):has([data-testid="tweetText"]) [data-xmp-media-block] :is(img, video) {
+      border-radius: 12px !important;
+    }
   `;
 
   let enabled = true;
@@ -686,6 +840,8 @@
   let bootTimer = null;
   let mediaBlockCounter = 0;
   let layoutRetry = 0;
+  let navExpanded = false;
+  let railTimer = null;
   const warned = new Set();
   const widthQuery = window.matchMedia(`(min-width: ${MIN_LAYOUT_WIDTH}px)`);
 
@@ -749,6 +905,40 @@
     STYLE_IDS.forEach(id => document.getElementById(id)?.remove());
   }
 
+  function setNavExpanded(value) {
+    navExpanded = value;
+    const root = document.documentElement;
+    if (value) root.dataset.xmpNavExpanded = '1';
+    else delete root.dataset.xmpNavExpanded;
+    const toggle = document.querySelector('.xmp-nav-toggle');
+    if (!toggle) return;
+    const label = value ? '收起导航' : '展开导航';
+    const text = toggle.querySelector('span');
+    if (text) text.textContent = label;
+    toggle.setAttribute('aria-expanded', value ? 'true' : 'false');
+    toggle.setAttribute('aria-label', label);
+    toggle.title = label;
+  }
+
+  function ensureNavToggle() {
+    if (!enabled || !document.body) return;
+    let toggle = document.querySelector('.xmp-nav-toggle');
+    if (!toggle) {
+      toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'xmp-nav-toggle';
+      toggle.innerHTML = `${NAV_TOGGLE_ICON}<span></span>`;
+      toggle.addEventListener('click', () => setNavExpanded(!navExpanded));
+      document.body.appendChild(toggle);
+    }
+    setNavExpanded(navExpanded);
+  }
+
+  function removeNavToggle() {
+    document.querySelectorAll('.xmp-nav-toggle').forEach(toggle => toggle.remove());
+    setNavExpanded(false);
+  }
+
   function setEnabled(value) {
     let stored = true;
     try {
@@ -768,6 +958,7 @@
     enabled = false;
     stopObserver();
     cleanupAllMedia();
+    removeNavToggle();
     removeStyles();
     const root = document.documentElement;
     delete root.dataset.xmpEnabled;
@@ -791,6 +982,9 @@
     scheduleTimestampFormat();
     markTabbar();
     markComposer();
+    markRailPanel();
+    markRailLayout();
+    ensureNavToggle();
     if (route === 'home' && !degraded) {
       startObserver();
       scanTimeline();
@@ -849,6 +1043,10 @@
     scheduleTimestampFormat();
     markTabbar();
     markComposer();
+    markRailPanel();
+    markRailLayout();
+    ensureNavToggle();
+    if (route !== 'home' && route !== 'status') setNavExpanded(false);
     if (route === 'home' && !degraded) {
       startObserver();
       scanTimeline();
@@ -947,6 +1145,44 @@
     }
   }
 
+  function markRailPanel() {
+    const switcher = document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]');
+    if (!switcher) return;
+    let panel = switcher.parentElement;
+    while (panel && panel !== document.body) {
+      if (window.getComputedStyle(panel).position === 'fixed') break;
+      panel = panel.parentElement;
+    }
+    if (!panel || panel === document.body) return;
+    document.querySelectorAll('[data-xmp-rail-panel]').forEach(node => {
+      if (node !== panel) node.removeAttribute('data-xmp-rail-panel');
+    });
+    panel.setAttribute('data-xmp-rail-panel', '');
+  }
+
+  function markRailLayout() {
+    const root = document.documentElement;
+    const nav = document.querySelector('header nav');
+    const logo = document.querySelector('header a[aria-label="X"]');
+    if (nav && logo) {
+      if (nav.contains(logo)) {
+        root.style.removeProperty('--xmp-nav-top');
+      } else {
+        const top = Math.max(0, Math.round(logo.getBoundingClientRect().bottom + 2));
+        root.style.setProperty('--xmp-nav-top', `${top}px`);
+      }
+    }
+    const more = document.querySelector('[data-testid="AppTabBar_More_Menu"]');
+    const switcher = document.querySelector('[data-testid="SideNav_AccountSwitcher_Button"]');
+    let top = more ? Math.round(more.getBoundingClientRect().bottom - 1) : 0;
+    const maxTop = switcher
+      ? Math.round(switcher.getBoundingClientRect().top - 50)
+      : window.innerHeight - 56;
+    if (top > maxTop) top = maxTop;
+    if (top > 0) root.style.setProperty('--xmp-toggle-top', `${top}px`);
+    else root.style.removeProperty('--xmp-toggle-top');
+  }
+
   function bootWhenReady() {
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', boot, { once: true });
@@ -977,6 +1213,9 @@
     scheduleTimestampFormat();
     markTabbar();
     markComposer();
+    markRailPanel();
+    markRailLayout();
+    ensureNavToggle();
     if (route === 'home' && !degraded) {
       startObserver();
       scanTimeline();
@@ -1053,6 +1292,7 @@
     warnOnce(`degraded-${reason}`, `选择器降级（${reason}）`);
     stopObserver();
     cleanupAllMedia();
+    setNavExpanded(false);
   }
 
   function clearDegraded() {
@@ -1110,6 +1350,8 @@
     formatTimestamps();
     markTabbar();
     markComposer();
+    markRailPanel();
+    markRailLayout();
     const cells = [...primary.querySelectorAll(CELL)];
     if (cells.length > 0 && !commonAncestor(cells)) return;
     primary.querySelectorAll(TWEET).forEach(tweet => {
@@ -1316,6 +1558,7 @@
     if (!widthQuery.matches) {
       stopObserver();
       cleanupAllMedia();
+      setNavExpanded(false);
     }
     if (widthQuery.matches && route === 'home' && !degraded) {
       startObserver();
@@ -1332,6 +1575,16 @@
     if (typeof widthQuery.addEventListener === 'function') {
       widthQuery.addEventListener('change', handleWidthChange);
     }
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && navExpanded) setNavExpanded(false);
+    });
+    window.addEventListener('resize', () => {
+      if (railTimer) window.clearTimeout(railTimer);
+      railTimer = window.setTimeout(() => {
+        railTimer = null;
+        if (enabled) markRailLayout();
+      }, 150);
+    });
     bootWhenReady();
   }
 

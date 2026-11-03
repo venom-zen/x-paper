@@ -14,7 +14,8 @@
 - 当前行为以代码、README 和 `docs/selectors.md` 为准。不要按已删除的旧设计记录回退
   当前行为。
 - 已经落地的、与初版设计不同的行为：无日期刊头、无操作栏上分割线、无正文列左右框线、
-  无头像框线、引用帖媒体折叠、帖子时间显示具体时刻、通知/Toast 纸面化。不要按旧设计回退。
+  无头像框线、引用帖媒体折叠、帖子时间显示具体时刻、通知/Toast 纸面化、左轨点击展开。
+  不要按旧设计回退（尤其不要把左轨改回 hover/focus-within 自动展开）。
 
 ## 工作方式
 
@@ -75,15 +76,31 @@
   inset 白色 `box-shadow`，不是 `border`。
 - 帖子分隔线在 `[data-testid="cellInnerDiv"] > div` 的 `border-bottom`；线程竖线是头像列
   最后一个 div（2px 宽、深色背景）。用 `Tweet-User-Avatar ~ div:last-child` 定位，换成
-  `--xmp-rule` 浅纸色。不要用“所有 div 都改 border-color”这种规则，透明边框会显形。
+  `--xmp-rule` 浅纸色。引用帖头像的最后一个 div 兄弟可能是作者行容器（含 `User-Name`/
+  `tweetText`），选择器必须排除，否则引用卡作者行会被涂成一条 `--xmp-rule` 背景带。
+  不要用“所有 div 都改 border-color”这种规则，透明边框会显形。
+- 引用帖媒体块在卡片内是整卡宽，展开后会压住引用卡左右和底部边框；给引用帖内的媒体块和
+  按钮左右各 12px 内缩，媒体块底部再留 12px，并对媒体元素设 12px 圆角。引用卡作者行保持透明。
+- X 文章预览卡是 `div:has(> [data-testid="article-cover-image"])`：外框在它的 border，标题/
+  摘要在最后一个子 div。去掉外框并只给最后子 div 设墨色；“X 文章”角标在封面图内，保持原样。
 - 操作栏的上分割线在 `[role="group"]` 的 `border-top`；移除时不要误删媒体/正文的边框。
 - 发帖编辑器的背景会盖住 Draft.js placeholder；编辑器必须保持透明。
 - 左轨图标左偏是 nav 标签包装层的 20px/16px 外边距造成的；收起时同时隐藏包装层，并用
   `align-items: center` 居中，而不是只改 `justify-content`。X 的 `SideNav_NewTweet_Button`
-  偏在屏幕左侧，收起为 88px 后会在轨道里露出一角，版面模式需要隐藏。
-- 新帖提示是 `[role="status"][data-keep-composer-open]` 内的按钮；必须 `width: auto` 并给
-  图标/文字 `gap`，否则「已发布」这类短文案会留下大间隔。Toast 是 `[data-testid="toast"]`；
-  两者都使用纸面浮起色，不要沿用 X 的蓝/绿大色块。
+  偏在屏幕左侧，收起为 88px 后会在轨道里露出一角，版面模式需要隐藏。账号入口在独立的
+  fixed 275px 侧栏层，不在 nav 里；只收窄 nav 会让账号入口和菜单跑到视口左侧。用
+  `data-xmp-rail-panel` 标记那个固定层并设 88/240px，账号按钮设 72/224px，菜单才能完整弹出。
+  展开只由 `.xmp-nav-toggle` 的点击切换 `html[data-xmp-nav-expanded]`，不要恢复
+  hover/focus-within；按钮放在「更多」项下方，账号悬浮卡打开时隐藏。当前 X 的 logo 在 nav
+  外，nav 固定在 top:0 会压住 Home；测量 logo 底部写入 `--xmp-nav-top`，nav 用该变量设置
+  top/height。
+- 新帖提示是 `[role="status"][data-keep-composer-open]` 内的按钮；必须 `display: flex` +
+  `flex-direction: row` + `width: auto` + `gap`，否则当前把文案放在按钮直接子级的版本会按
+  View 的 column 排成两行。提示在 `[data-xmp-tabbar]` 内；tab 栏/发帖框的
+  `background-image: none` 必须排除带内联 `background-image` 的元素，否则脸谱头像的照片层
+  被清空，只剩轮廓。头像在 `[data-testid="userAvatars"]` 里，清空背景后要用 1px 细线圆环
+  保留轮廓；`header[role="banner"]` 里的账号头像要排除清理。Toast 是
+  `[data-testid="toast"]`；两者都使用纸面浮起色，不要沿用 X 的蓝/绿大色块。
 - tab 栏和发帖工具栏的滚动箭头是深色圆形按钮；在纸面主题中要改成 paper-raised + 细线。
 - 推文里的「显示更多」可能是内联 X 蓝色，不是 `<a>`；用推文范围内的内联颜色选择器改为松绿。
 - 不要做宽泛的 `!important` 覆盖；先看元素是否被按钮/链接/媒体共享。必要时用 `:has()` 精确
