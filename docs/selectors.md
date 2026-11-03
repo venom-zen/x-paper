@@ -15,10 +15,12 @@
 | `data-xmp-media-state` | `collapsed` / `expanded` | 顶层帖子的媒体状态 |
 | `data-xmp-media-loading` | 空 | 展开后的短暂存态；媒体块移出文档流并隐藏，可见媒体图就绪后移除并一次性显示 |
 | `data-xmp-tabbar` | 空 | 首页主内容容器内的 tab 栏容器；主题背景标记 |
-| `data-xmp-composer` | 空 | 首页主内容容器内的发帖框包装层；主题背景标记 |
+| `data-xmp-composer` | 空 | 首页主内容容器内的发帖框包装层；主题背景标记。详情页/文章页的回复框不标这个属性，直接按 `inline_reply_offscreen` 写 CSS |
 | `data-xmp-divider` | 空 | 首页发帖框后的 1–2px 分隔条；背景透明，由发帖框下边框提供线条 |
 | `data-xmp-nav-expanded` | `1` | 左轨展开状态；由 `.xmp-nav-toggle` 点击切换，路由离开或宽度不足时移除 |
 | `data-xmp-rail-panel` | 空 | 账号入口所在的固定侧栏层；脚本把它的 left/width 从 275px 收回到 88px（展开 240px），避免账号入口和菜单跑出视口 |
+| `data-xmp-appbar` | 空 | 详情页/文章页顶部条；脚本从 `[data-testid="app-bar-back"]` 向上找到带 `backdrop-filter: blur` 或非透明背景的那一层后标记，主题把半透明黑换成纸色 |
+| `data-xmp-preview-open` | `1` | `.xmp-photo-preview` 悬浮原图预览的显示开关；移出图片/按钮、滚轮或触摸滚动、点击、按 `Esc`、切路由或关闭脚本时移除 |
 
 `button.xmp-nav-toggle` 是脚本创建并挂到 `body` 的轨道展开按钮：≥1000px、home/status 且未
 降级时显示在「更多」项下方（收起 72px、展开 224px），样式与普通导航项一致，`aria-expanded`
@@ -60,10 +62,19 @@
 | 首页发帖框 | 主内容容器的发帖框包装层；含 `[data-testid="tweetTextarea_0"]` 和 `toolBar` | 标 `data-xmp-composer`；外层和子 div 都要纸色 |
 | 发帖按钮 | `[data-testid="tweetButtonInline"]` | 主按钮使用 `--xmp-pine` |
 | 多图轮播 | 帖子内 `[data-testid="ScrollSnap-List"]` | X 当前多图媒体使用滚动轮播；媒体块取该轮播容器 |
+| 详情页顶部条 | `[data-testid="app-bar-back"]` 的 blur/带背景祖先 | 标记为 `data-xmp-appbar`；条本身没有稳定 testid |
+| 详情页回复框 | `[data-testid="inline_reply_offscreen"]` | 无 `toolBar`，直接标成 `data-xmp-composer` 复用发帖框规则 |
+| 文章内嵌引用帖 | `[data-testid="simpleTweet"]` | 纯黑底 + 深灰边，墨色文字在其上不可读 |
+| 文章代码块 | `[data-testid="markdown-code-block"]` | 首个子 div 是 28px 头部条，`pre > code` 带内联浅色 |
+| 文章升级横幅 | `[data-testid="twitterArticleReadView"] [role="status"]` | 深蓝底 `rgb(2,17,61)` |
+| 文章阅读进度条 | `[data-testid="progressBar-bar"]` | X 蓝 `rgb(29,155,240)` |
+| 线程短尾 | 头像行上一行里的 `div:only-child` | 回复头像上方 2×8 的深色连接线 |
 
 ## 媒体
 
 - 只处理 `!tweet.parentElement.closest('[data-testid="tweet"]')` 的顶层帖子。
+- 视频的海报层也是 `tweetPhoto`，并且**包住** `previewInterstitial`；收集媒体时同时排除「在 interstitial 内部」
+  和「内部含 interstitial」两种 `tweetPhoto`，否则一个视频会被算成「图片 1 + 视频 1 = 2 项」。
 - 先检查多图轮播：媒体元素最近的 `[data-testid="ScrollSnap-List"]` 若在帖子内、包含本次收集到的
   **全部**媒体、且不含 `tweetText` 或 `[role="group"]`，直接作为媒体块；只含部分媒体时退回
   公共祖先算法，避免只折叠轮播而留下其余媒体。
@@ -89,6 +100,48 @@
   `Image` 缓存中加载；全部就绪或 700ms 超时后移除标记，块恢复文档流并一次性显示。
   网格需要等所有可见单元，轮播只等当前可见 slide；不显示空白占位，也不触发内部滚动条。
 - 媒体块或公共祖先找不到时不插入按钮，原媒体保持可见。
+- 悬浮原图预览有两个入口，都不需要先展开媒体：
+  1. **折叠按钮** `.xmp-media-toggle`：`pointerover` 后延时 220ms，取 `aria-controls` 指向的媒体块里
+     全部图片并排预览；折叠块里只有 120px 缩略图，所以等 `name=orig` 解码（或 800ms 超时）再弹出，
+     标题 `N 张 · 原图`。
+  2. **已展开的图片** `[data-testid="tweetPhoto"]`（≥40px、非视频、非卡片、不在 `data-xmp-media-loading`
+     存态）：只预览悬停的那一张，先用已下载尺寸立即显示、原图解码完替换，标题 `第 n / N 张 · 原图`。
+  绘制层取内联 `background-image` 的 URL，取不到时退回 `img.currentSrc || img.src`；
+  `pbs.twimg.com` 的 URL 把 `name=` 参数换成 `orig` 得到原图，已加载过的原图记在 `previewReady` 里。
+  浮层 `pointer-events: none`；移出图片/按钮、点击、`Esc`、切路由、宽度跌破 1000px 或关闭脚本都会收起。
+  **不要监听 `scroll` 事件**：X 加载图片时的滚动锚定会触发 scroll，把刚打开的预览误关；只在
+  `wheel`/`touchmove` 时收起。浮层尺寸按图片数量分级（单图最多 88vh，2 张 66vh，3 张以上 30vh 并换行），
+  保证整卡不超过 92vh。
+
+## 详情页与文章页表面
+
+- 顶部条（`帖子`/`文章`）是 `rgba(0,0,0,0.65)` + `backdrop-filter: blur(12px)`，没有稳定 testid。
+  主题用结构选择器 `div:has(> div > div > [data-testid="app-bar-back"])` 直接命中，节点一出现就是
+  纸色 + 下沿细线，不会先闪黑；`markAppBar()` 从 `[data-testid="app-bar-back"]` 向上找带 blur 或
+  非透明背景的祖先标 `data-xmp-appbar`，只作为 X 改嵌套后的运行时兜底。X 还把标题写成内联
+  `color: rgb(231, 233, 234)`，由 primary 内的内联浅色文字规则统一改墨色。
+- 回复框（`发布你的回复`）是 `[data-testid="inline_reply_offscreen"]` 内的纯黑层，且没有
+  `toolBar`。主题按该 testid 直接覆盖（纸色、内部 div 透明、`tweetButtonInline` 松绿、禁用态纸面浮起），
+  同样不依赖 JS 标记；`markComposer()` 只负责首页发帖框。
+- 文章页其余深色表面：`[data-testid="simpleTweet"]`（内嵌引用帖，纯黑底）、
+  `[data-testid="markdown-code-block"]`（`pre` 深底 + 28px 头部条）、文末 `[role="status"]`
+  升级横幅（`rgb(2,17,61)`）、`[data-testid="progressBar-bar"]` 阅读进度条（X 蓝）。
+  主题分别换成纸面浮起色 + 细线、纸色代码块（语法色统一墨色）、松绿进度条。
+- 线程竖线有两段：头像**下方**的长线是 `Tweet-User-Avatar ~ div:last-child`；回复头像**上方**还有
+  一段 2×8 的短尾，位于头像行的上一行里（`div:has(+ div > div > Tweet-User-Avatar) > * > * > div:only-child`），
+  两段都要涂 `--xmp-rule`，否则短尾保持 X 的深色 `rgb(51,54,57)`。
+
+## 返回首页的位置恢复
+
+X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。脚本在**离开 home** 时记录
+`window.scrollY` 和视口内第一条完整可见帖子的状态链接（`captureHomeReturn`），**回到 home** 时
+（`previousRoute !== 'home' && route === 'home'`）用 `restoreHomeReturn` 复位：
+
+- 帖子还在 DOM 里：把它滚回离开时的视口位置（`cell.top` 与记录值比对，差 2px 以上才动）。
+- 帖子还没渲染出来：先等 2 秒，之后按像素位置回填（用当前文档高度钳制），并在 6 秒内每 250ms
+  校正一次，避免 X 稍后的滚动恢复又把它拉走。
+- 用户 `wheel`/`touchmove` 主动滚动即放弃；不在 home 路由时自动停止。
+- 只在 SPA 内导航生效；整页刷新交给浏览器自己的滚动恢复。
 
 ## 降级
 

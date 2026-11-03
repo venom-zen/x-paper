@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         x-paper
 // @namespace    x-paper
-// @version      0.3.3
+// @version      0.4.1
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @match        https://x.com/*
 // @run-at       document-start
@@ -21,7 +21,7 @@
   const CELL = '[data-testid="cellInnerDiv"]';
   const TWEET = '[data-testid="tweet"]';
   const MEDIA_SELECTOR = '[data-testid="tweetPhoto"], [data-testid="previewInterstitial"]';
-  const STYLE_IDS = ['xmp-preflight', 'xmp-theme', 'xmp-layout', 'xmp-noise', 'xmp-media'];
+  const STYLE_IDS = ['xmp-preflight', 'xmp-theme', 'xmp-layout', 'xmp-noise', 'xmp-media', 'xmp-preview'];
   const NAV_TOGGLE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 4.6 4.9 6l5.65 5.65L4.9 17.3l1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L6.3 4.6Zm8 0L12.9 6l5.65 5.65-5.65 5.65 1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L14.3 4.6Z"/></svg>';
 
   const PREFLIGHT_CSS = `
@@ -105,6 +105,11 @@
 
     html[data-xmp-enabled="1"] [data-testid="tweet"] [style*="color: rgb(29, 155, 240)"] {
       color: var(--xmp-pine) !important;
+    }
+
+    /* X 把查看数、标题等文字写成内联浅色（深色主题的 --xmpColorlessText），纸面上必须换成墨色 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [style*="color: rgb(231, 233, 234)"] {
+      color: var(--xmp-ink) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="tweetTextarea_0"] {
@@ -417,6 +422,14 @@
       border-radius: 1px !important;
     }
 
+    /* Thread tail: the reply row paints a short connector above its avatar, in
+       the row that precedes the avatar row. It is not a sibling of the avatar,
+       so the rule above cannot reach it and X's dark stub would show. */
+    html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"] div:has(+ div > div > [data-testid="Tweet-User-Avatar"]) > * > * > div:only-child {
+      background-color: var(--xmp-rule) !important;
+      border-radius: 1px !important;
+    }
+
     [data-xmp-divider] {
       background-color: transparent !important;
     }
@@ -439,6 +452,92 @@
 
     html[data-xmp-enabled="1"] [data-testid="toast"] a {
       color: var(--xmp-pine) !important;
+    }
+
+    /* 详情页/文章页顶部条：X 用半透明黑 + blur，纸面下换成纸色 + 细线。
+       结构选择器让它一出现就是纸色；data-xmp-appbar 是结构变化时的运行时兜底。 */
+    html[data-xmp-enabled="1"] [data-xmp-appbar],
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > div > [data-testid="app-bar-back"]) {
+      background-color: var(--xmp-paper) !important;
+      backdrop-filter: none !important;
+      box-shadow: inset 0 -1px 0 var(--xmp-hairline);
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-appbar] :is(span, svg),
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > div > [data-testid="app-bar-back"]) :is(span, svg) {
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
+    }
+
+    /* 详情页/文章页的回复框：黑底在 inline_reply_offscreen 的子里；按 testid 直接覆盖，
+       节点渲染出来就是纸色，不用等 JS 标记，避免进入详情页时闪一下黑色。 */
+    html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] {
+      background-color: var(--xmp-paper) !important;
+      border-bottom: 1px solid var(--xmp-hairline) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] div {
+      background-color: transparent !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] div:not([style*="background-image"]) {
+      background-image: none !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] [data-testid="tweetButtonInline"] {
+      background-color: var(--xmp-pine) !important;
+      border-color: var(--xmp-pine) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] [data-testid="tweetButtonInline"] span {
+      color: var(--xmp-paper) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] [data-testid="tweetButtonInline"]:disabled {
+      background-color: var(--xmp-paper-raised) !important;
+      border-color: var(--xmp-hairline) !important;
+      opacity: 1 !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] [data-testid="tweetButtonInline"]:disabled span {
+      color: var(--xmp-ink-secondary) !important;
+    }
+
+    /* 文章内嵌的引用帖：X 用纯黑底 + 深灰边，墨色文字在其上几乎不可读 */
+    html[data-xmp-enabled="1"] [data-testid="simpleTweet"] {
+      background-color: var(--xmp-paper-raised) !important;
+      border-color: var(--xmp-hairline) !important;
+    }
+
+    /* 文章代码块：换成纸面终端块，浅底深字；语法色统一为墨色 */
+    html[data-xmp-enabled="1"] [data-testid="markdown-code-block"] {
+      border: 1px solid var(--xmp-hairline) !important;
+      border-radius: 8px !important;
+      overflow: hidden;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="markdown-code-block"] > div:first-child {
+      background-color: var(--xmp-rule) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="markdown-code-block"] pre {
+      background-color: var(--xmp-paper-raised) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="markdown-code-block"] :is(div, span, pre, code, svg) {
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
+    }
+
+    /* 文章末尾的升级横幅 */
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] [role="status"] {
+      background-color: var(--xmp-paper-raised) !important;
+      border: 1px solid var(--xmp-hairline) !important;
+    }
+
+    /* 文章阅读进度条 */
+    html[data-xmp-enabled="1"] [data-testid="progressBar-bar"] {
+      background-color: var(--xmp-pine) !important;
     }
 
     html[data-xmp-enabled="1"] [data-xmp-tabbar] [data-testid="ScrollSnap-prevButtonWrapper"] button,
@@ -846,6 +945,66 @@
     }
   `;
 
+  const PREVIEW_CSS = `
+    html[data-xmp-enabled="1"] .xmp-photo-preview {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 1400;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      max-width: min(1600px, 92vw);
+      max-height: 92vh;
+      padding: 10px;
+      background: var(--xmp-paper);
+      border: 1px solid var(--xmp-hairline);
+      border-radius: 12px;
+      box-shadow: 0 18px 48px rgba(27, 27, 27, 0.28);
+      pointer-events: none;
+    }
+
+    html[data-xmp-enabled="1"] .xmp-photo-preview[data-xmp-preview-open="1"] {
+      display: flex;
+    }
+
+    html[data-xmp-enabled="1"] .xmp-photo-preview-body {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      max-width: 100%;
+    }
+
+    html[data-xmp-enabled="1"] .xmp-photo-preview img {
+      display: block;
+      max-width: min(1200px, 86vw);
+      max-height: calc(88vh - 52px);
+      border-radius: 8px;
+      object-fit: contain;
+    }
+
+    html[data-xmp-enabled="1"] .xmp-photo-preview[data-xmp-preview-count="2"] img {
+      max-width: 40vw;
+      max-height: 66vh;
+    }
+
+    html[data-xmp-enabled="1"] .xmp-photo-preview:is([data-xmp-preview-count="3"], [data-xmp-preview-count="4"], [data-xmp-preview-count="many"]) img {
+      max-width: 28vw;
+      max-height: 30vh;
+    }
+
+    html[data-xmp-enabled="1"] .xmp-photo-preview span {
+      font-family: var(--xmp-ui-font);
+      font-size: 13px;
+      line-height: 1.4;
+      color: var(--xmp-ink-secondary);
+    }
+  `;
+
   let enabled = true;
   let degraded = false;
   let route = 'other';
@@ -860,6 +1019,8 @@
   let layoutRetry = 0;
   let navExpanded = false;
   let railTimer = null;
+  let homeReturn = null;
+  let homeRestoreToken = 0;
   const warned = new Set();
   const mediaWarmups = new WeakMap();
   const mediaReveals = new WeakMap();
@@ -920,6 +1081,7 @@
     injectStyle('xmp-layout', LAYOUT_CSS);
     injectStyle('xmp-noise', NOISE_CSS);
     injectStyle('xmp-media', MEDIA_CSS);
+    injectStyle('xmp-preview', PREVIEW_CSS);
   }
 
   function removeStyles() {
@@ -979,6 +1141,11 @@
     enabled = false;
     stopObserver();
     cleanupAllMedia();
+    hidePhotoPreview();
+    if (previewEl) {
+      previewEl.remove();
+      previewEl = null;
+    }
     removeNavToggle();
     removeStyles();
     const root = document.documentElement;
@@ -1000,9 +1167,10 @@
     }
     checkSelectorHealth();
     formatTimestamps();
-    scheduleTimestampFormat();
+    scheduleSurfaceRefresh();
     markTabbar();
     markComposer();
+    markAppBar();
     markRailPanel();
     markRailLayout();
     ensureNavToggle();
@@ -1047,12 +1215,71 @@
     });
   }
 
+  // X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。
+  // 离开首页时记住滚动量和当时第一条完整可见的帖子，回来后按它复位；帖子还没渲染出来时
+  // 先等 2s 让 X 补内容，再按像素位置回填，并在 6s 内持续校正（用户主动滚动即放弃）。
+  function captureHomeReturn() {
+    const primary = document.querySelector(PRIMARY);
+    const y = Math.round(window.scrollY);
+    if (!primary || y <= 0) {
+      homeReturn = null;
+      return;
+    }
+    let anchor = null;
+    for (const cell of primary.querySelectorAll(CELL)) {
+      const rect = cell.getBoundingClientRect();
+      if (rect.bottom <= 80) continue;
+      const link = cell.querySelector('a[href*="/status/"]');
+      if (!link) continue;
+      anchor = { href: link.getAttribute('href'), top: Math.round(rect.top) };
+      break;
+    }
+    homeReturn = { y, anchor };
+  }
+
+  function restoreHomeReturn() {
+    const state = homeReturn;
+    if (!state) return;
+    const token = ++homeRestoreToken;
+    let cancelled = false;
+    const cancel = () => { cancelled = true; };
+    ['wheel', 'touchmove'].forEach(type => {
+      window.addEventListener(type, cancel, { passive: true, once: true });
+    });
+    const started = performance.now();
+    const tick = () => {
+      if (cancelled || token !== homeRestoreToken || route !== 'home') return;
+      const elapsed = performance.now() - started;
+      let aligned = false;
+      if (state.anchor) {
+        const link = document.querySelector(`a[href="${state.anchor.href}"]`);
+        const cell = link ? link.closest(CELL) : null;
+        if (cell) {
+          const delta = Math.round(cell.getBoundingClientRect().top) - state.anchor.top;
+          if (Math.abs(delta) > 2) window.scrollBy(0, delta);
+          aligned = true;
+        }
+      }
+      // 锚点还没渲染出来时先等 X 补内容，否则按像素滚动会被短页面钳到底部。
+      if (!aligned && elapsed >= 2000) {
+        const max = Math.max(0, document.scrollingElement.scrollHeight - window.innerHeight);
+        const target = Math.min(state.y, max);
+        if (Math.abs(window.scrollY - target) > 2) window.scrollTo(0, target);
+      }
+      if (elapsed < 6000) window.setTimeout(tick, 250);
+    };
+    window.setTimeout(tick, 120);
+  }
+
   function onRouteChange() {
     if (!enabled) return;
+    const previousRoute = route;
     setRoute();
+    hidePhotoPreview();
+    if (previousRoute === 'home' && route !== 'home') captureHomeReturn();
+    if (previousRoute !== 'home' && route === 'home') restoreHomeReturn();
     if (route !== 'home') {
       stopObserver();
-      cleanupAllMedia();
     }
     const primary = document.querySelector(PRIMARY);
     if (!primary) {
@@ -1061,9 +1288,10 @@
     }
     checkSelectorHealth();
     formatTimestamps();
-    scheduleTimestampFormat();
+    scheduleSurfaceRefresh();
     markTabbar();
     markComposer();
+    markAppBar();
     markRailPanel();
     markRailLayout();
     ensureNavToggle();
@@ -1105,11 +1333,14 @@
     }
   }
 
-  function scheduleTimestampFormat() {
+  // X 流式渲染：顶部条和回复框可能晚于正文出现，延迟再标一次。
+  function scheduleSurfaceRefresh() {
     if (timestampTimer) window.clearTimeout(timestampTimer);
     timestampTimer = window.setTimeout(() => {
       timestampTimer = null;
       formatTimestamps();
+      markComposer();
+      markAppBar();
     }, 1200);
   }
 
@@ -1163,6 +1394,28 @@
         const box = child.getBoundingClientRect();
         if (box.height > 0 && box.height <= 2) child.setAttribute('data-xmp-divider', '');
       }
+    }
+  }
+
+  // 详情页/文章页的顶部条没有稳定 testid，从返回按钮向上找带 blur/背景的那一层，
+  // 标成 data-xmp-appbar 交给主题规则。
+  function markAppBar() {
+    const primary = document.querySelector(PRIMARY);
+    if (!primary) return;
+    const back = primary.querySelector('[data-testid="app-bar-back"]');
+    if (!back) return;
+    document.querySelectorAll('[data-xmp-appbar]').forEach(node => {
+      if (!node.contains(back)) node.removeAttribute('data-xmp-appbar');
+    });
+    let node = back.parentElement;
+    for (let depth = 0; node && node !== primary && depth < 8; depth += 1) {
+      const cs = window.getComputedStyle(node);
+      if (cs.backdropFilter.includes('blur') ||
+          (cs.backgroundColor !== 'rgba(0, 0, 0, 0)' && cs.backgroundColor !== 'transparent')) {
+        node.setAttribute('data-xmp-appbar', '');
+        return;
+      }
+      node = node.parentElement;
     }
   }
 
@@ -1231,9 +1484,10 @@
     }
     checkSelectorHealth();
     formatTimestamps();
-    scheduleTimestampFormat();
+    scheduleSurfaceRefresh();
     markTabbar();
     markComposer();
+    markAppBar();
     markRailPanel();
     markRailLayout();
     ensureNavToggle();
@@ -1371,6 +1625,7 @@
     formatTimestamps();
     markTabbar();
     markComposer();
+    markAppBar();
     markRailPanel();
     markRailLayout();
     const cells = [...primary.querySelectorAll(CELL)];
@@ -1384,8 +1639,13 @@
     return [...tweet.querySelectorAll(MEDIA_SELECTOR)].filter(element => {
       if (element.closest(TWEET) !== tweet) return false;
       if (element.closest('[data-testid="card.wrapper"]') && !isQuoteMedia(tweet, element)) return false;
-      if (element.getAttribute('data-testid') === 'tweetPhoto' &&
-          element.closest('[data-testid="previewInterstitial"]')) return false;
+      if (element.getAttribute('data-testid') === 'tweetPhoto') {
+        // A clip paints its poster through a tweetPhoto shell: the shell either
+        // wraps the interstitial or sits inside one. Counting both would report
+        // one video as an image plus a video.
+        if (element.closest('[data-testid="previewInterstitial"]')) return false;
+        if (element.querySelector('[data-testid="previewInterstitial"]')) return false;
+      }
       return true;
     });
   }
@@ -1604,6 +1864,7 @@
     const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
     if (tweet.dataset.xmpMediaState === 'expanded') {
       tweet.dataset.xmpMediaState = 'collapsed';
+      hidePhotoPreview();
       if (block) {
         mediaReveals.set(block, (mediaReveals.get(block) || 0) + 1);
         block.removeAttribute('data-xmp-media-loading');
@@ -1691,6 +1952,7 @@
   }
 
   function cleanupAllMedia() {
+    hidePhotoPreview();
     document.querySelectorAll('.xmp-media-toggle').forEach(button => button.remove());
     document.querySelectorAll('[data-xmp-media-block]').forEach(block => {
       block.removeAttribute('data-xmp-media-block');
@@ -1702,9 +1964,192 @@
     });
   }
 
+  const PHOTO_SELECTOR = '[data-testid="tweetPhoto"]';
+  const PREVIEW_SHOW_DELAY = 220;
+  const PREVIEW_ORIG_TIMEOUT = 800;
+  let previewEl = null;
+  let previewTimer = null;
+  let previewKey = null;
+  let previewToken = 0;
+  const previewReady = new Set();
+
+  function ensurePreview() {
+    if (previewEl && previewEl.isConnected) return previewEl;
+    previewEl = document.createElement('div');
+    previewEl.className = 'xmp-photo-preview';
+    previewEl.setAttribute('aria-hidden', 'true');
+    previewEl.innerHTML = '<div class="xmp-photo-preview-body"></div><span></span>';
+    document.body.appendChild(previewEl);
+    return previewEl;
+  }
+
+  function photoUrl(photo) {
+    for (const node of photo.querySelectorAll('[style*="background-image"]')) {
+      const match = (node.getAttribute('style') || '').match(/url\((["']?)(.*?)\1\)/);
+      if (match && match[2]) return match[2];
+    }
+    const image = photo.querySelector('img[src]');
+    return image ? image.currentSrc || image.src : '';
+  }
+
+  // pbs.twimg.com 用 name=orig 提供原图；折叠块里只有 120x120 缩略图。
+  function originalUrl(url) {
+    if (!/^https?:\/\/pbs\.twimg\.com\//.test(url)) return url;
+    if (/[?&]name=/.test(url)) return url.replace(/([?&]name=)[^&#]*/i, '$1orig');
+    return `${url}${url.includes('?') ? '&' : '?'}name=orig`;
+  }
+
+  function isPreviewablePhoto(photo) {
+    return !photo.querySelector('[data-testid="previewInterstitial"]') &&
+      !photo.closest('[data-testid="previewInterstitial"]');
+  }
+
+  function mediaPhotos(scope) {
+    return [...scope.querySelectorAll(PHOTO_SELECTOR)].filter(isPreviewablePhoto);
+  }
+
+  function hidePhotoPreview() {
+    if (previewTimer) {
+      window.clearTimeout(previewTimer);
+      previewTimer = null;
+    }
+    previewKey = null;
+    previewToken += 1;
+    if (previewEl) previewEl.removeAttribute('data-xmp-preview-open');
+  }
+
+  // waitForOriginal: 折叠块里只有 120px 缩略图，放大后一片模糊；
+  // 等原图解码（或 800ms 超时）再弹出。展开后的图片已有较大尺寸，立即显示再替换原图。
+  function openPreview(key, photos, label, waitForOriginal) {
+    const urls = photos.map(photoUrl).filter(Boolean);
+    if (!urls.length) return;
+    previewKey = key;
+    const token = ++previewToken;
+    const el = ensurePreview();
+    const build = () => {
+      if (token !== previewToken || previewKey !== key) return;
+      const body = el.querySelector('.xmp-photo-preview-body');
+      body.textContent = '';
+      el.dataset.xmpPreviewCount = urls.length === 1 ? '1' : urls.length <= 4 ? String(urls.length) : 'many';
+      el.querySelector('span').textContent = label;
+      for (const url of urls) {
+        const image = document.createElement('img');
+        image.alt = '';
+        const orig = originalUrl(url);
+        image.src = previewReady.has(orig) ? orig : url;
+        body.appendChild(image);
+        if (orig !== url && !previewReady.has(orig)) {
+          const loader = new Image();
+          loader.onload = () => {
+            previewReady.add(orig);
+            if (token === previewToken) image.src = orig;
+          };
+          loader.src = orig;
+        }
+      }
+      el.setAttribute('data-xmp-preview-open', '1');
+    };
+    if (!waitForOriginal) {
+      build();
+      return;
+    }
+    const pending = [...new Set(urls.map(originalUrl))].filter(url => !previewReady.has(url));
+    if (pending.length === 0) {
+      build();
+      return;
+    }
+    let left = pending.length;
+    let timer = null;
+    const finish = () => {
+      if (timer) {
+        window.clearTimeout(timer);
+        timer = null;
+      }
+      build();
+    };
+    for (const url of pending) {
+      const loader = new Image();
+      const settle = () => {
+        previewReady.add(url);
+        left -= 1;
+        if (left === 0) finish();
+      };
+      loader.onload = settle;
+      loader.onerror = settle;
+      loader.src = url;
+    }
+    timer = window.setTimeout(finish, PREVIEW_ORIG_TIMEOUT);
+  }
+
+  function hoveredPhoto(target) {
+    if (!enabled || degraded || !widthQuery.matches || !(target instanceof Element)) return null;
+    const photo = target.closest(PHOTO_SELECTOR);
+    if (!photo || photo.closest('.xmp-photo-preview') || !photo.closest(PRIMARY)) return null;
+    if (!isPreviewablePhoto(photo)) return null;
+    if (photo.closest('[data-xmp-media-loading]')) return null;
+    const box = photo.getBoundingClientRect();
+    if (box.width < 40 || box.height < 40) return null;
+    return photo;
+  }
+
+  function hoveredToggle(target) {
+    if (!enabled || degraded || !widthQuery.matches || !(target instanceof Element)) return null;
+    const toggle = target.closest('.xmp-media-toggle');
+    return toggle && toggle.closest(PRIMARY) ? toggle : null;
+  }
+
+  function schedulePreview(key, open) {
+    if (key === previewKey) return;
+    if (previewTimer) window.clearTimeout(previewTimer);
+    hidePhotoPreview();
+    previewKey = key;
+    previewTimer = window.setTimeout(() => {
+      previewTimer = null;
+      open();
+    }, PREVIEW_SHOW_DELAY);
+  }
+
+  function watchPhotoPreview() {
+    document.addEventListener('pointerover', event => {
+      const toggle = hoveredToggle(event.target);
+      if (toggle) {
+        const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
+        const photos = block ? mediaPhotos(block) : [];
+        if (photos.length === 0) return;
+        const label = photos.length > 1 ? `${photos.length} 张 · 原图` : '原图';
+        schedulePreview(toggle, () => openPreview(toggle, photos, label, true));
+        return;
+      }
+      const photo = hoveredPhoto(event.target);
+      if (!photo) return;
+      const group = photo.closest('[data-xmp-media-block]') || photo.closest(TWEET) || photo.parentElement;
+      const photos = group ? mediaPhotos(group) : [photo];
+      const index = photos.indexOf(photo);
+      const label = photos.length > 1 && index >= 0 ? `第 ${index + 1} / ${photos.length} 张 · 原图` : '原图';
+      schedulePreview(photo, () => openPreview(photo, [photo], label, false));
+    });
+    document.addEventListener('pointerout', event => {
+      if (!previewKey) return;
+      const from = event.target instanceof Element
+        ? event.target.closest('.xmp-media-toggle, [data-testid="tweetPhoto"]')
+        : null;
+      if (from !== previewKey) return;
+      const to = event.relatedTarget;
+      if (to instanceof Element && to.closest('.xmp-media-toggle, [data-testid="tweetPhoto"]') === previewKey) return;
+      hidePhotoPreview();
+    });
+    // 点击进入 X 自己的大图查看器或展开媒体，预览先让位。
+    document.addEventListener('click', hidePhotoPreview, true);
+    // 用户滚轮/触摸滚动时收起；不监听 scroll 事件，否则 X 加载时的滚动锚定会把刚打开的预览误关。
+    ['wheel', 'touchmove'].forEach(type => {
+      window.addEventListener(type, hidePhotoPreview, { capture: true, passive: true });
+    });
+  }
+
   function handleWidthChange() {
     if (!enabled) return;
     if (!widthQuery.matches) {
+      hidePhotoPreview();
       stopObserver();
       cleanupAllMedia();
       setNavExpanded(false);
@@ -1717,6 +2162,7 @@
 
   function init() {
     registerMenu();
+    watchPhotoPreview();
     enabled = readEnabled();
     if (!enabled) return;
     document.documentElement.dataset.xmpEnabled = '1';
@@ -1725,7 +2171,9 @@
       widthQuery.addEventListener('change', handleWidthChange);
     }
     document.addEventListener('keydown', event => {
-      if (event.key === 'Escape' && navExpanded) setNavExpanded(false);
+      if (event.key !== 'Escape') return;
+      hidePhotoPreview();
+      if (navExpanded) setNavExpanded(false);
     });
     window.addEventListener('resize', () => {
       if (railTimer) window.clearTimeout(railTimer);

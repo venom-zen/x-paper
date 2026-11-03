@@ -52,6 +52,19 @@
   [data-testid="SearchBox_Search_Input"] { display: block; width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 999px; border: 1px solid var(--x-line); background: var(--x-bg); color: var(--x-fg); }
   [data-testid="trend"], [data-testid="UserCell"] { padding: 10px 0; border-bottom: 1px solid var(--x-line); }
   .spacer { height: 40px; }
+  .thread-rows { display: flex; flex-direction: column; }
+  .thread-strip, .thread-main { display: flex; flex-direction: row; }
+  .thread-strip > div { display: flex; flex-direction: row; width: 100%; height: 12px; }
+  .avatar-slot { position: relative; width: 40px; flex: 0 0 40px; }
+  .thread-stub { position: absolute; left: 19px; top: 0; width: 2px; height: 8px; background: #333639; }
+  .content-slot { flex: 1; }
+  .avatar-slot img { width: 40px; height: 40px; border-radius: 9999px; }
+  .reply-shell { display: flex; align-items: center; gap: 8px; padding: 8px; background: #000; color: #e7e9ea; }
+  .reply-shell [data-testid="tweetTextarea_0"] { flex: 1; min-height: 24px; }
+  .reply-shell [data-testid="tweetButtonInline"] { border: 0; border-radius: 9999px; padding: 6px 14px; background: #eff3f4; color: #0f1419; }
+  .appbar-shell { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 16px; height: 53px; padding: 0 16px; background: rgba(0, 0, 0, 0.65); backdrop-filter: blur(12px); }
+  .appbar-shell button { display: flex; background: transparent; border: 0; }
+  .appbar-shell svg { width: 20px; height: 20px; fill: #e7e9ea; }
 </style>
 </head>
 <body class="dark">
@@ -67,6 +80,14 @@
 <main>
   <div id="main-row">
     <div data-testid="primaryColumn">
+      <div class="appbar-shell">
+        <div>
+          <div>
+            <button type="button" data-testid="app-bar-back" aria-label="返回"><svg viewBox="0 0 24 24"><path d="M15 4 8 12l7 8"/></svg></button>
+            <h2 style="color: rgb(231, 233, 234); font-size: 20px;">帖子</h2>
+          </div>
+        </div>
+      </div>
       <div id="tabs">
         <div role="tablist" aria-label="Home timelines">
           <button role="tab" aria-selected="true" type="button">For you</button>
@@ -116,9 +137,35 @@
           <article data-testid="tweet" id="tweet-video">
             <div data-testid="User-Name"><span>Video Reader</span><span dir="ltr">@video</span><time>3h</time></div>
             <p data-testid="tweetText">A short clip.</p>
-            <div class="media" id="media-video"><div data-testid="previewInterstitial"><div class="video-preview">▶</div></div></div>
+            <div class="media" id="media-video">
+              <div data-testid="tweetPhoto"><div data-testid="previewInterstitial"><div class="video-preview">▶</div></div></div>
+            </div>
             <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
           </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-thread">
+          <article data-testid="tweet" id="tweet-thread">
+            <div class="thread-rows">
+              <div class="thread-strip"><div><div class="avatar-slot"><div class="thread-stub"></div></div><div class="content-slot"></div></div></div>
+              <div class="thread-main">
+                <div class="avatar-slot"><div data-testid="Tweet-User-Avatar"><div><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%232f5d50'/%3E%3C/svg%3E"></div></div></div>
+                <div>
+                  <div data-testid="User-Name"><span>Threaded Reader</span><span dir="ltr">@thread</span><time>3h</time></div>
+                  <p data-testid="tweetText">Second post in the author's own thread.</p>
+                </div>
+              </div>
+            </div>
+            <div role="group" aria-label="Actions"><button type="button" data-testid="reply"><svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>1</span></button></div>
+          </article>
+        </div>
+        <div data-testid="cellInnerDiv" id="cell-replybar">
+          <div data-testid="inline_reply_offscreen">
+            <div class="reply-shell">
+              <div data-testid="UserAvatar-Container-reply"><img alt="" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40'%3E%3Crect width='40' height='40' fill='%23a8442e'/%3E%3C/svg%3E"></div>
+              <div data-testid="tweetTextarea_0" contenteditable="true" role="textbox"></div>
+              <button type="button" data-testid="tweetButtonInline"><span>回复</span></button>
+            </div>
+          </div>
         </div>
         <div data-testid="cellInnerDiv" id="cell-mixed">
           <article data-testid="tweet" id="tweet-mixed">

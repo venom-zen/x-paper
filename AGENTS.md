@@ -14,8 +14,9 @@
 - 当前行为以代码、README 和 `docs/selectors.md` 为准。不要按已删除的旧设计记录回退
   当前行为。
 - 已经落地的、与初版设计不同的行为：无日期刊头、无操作栏上分割线、无正文列左右框线、
-  无头像框线、引用帖媒体折叠、帖子时间显示具体时刻、通知/Toast 纸面化、左轨点击展开。
-  不要按旧设计回退（尤其不要把左轨改回 hover/focus-within 自动展开）。
+  无头像框线、引用帖媒体折叠、帖子时间显示具体时刻、通知/Toast 纸面化、左轨点击展开、
+  图片悬浮原图预览、详情页/文章页表面纸面化。不要按旧设计回退（尤其不要把左轨改回
+  hover/focus-within 自动展开）。
 
 ## 工作方式
 
@@ -60,6 +61,10 @@
 - 引用帖不是嵌套的 `[data-testid="tweet"]`，而是包含 `User-Name` 和 `tweetText` 的
   `div[role="link"]`。媒体收集要覆盖引用帖；有自有媒体时优先折叠自有媒体，只有引用媒体时
   才折叠引用媒体。引用帖内的卡片媒体包含；帖子外层的链接卡片媒体保持原生。
+- 视频的海报层也是 `tweetPhoto`，并且**包住** `previewInterstitial`（interstitial 深度 16、
+  tweetPhoto 深度 12）。只排除「在 interstitial 内部」的 tweetPhoto 会把一个视频算成
+  「图片 1 + 视频 1 = 2 项」，收集时两种包含关系都要排除。排除后媒体块仍提升到同一个定高外壳，
+  因为提升算法是从媒体元素向上找只含媒体的祖先。
 - 媒体块要提升到“仍只包含媒体的最高祖先”再隐藏；只隐藏图片内层会留下定高外壳。提升在
   遇到 `tweetText`、`User-Name`、链接卡片、嵌套帖或操作组时停止。
 - 轮播必须包含本次选择的**全部**媒体才能作为媒体块；只含部分时退回公共祖先算法。
@@ -74,11 +79,28 @@
 - X 深色主题大量使用内联颜色；逐表面覆盖，不要只改 body/primary。
 - 正文列左右框线在 `primaryColumn` 的 `border-left/right`；头像框线来自头像内部黑色底层和
   inset 白色 `box-shadow`，不是 `border`。
-- 帖子分隔线在 `[data-testid="cellInnerDiv"] > div` 的 `border-bottom`；线程竖线是头像列
-  最后一个 div（2px 宽、深色背景）。用 `Tweet-User-Avatar ~ div:last-child` 定位，换成
-  `--xmp-rule` 浅纸色。引用帖头像的最后一个 div 兄弟可能是作者行容器（含 `User-Name`/
+- 帖子分隔线在 `[data-testid="cellInnerDiv"] > div` 的 `border-bottom`；线程竖线有**两段**：
+  头像列最后一个 div（2×N，`Tweet-User-Avatar ~ div:last-child`）是头像下方的长线；回复头像
+  **上方**还有一段 2×8 的短尾，它在头像行的上一行里（`div:has(+ div > div > Tweet-User-Avatar)
+  > * > * > div:only-child`），不是头像的兄弟，漏掉它就会在回复头像旁留一段 `rgb(51,54,57)` 深色。
+  两段都换成 `--xmp-rule`。引用帖头像的最后一个 div 兄弟可能是作者行容器（含 `User-Name`/
   `tweetText`），选择器必须排除，否则引用卡作者行会被涂成一条 `--xmp-rule` 背景带。
   不要用“所有 div 都改 border-color”这种规则，透明边框会显形。
+- 详情页/文章页的顶部条（`帖子`/`文章`）是 `rgba(0,0,0,0.65)` + `backdrop-filter: blur(12px)`，
+  条本身没有 testid。**首帧闪黑只能靠 CSS 解决**：用结构选择器
+  `div:has(> div > div > [data-testid="app-bar-back"])` 直接命中，节点渲染出来就是纸色；
+  `markAppBar()`（从返回按钮向上找 blur/非透明祖先标 `data-xmp-appbar`）只作为 X 改嵌套后的兜底，
+  单纯靠 JS 标记会晚 1 秒以上，用户能看到一帧黑色。回复框同理：按
+  `[data-testid="inline_reply_offscreen"]` 直接写 CSS（纸色 / 内部 div 透明 / 按钮松绿 / 禁用态纸面浮起），
+  不要依赖 `markComposer()` 的 JS 标记。X 还把标题和查看数写成内联 `color: rgb(231, 233, 234)`，
+  需要 primary 范围内的内联浅色文字规则改回墨色。文章页还有几个深色表面：`simpleTweet` 内嵌引用帖
+  （纯黑）、`markdown-code-block`（`pre` 深底 + 28px 头部条，`code` 带内联浅色，换纸面时必须同时
+  强制文字色）、文末 `[role="status"]` 升级横幅（深蓝）、`progressBar-bar`（X 蓝）。
+- X 从详情页返回首页（app-bar 的 `←` 触发 `popstate`）时会重建时间线，滚动位置会回到顶部，
+  而且重建后往往只有少量单元格。脚本在离开 home 时记录滚动量和第一条可见帖子的链接，返回后把
+  该帖子滚回原来的视口位置；帖子还没渲染时先等 2s 再按像素回填，并在 6s 内持续校正。
+  A/B 验证（同一流程，关闭恢复）：恢复关闭时返回后停在 `scrollY≈649`（目标帖 `top≈1512`，在视口外），
+  开启时回到 `scrollY≈2002`（目标帖在视口内）。用户 wheel/touchmove 即放弃校正，别长时间抢滚动。
 - 引用帖媒体块在卡片内是整卡宽，展开后会压住引用卡左右和底部边框；给引用帖内的媒体块和
   按钮左右各 12px 内缩，媒体块底部再留 12px，并对媒体元素设 12px 圆角。引用卡作者行保持透明。
 - X 文章预览卡是 `div:has(> [data-testid="article-cover-image"])`：外框在它的 border，标题/
@@ -89,6 +111,15 @@
   URL（实际绘制层，`<img>` 常是 opacity 0 的命中层），全部就绪后恢复文档流并一次性显示。
   网格等全部可见单元，轮播只等当前 slide；不要用纸面占位/隐藏子元素那套，会看起来像加载
   帖子并带出滚动条。按钮 hover/focus 时先预热 URL 缩短等待。
+- 图片悬浮预览取的是**绘制层** URL（内联 `background-image`，退回 `img.currentSrc`），
+  原图靠 `pbs.twimg.com` 的 `name=orig` 变体。浮层挂在 `body` 上、`pointer-events: none`，
+  所以点击仍然命中底下的图片、由 X 打开自己的大图。预览有两个入口：折叠的 `.xmp-media-toggle`
+  （悬停即预览整块图片，多图并排、标题 `N 张 · 原图`）和已展开的图片（只预览悬停那张）。
+  折叠块里只有 `name=120x120` 缩略图，放大后一片模糊，必须先等 orig 解码（或 800ms 超时）再弹出；
+  展开后的图片可以先用已下载尺寸立即显示、原图解码完再替换（同一张图比例一致，不会跳动）。
+  视频（含 interstitial 的 tweetPhoto）、链接卡片、仍在 `data-xmp-media-loading` 存态的块都不预览。
+  **不要用 `scroll` 事件收起预览**：X 加载图片时的滚动锚定会触发 scroll，把刚弹出的预览误关；
+  用 `wheel`/`touchmove` 判定用户主动滚动。点击、`Esc`、切路由、宽度跌破 1000px 和关闭脚本也要收起。
 - 操作栏的上分割线在 `[role="group"]` 的 `border-top`；移除时不要误删媒体/正文的边框。
 - 发帖编辑器的背景会盖住 Draft.js placeholder；编辑器必须保持透明。
 - 左轨图标左偏是 nav 标签包装层的 20px/16px 外边距造成的；收起时同时隐藏包装层，并用
@@ -129,12 +160,20 @@
 - 适配器要幂等；扫描只处理变更节点。避免对 primary 内所有元素做 `getComputedStyle`。
 - 隐藏标签页的定时器会被节流，截图可能出现未重绘的黑块；这是截图/合成器现象，先查 DOM
   计算样式再判断，不要据此改 CSS。
+- 后台标签页里 X **不会加载详情页的回复**，会话模块看起来只有 1 个单元格；`Page.bringToFront`
+  并等待数秒后回复才会渲染出来，否则会把「回复没加载」误判成「选择器失效」。同理，注入脚本后
+  媒体按钮要等 1–3 秒（X 流式渲染 + 150ms 防抖）才会全部出现。
+- 调试 Chrome 的 `Emulation.setDeviceMetricsOverride` 只改布局视口，`Input.dispatchMouseEvent`
+  的坐标按 CSS 像素给；把鼠标移到视口外不会产生 pointer 事件，验证悬浮层前先确认目标在
+  70–890px 之间。
 
 ## 已知限制
 
 - 同一帖子同时有自有媒体和引用媒体时，当前只折叠自有媒体；引用媒体保持可见。若要分别折叠，
   需要把媒体状态从帖子级改为媒体块级（多按钮/多状态）。
 - 帖子外层的链接卡片媒体保持原生，不参与折叠。
+- 悬浮原图预览只覆盖图片：视频、GIF 和链接卡片缩略图不预览；预览按悬停的那一张显示，
+  轮播只预览当前可见的 slide，不能在浮层里翻页。
 - X 的 A/B 布局、实验性卡片和生成 class 会继续变化；`docs/selectors.md` 是维护入口。
 
 ## 提交前检查
