@@ -1,8 +1,10 @@
 // ==UserScript==
 // @name         x-paper
 // @namespace    x-paper
-// @version      0.4.2
+// @version      0.4.3
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
+// @author       venom
+// @license      MIT
 // @match        https://x.com/*
 // @run-at       document-start
 // @grant        GM_getValue

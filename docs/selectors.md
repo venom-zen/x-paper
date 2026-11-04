@@ -19,7 +19,7 @@
 | `data-xmp-divider` | 空 | 首页发帖框后的 1–2px 分隔条；背景透明，由发帖框下边框提供线条 |
 | `data-xmp-nav-expanded` | `1` | 左轨展开状态；由 `.xmp-nav-toggle` 点击切换，路由离开或宽度不足时移除 |
 | `data-xmp-rail-panel` | 空 | 账号入口所在的固定侧栏层；脚本把它的 left/width 从 275px 收回到 88px（展开 240px），避免账号入口和菜单跑出视口 |
-| `data-xmp-appbar` | 空 | 详情页/文章页顶部条；脚本从 `[data-testid="app-bar-back"]` 向上找到带 `backdrop-filter: blur` 或非透明背景的那一层后标记，主题把半透明黑换成纸色 |
+| `data-xmp-appbar` | 空 | 详情页/文章页顶部条；主题用结构选择器直接命中（节点出现即纸色），`markAppBar()` 从 `[data-testid="app-bar-back"]` 向上找带 `backdrop-filter: blur` 或非透明背景的祖先标记它，只作 X 改嵌套后的兜底 |
 | `data-xmp-preview-open` | `1` | `.xmp-photo-preview` 悬浮原图预览的显示开关；移出图片/按钮、滚轮或触摸滚动、点击、按 `Esc`、切路由或关闭脚本时移除 |
 
 `button.xmp-nav-toggle` 是脚本创建并挂到 `body` 的轨道展开按钮：≥1000px、home/status 且未
@@ -63,7 +63,7 @@
 | 发帖按钮 | `[data-testid="tweetButtonInline"]` | 主按钮使用 `--xmp-pine` |
 | 多图轮播 | 帖子内 `[data-testid="ScrollSnap-List"]` | X 当前多图媒体使用滚动轮播；媒体块取该轮播容器 |
 | 详情页顶部条 | `[data-testid="app-bar-back"]` 的 blur/带背景祖先 | 标记为 `data-xmp-appbar`；条本身没有稳定 testid |
-| 详情页回复框 | `[data-testid="inline_reply_offscreen"]` | 无 `toolBar`，直接标成 `data-xmp-composer` 复用发帖框规则 |
+| 详情页回复框 | `[data-testid="inline_reply_offscreen"]` | 无 `toolBar`；主题按该 testid 直接写 CSS（纸色 / 内部 div 透明 / 按钮松绿），不依赖 JS 标记 |
 | 文章内嵌引用帖 | `[data-testid="simpleTweet"]` | 纯黑底 + 深灰边，墨色文字在其上不可读 |
 | 文章代码块 | `[data-testid="markdown-code-block"]` | 首个子 div 是 28px 头部条，`pre > code` 带内联浅色 |
 | 文章升级横幅 | `[data-testid="twitterArticleReadView"] [role="status"]` | 深蓝底 `rgb(2,17,61)` |
@@ -100,6 +100,7 @@
   `Image` 缓存中加载；全部就绪或 700ms 超时后移除标记，块恢复文档流并一次性显示。
   网格需要等所有可见单元，轮播只等当前可见 slide；不显示空白占位，也不触发内部滚动条。
 - 媒体块或公共祖先找不到时不插入按钮，原媒体保持可见。
+- 媒体按钮只在 home 路由标注（`scanTimeline` 要求 `route === 'home'`），详情页不显示媒体按钮。
 - 悬浮原图预览有两个入口，都不需要先展开媒体：
   1. **折叠按钮** `.xmp-media-toggle`：`pointerover` 后延时 220ms，取 `aria-controls` 指向的媒体块里
      全部图片并排预览；折叠块里只有 120px 缩略图，所以等 `name=orig` 解码（或 800ms 超时）再弹出，
