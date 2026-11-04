@@ -29,6 +29,20 @@
 导航起点）和 `--xmp-toggle-top`（「更多」下方的按钮位置）两个 CSS 变量，导航和按钮通过
 它们对齐当前 X 的 logo/更多项布局。
 
+## 配色
+
+主题变量定义在 `THEME_CSS` 的 `html[data-xmp-enabled="1"]` 上，强调色是暖橙：
+
+| 变量 | 值 | 用途 |
+|------|----|------|
+| `--xmp-paper` / `--xmp-paper-raised` | `#FBFAF7` / `#F4F1E8` | 纸面 / 浮起表面 |
+| `--xmp-ink` / `--xmp-ink-secondary` | `#1B1B1B` / `#5C5A52` | 正文 / 次要文字 |
+| `--xmp-hairline` / `--xmp-rule` | `#D8D4C8` / `#E6E1D5` | 细线 / 分隔线 |
+| `--xmp-accent` / `--xmp-accent-deep` / `--xmp-accent-soft` | `#B4531F` / `#97451A` / `#F3E3D3` | 链接、选中标签、主按钮、进度条 / 悬停 / 浅底 |
+| `--xmp-like` | `#A8442E` | 点赞激活 |
+
+已认证徽章（`[data-testid="icon-verified"]`）保留 X 原本的蓝色，主题不再染色。
+
 ## 时间格式
 
 脚本读取 primary 内每个 `time[datetime]` 的 `datetime`，把可见文本重写为本地时间：
@@ -60,10 +74,10 @@
 | 搜索框 / 趋势 | `SearchBox_Search_Input` / `trend` | 其他页面主题表面 |
 | 首页 tab 栏 | 首页主内容容器的第一个子元素；含 `[role="tablist"]` | 标 `data-xmp-tabbar`；容器和子 div/nav 都要纸色 |
 | 首页发帖框 | 主内容容器的发帖框包装层；含 `[data-testid="tweetTextarea_0"]` 和 `toolBar` | 标 `data-xmp-composer`；外层和子 div 都要纸色 |
-| 发帖按钮 | `[data-testid="tweetButtonInline"]` | 主按钮使用 `--xmp-pine` |
+| 发帖按钮 | `[data-testid="tweetButtonInline"]` | 主按钮使用 `--xmp-accent` |
 | 多图轮播 | 帖子内 `[data-testid="ScrollSnap-List"]` | X 当前多图媒体使用滚动轮播；媒体块取该轮播容器 |
 | 详情页顶部条 | `[data-testid="app-bar-back"]` 的 blur/带背景祖先 | 标记为 `data-xmp-appbar`；条本身没有稳定 testid |
-| 详情页回复框 | `[data-testid="inline_reply_offscreen"]` | 无 `toolBar`；主题按该 testid 直接写 CSS（纸色 / 内部 div 透明 / 按钮松绿），不依赖 JS 标记 |
+| 详情页回复框 | `[data-testid="inline_reply_offscreen"]` | 无 `toolBar`；主题按该 testid 直接写 CSS（纸色 / 内部 div 透明 / 按钮暖橙），不依赖 JS 标记 |
 | 文章内嵌引用帖 | `[data-testid="simpleTweet"]` | 纯黑底 + 深灰边，墨色文字在其上不可读 |
 | 文章代码块 | `[data-testid="markdown-code-block"]` | 首个子 div 是 28px 头部条，`pre > code` 带内联浅色 |
 | 文章升级横幅 | `[data-testid="twitterArticleReadView"] [role="status"]` | 深蓝底 `rgb(2,17,61)` |
@@ -124,9 +138,9 @@
   同样生效。`checkSelectorHealth` 需要的内层 600px 容器在个人主页存在，不会降级。
 - 观察器在 home 和 profile 运行（格式化时间、标记表面）；媒体折叠在 home 和 profile 都生效，
   详情页（status）不折叠。
-- 操作按钮：`[data-testid$="-follow"]`（关注）用松绿实心 + 纸色文字，`:hover` 松绿深色；
+- 操作按钮：`[data-testid$="-follow"]`（关注）用暖橙实心 + 纸色文字，`:hover` 暖橙深色；
   `[data-testid$="-unfollow"]`（正在关注）用纸面浮起 + 细线 + 墨色，`:hover` 转暖红；
-  `sendDMFromProfile`、`userActions`、`editProfileButton` 用纸面浮起 + 细线 + 墨色，悬停松绿描边。
+  `sendDMFromProfile`、`userActions`、`editProfileButton` 用纸面浮起 + 细线 + 墨色，悬停暖橙描边。
   顶部返回条由 `data-xmp-appbar` / 结构选择器主题化，与详情页一致。
 
 ## 详情页与文章页表面
@@ -137,12 +151,12 @@
   非透明背景的祖先标 `data-xmp-appbar`，只作为 X 改嵌套后的运行时兜底。X 还把标题写成内联
   `color: rgb(231, 233, 234)`，由 primary 内的内联浅色文字规则统一改墨色。
 - 回复框（`发布你的回复`）是 `[data-testid="inline_reply_offscreen"]` 内的纯黑层，且没有
-  `toolBar`。主题按该 testid 直接覆盖（纸色、内部 div 透明、`tweetButtonInline` 松绿、禁用态纸面浮起），
+  `toolBar`。主题按该 testid 直接覆盖（纸色、内部 div 透明、`tweetButtonInline` 暖橙、禁用态纸面浮起），
   同样不依赖 JS 标记；`markComposer()` 只负责首页发帖框。
 - 文章页其余深色表面：`[data-testid="simpleTweet"]`（内嵌引用帖，纯黑底）、
   `[data-testid="markdown-code-block"]`（`pre` 深底 + 28px 头部条）、文末 `[role="status"]`
   升级横幅（`rgb(2,17,61)`）、`[data-testid="progressBar-bar"]` 阅读进度条（X 蓝）。
-  主题分别换成纸面浮起色 + 细线、纸色代码块（语法色统一墨色）、松绿进度条。
+  主题分别换成纸面浮起色 + 细线、纸色代码块（语法色统一墨色）、暖橙进度条。
 - 线程竖线有两段：头像**下方**的长线是 `Tweet-User-Avatar ~ div:last-child`；回复头像**上方**还有
   一段 2×8 的短尾，位于头像行的上一行里（`div:has(+ div > div > Tweet-User-Avatar) > * > * > div:only-child`），
   两段都要涂 `--xmp-rule`，否则短尾保持 X 的深色 `rgb(51,54,57)`。
@@ -152,8 +166,8 @@
 - `/i/connect_people`（个人主页「推荐关注」里的「显示更多」）归为 `people`，与 home/status/profile
   共用宽版面；该页没有内层 600px 时间线容器，因此 `checkSelectorHealth` 把内层锚点视为**可选**，
   只要求 header、nav 和 primaryColumn，找不到内层容器时不再降级。
-- 顶部条、标签页和关注按钮沿用同一套规则：顶部条走 `data-xmp-appbar` / 结构选择器，标签选中松绿，
-  关注按钮松绿实心 + 纸色文字。
+- 顶部条、标签页和关注按钮沿用同一套规则：顶部条走 `data-xmp-appbar` / 结构选择器，标签选中暖橙，
+  关注按钮暖橙实心 + 纸色文字。
 
 ## 返回首页的位置恢复
 
@@ -167,13 +181,20 @@ X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。
 - 用户 `wheel`/`touchmove` 主动滚动即放弃；不在 home 路由时自动停止。
 - 只在 SPA 内导航生效；整页刷新交给浏览器自己的滚动恢复。
 
-## 弹窗
+## 弹窗与悬浮卡
 
-- X 的弹窗（Premium `/i/premium_sign_up`、认证、回复框、图片查看器）保持深色外观；主题不套纸面，
-  改为把文字恢复成 X 的浅色：
-  `html[data-xmp-enabled="1"] [role="dialog"] :is(span, div, p, h1, h2, h3, h4, time) { color: rgb(231,233,234) }`，
-  svg 同步改 `fill`。否则纸面墨色（#1B1B1B）落在 `rgb(20,20,20)` 的弹窗底上会变成黑底黑字。
-- 关注按钮的文字曾被「非帖子单元格的 [role=button] span」松绿规则染成与背景同色；
+- 弹窗按**实际底色**分深浅：`markDialogs()` 从 `[role="dialog"]` 向下最多四层找第一个非透明背景，
+  亮度 < 90 标 `data-xmp-dark-dialog`，否则标 `data-xmp-light-dialog`；`MutationObserver` 观察 body，
+  新弹窗出现后 120ms 内补标。深色弹窗内文字/图标恢复成 X 的浅色 `rgb(231,233,234)`，
+  浅色弹窗继续用纸面墨色——只在深色弹窗上强制浅色，避免把浅色弹窗的文字和关闭按钮“抹掉”。
+- 用户悬浮资料卡 `[data-testid="HoverCard"]`（X 原本是 `rgb(20,20,20)` 深色卡）换成纸面浮起 +
+  细线 + 阴影；卡内文字墨色，`http(s)` 链接暖橙，关注/正在关注按钮沿用主按钮规则。
+- 「你尚未通过认证」推广卡是**深绿底**（内联 `background-color: rgb(0, 67, 41)`），保留深色卡：
+  卡内文字和右上角关闭图标恢复浅色（`... :is(span, div, p, svg):not(a *)`），否则标题和关闭按钮
+  都会被纸面墨色吞掉；「获得认证」CTA 是白色胶囊 + 深色文字，保持原样。
+- 滚动后个人主页顶栏的关注按钮由 `[data-xmp-appbar]` 标记，顶栏的文字规则已排除
+  `-follow`/`-unfollow` 的后代，避免把按钮文字改回墨色。
+- 关注按钮的文字曾被「非帖子单元格的 [role=button] span」暖橙规则染成与背景同色；
   该规则现在排除自身或后代带 `[data-testid$="-follow"]` / `[data-testid$="-unfollow"]` 的按钮。
 
 ## 降级
@@ -213,7 +234,7 @@ X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。
   作者行会被涂成 `--xmp-rule` 色。
 - 引用卡不是嵌套 `tweet`，而是 `div[role="link"]`；卡片内的 `card.wrapper` 和
   `twitter-article-title`/`twitterArticleRichTextView` 等文章预览文字在 X 深色设置下是浅色，
-  主题需要改为墨色，链接使用松绿。
+  主题需要改为墨色，链接使用暖橙。
 - X 文章预览卡是 `div:has(> [data-testid="article-cover-image"])`：外框在该 div 的
   `border`，标题/摘要在其最后一个子 div 内。主题把外框设为透明，并把最后子 div 的文字
   改为墨色；“X 文章”角标在封面图内，不能被这条规则覆盖。

@@ -78,12 +78,22 @@
   `RESERVED_HANDLES` 必须覆盖 X 自己的保留一级路径（home/explore/notifications/i/...），否则
   `/explore` 之类会被误判成个人主页。观察器只在 home/profile 运行；媒体折叠在首页和个人主页都生效
   （详情页不折叠）。关注/正在关注/私信/更多按 testid 后缀主题化，
-  关注用松绿实心；注意「非帖子单元格的 [role=button] span」松绿规则会把关注按钮文字染成与
+  关注用暖橙实心；注意「非帖子单元格的 [role=button] span」暖橙规则会把关注按钮文字染成与
   背景同色，必须同时排除自身/后代带 `-follow`、`-unfollow` testid 的按钮。
 - `/i/connect_people`（推荐关注整页）归为 `people` 路由，共用宽版面；该页没有内层 600px
   容器，健康检查把内层锚点视为可选（只要求 header/nav/primaryColumn），否则会误降级。
-- X 的弹窗保持深色外观，主题必须把 `[role="dialog"]` 内的文字恢复成浅色，否则纸面墨色会在
-  `rgb(20,20,20)` 的弹窗上变成黑底黑字（Premium/认证页是整页 dialog）。
+- 弹窗要按**实际底色**处理，不能一律强制浅色：`markDialogs()` 从 `[role="dialog"]` 向下找第一个
+  非透明背景，亮度 < 90 标 `data-xmp-dark-dialog` 并把文字/图标改回浅色；否则标
+  `data-xmp-light-dialog` 保持纸面墨色。一律强制浅色会把浅色弹窗的文字和关闭按钮“抹掉”。
+  body 上的 MutationObserver 负责补标后出现的弹窗。
+- 「你尚未通过认证」推广卡是深绿底（内联 `rgb(0, 67, 41)`），卡内文字和右上角关闭图标必须恢复浅色，
+  否则关闭按钮在深绿底上不可见；「获得认证」CTA 保持白色胶囊 + 深色文字。
+- 用户悬浮资料卡 `[data-testid="HoverCard"]` 在主题里换成纸面浮起 + 细线；卡内链接用
+  `--xmp-accent`，关注/正在关注沿用主按钮规则。
+- 个人主页滚动后顶栏的关注按钮落在 `[data-xmp-appbar]` 里，顶栏的文字规则必须排除
+  `-follow`/`-unfollow` 后代，否则按钮文字会被改回墨色。
+- 已认证徽章 `[data-testid="icon-verified"]` 保持 X 原本的蓝色，不要随强调色染色。
+- 强调色 token 从 `--xmp-pine*` 更名为 `--xmp-accent*`（暖橙 `#B4531F`），改名后所有引用与文档同步。
 - 详情页/文章页的推广回复和首页推广帖用同一个标记（`cellInnerDiv` 内含
   `[data-testid="placementTracking"]`），`NOISE_CSS` 的推广规则要覆盖 home 和 status 两个路由；
   推荐关注（`UserCell`）只在首页隐藏，搜索/通知页的用户列表保持可见。
@@ -105,7 +115,7 @@
   `div:has(> div > div > [data-testid="app-bar-back"])` 直接命中，节点渲染出来就是纸色；
   `markAppBar()`（从返回按钮向上找 blur/非透明祖先标 `data-xmp-appbar`）只作为 X 改嵌套后的兜底，
   单纯靠 JS 标记会晚 1 秒以上，用户能看到一帧黑色。回复框同理：按
-  `[data-testid="inline_reply_offscreen"]` 直接写 CSS（纸色 / 内部 div 透明 / 按钮松绿 / 禁用态纸面浮起），
+  `[data-testid="inline_reply_offscreen"]` 直接写 CSS（纸色 / 内部 div 透明 / 按钮暖橙 / 禁用态纸面浮起），
   不要依赖 `markComposer()` 的 JS 标记。X 还把标题和查看数写成内联 `color: rgb(231, 233, 234)`，
   需要 primary 范围内的内联浅色文字规则改回墨色。文章页还有几个深色表面：`simpleTweet` 内嵌引用帖
   （纯黑）、`markdown-code-block`（`pre` 深底 + 28px 头部条，`code` 带内联浅色，换纸面时必须同时
@@ -158,7 +168,7 @@
   会多出一圈原生边框。Toast 是 `[data-testid="toast"]`；两者都使用纸面浮起色，不要沿用
   X 的蓝/绿大色块。
 - tab 栏和发帖工具栏的滚动箭头是深色圆形按钮；在纸面主题中要改成 paper-raised + 细线。
-- 推文里的「显示更多」可能是内联 X 蓝色，不是 `<a>`；用推文范围内的内联颜色选择器改为松绿。
+- 推文里的「显示更多」可能是内联 X 蓝色，不是 `<a>`；用推文范围内的内联颜色选择器改为暖橙。
 - 不要做宽泛的 `!important` 覆盖；先看元素是否被按钮/链接/媒体共享。必要时用 `:has()` 精确
   限定范围。
 

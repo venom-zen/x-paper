@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         x-paper
 // @namespace    x-paper
-// @version      0.5.1
+// @version      0.6.0
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @author       venom
 // @license      MIT
@@ -41,21 +41,21 @@
       --xmp-ink-secondary: #5C5A52;
       --xmp-hairline: #D8D4C8;
       --xmp-rule: #E6E1D5;
-      --xmp-pine: #2F5D50;
-      --xmp-pine-deep: #264C42;
-      --xmp-pine-soft: #E6ECE7;
+      --xmp-accent: #B4531F;
+      --xmp-accent-deep: #97451A;
+      --xmp-accent-soft: #F3E3D3;
       --xmp-like: #A8442E;
       --xmp-ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
       background-color: var(--xmp-paper) !important;
       color-scheme: light !important;
       color: var(--xmp-ink) !important;
-      caret-color: var(--xmp-pine);
+      caret-color: var(--xmp-accent);
       scrollbar-color: #C9C4B6 var(--xmp-paper);
       scrollbar-width: thin;
     }
 
     html[data-xmp-enabled="1"] ::selection {
-      background: var(--xmp-pine-soft);
+      background: var(--xmp-accent-soft);
       color: var(--xmp-ink);
     }
 
@@ -102,17 +102,18 @@
     }
 
     html[data-xmp-enabled="1"] [data-testid="tweetText"] a {
-      color: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="tweet"] [style*="color: rgb(29, 155, 240)"] {
-      color: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
     }
 
     /* X 把查看数、标题等文字写成内联浅色（深色主题的 --xmpColorlessText），纸面上必须换成墨色 */
     html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [style*="color: rgb(231, 233, 234)"] {
       color: var(--xmp-ink) !important;
     }
+
 
     html[data-xmp-enabled="1"] [data-testid="tweetTextarea_0"] {
       background-color: transparent !important;
@@ -138,7 +139,7 @@
 
     html[data-xmp-enabled="1"] [role="tab"][aria-selected="true"],
     html[data-xmp-enabled="1"] [role="tab"][aria-selected="true"] * {
-      color: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [role="group"] {
@@ -160,12 +161,12 @@
 
     html[data-xmp-enabled="1"] [role="group"] button:hover svg,
     html[data-xmp-enabled="1"] [role="group"] a:hover svg {
-      color: var(--xmp-pine) !important;
-      fill: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
+      fill: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [role="group"] button:hover span {
-      color: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="like"][aria-pressed="true"] svg {
@@ -175,8 +176,8 @@
 
     html[data-xmp-enabled="1"] [role="group"] [data-testid="retweet"][aria-pressed="true"] svg,
     html[data-xmp-enabled="1"] [role="group"] [data-testid="bookmark"][aria-pressed="true"] svg {
-      color: var(--xmp-pine) !important;
-      fill: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
+      fill: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [role="group"] [data-testid="like"][aria-pressed="true"] span {
@@ -185,7 +186,7 @@
 
     html[data-xmp-enabled="1"] [role="group"] [data-testid="retweet"][aria-pressed="true"] span,
     html[data-xmp-enabled="1"] [role="group"] [data-testid="bookmark"][aria-pressed="true"] span {
-      color: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="SearchBox_Search_Input"] {
@@ -236,11 +237,11 @@
     }
 
     [data-xmp-tabbar] [role="tab"][aria-selected="true"] {
-      border-bottom-color: var(--xmp-pine) !important;
+      border-bottom-color: var(--xmp-accent) !important;
     }
 
     [data-xmp-tabbar] [role="tab"][aria-selected="true"] div[style*="background-color"] {
-      background-color: var(--xmp-pine) !important;
+      background-color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button {
@@ -304,8 +305,8 @@
 
     [data-xmp-composer] button:has(span) span,
     [data-xmp-composer] button:has(span) svg {
-      color: var(--xmp-pine) !important;
-      fill: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
+      fill: var(--xmp-accent) !important;
     }
 
     [data-xmp-composer] [data-testid="toolBar"] {
@@ -319,8 +320,8 @@
     }
 
     [data-xmp-composer] [data-testid="tweetButtonInline"] {
-      background-color: var(--xmp-pine) !important;
-      border-color: var(--xmp-pine) !important;
+      background-color: var(--xmp-accent) !important;
+      border-color: var(--xmp-accent) !important;
       color: var(--xmp-paper) !important;
     }
 
@@ -339,20 +340,12 @@
     }
 
     html[data-xmp-enabled="1"] header nav div[aria-label] {
-      background-color: var(--xmp-pine) !important;
+      background-color: var(--xmp-accent) !important;
       color: var(--xmp-paper) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="icon-verified"] {
-      color: var(--xmp-pine) !important;
-    }
-
-    html[data-xmp-enabled="1"] [data-testid="icon-verified"] path {
-      fill: var(--xmp-pine) !important;
-    }
-
     html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"]:not(:has([data-testid="tweet"])) [role="button"]:not([data-testid$="-follow"], [data-testid$="-unfollow"]):not(:has([data-testid$="-follow"], [data-testid$="-unfollow"])) span {
-      color: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="card.wrapper"],
@@ -367,7 +360,7 @@
     }
 
     html[data-xmp-enabled="1"] [data-testid="card.wrapper"] a {
-      color: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="twitter-article-title"],
@@ -384,7 +377,7 @@
     html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] a,
     html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"] a,
     html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"] a {
-      color: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="tweet"] div:has(> [data-testid="article-cover-image"]) {
@@ -453,14 +446,14 @@
     }
 
     html[data-xmp-enabled="1"] [data-testid="toast"] a {
-      color: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
     }
 
-    /* 个人主页的操作按钮：关注用松绿实心，正在关注 / 私信 / 更多用纸面浮起 + 细线，
+    /* 个人主页的操作按钮：关注用暖橙实心，正在关注 / 私信 / 更多用纸面浮起 + 细线，
        悬停取消关注时用暖红提示 */
     html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-follow"] {
-      background-color: var(--xmp-pine) !important;
-      border-color: var(--xmp-pine) !important;
+      background-color: var(--xmp-accent) !important;
+      border-color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-follow"] :is(span, div, svg) {
@@ -469,8 +462,8 @@
     }
 
     html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-follow"]:hover {
-      background-color: var(--xmp-pine-deep) !important;
-      border-color: var(--xmp-pine-deep) !important;
+      background-color: var(--xmp-accent-deep) !important;
+      border-color: var(--xmp-accent-deep) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-unfollow"] {
@@ -505,7 +498,7 @@
     }
 
     html[data-xmp-enabled="1"] [data-testid="primaryColumn"] :is([data-testid="sendDMFromProfile"], [data-testid="userActions"], [data-testid="editProfileButton"]):hover {
-      border-color: var(--xmp-pine) !important;
+      border-color: var(--xmp-accent) !important;
     }
 
     /* 详情页/文章页顶部条：X 用半透明黑 + blur，纸面下换成纸色 + 细线。
@@ -517,8 +510,56 @@
       box-shadow: inset 0 -1px 0 var(--xmp-hairline);
     }
 
-    html[data-xmp-enabled="1"] [data-xmp-appbar] :is(span, svg),
-    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > div > [data-testid="app-bar-back"]) :is(span, svg) {
+    html[data-xmp-enabled="1"] [data-xmp-appbar] :is(span, svg):not([data-testid$="-follow"] *, [data-testid$="-unfollow"] *),
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > div > [data-testid="app-bar-back"]) :is(span, svg):not([data-testid$="-follow"] *, [data-testid$="-unfollow"] *) {
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
+    }
+
+    /* 「你尚未通过认证」推广卡是深绿底（内联 rgb(0,67,41)）：保留深色卡，把卡内文字和
+       右上角关闭图标恢复为浅色，否则纸面墨色会变成黑底黑字、关闭按钮也看不见 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [style*="background-color: rgb(0, 67, 41)"] :is(span, div, p, svg):not(a *) {
+      color: rgb(231, 233, 234) !important;
+      fill: rgb(231, 233, 234) !important;
+    }
+
+    /* 用户悬浮资料卡：X 用 rgb(20,20,20) 深色卡 + 16px 圆角，纸面下换成纸面浮起 + 细线 */
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] {
+      background-color: var(--xmp-paper-raised) !important;
+      border: 1px solid var(--xmp-hairline) !important;
+      box-shadow: 0 12px 32px rgba(27, 27, 27, 0.18) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] :is(div, span, p) {
+      color: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] a,
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] a[href^="http"] :is(span, div, p) {
+      color: var(--xmp-accent) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] svg {
+      color: var(--xmp-ink-secondary) !important;
+      fill: var(--xmp-ink-secondary) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] [data-testid$="-follow"] {
+      background-color: var(--xmp-accent) !important;
+      border-color: var(--xmp-accent) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] [data-testid$="-follow"] :is(span, div, svg) {
+      color: var(--xmp-paper) !important;
+      fill: var(--xmp-paper) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] [data-testid$="-unfollow"] {
+      background-color: var(--xmp-paper) !important;
+      border-color: var(--xmp-hairline) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] [data-testid$="-unfollow"] :is(span, div, svg) {
       color: var(--xmp-ink) !important;
       fill: var(--xmp-ink) !important;
     }
@@ -539,8 +580,8 @@
     }
 
     html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] [data-testid="tweetButtonInline"] {
-      background-color: var(--xmp-pine) !important;
-      border-color: var(--xmp-pine) !important;
+      background-color: var(--xmp-accent) !important;
+      border-color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] [data-testid="tweetButtonInline"] span {
@@ -557,17 +598,17 @@
       color: var(--xmp-ink-secondary) !important;
     }
 
-    /* 弹窗（Premium、认证、回复框、图片查看器等）保留 X 的深色外观：
-       纸面墨色在深色底上不可读，统一恢复成 X 的浅色文字 */
-    html[data-xmp-enabled="1"] [role="dialog"] {
+    /* 深色弹窗（Premium、认证、回复框、图片查看器等）保留 X 的深色外观：
+       纸面墨色在深色底上不可读，恢复成 X 的浅色文字。浅色弹窗不标记，继续用墨色。 */
+    html[data-xmp-enabled="1"] [data-xmp-dark-dialog] {
       color: rgb(231, 233, 234) !important;
     }
 
-    html[data-xmp-enabled="1"] [role="dialog"] :is(span, div, p, h1, h2, h3, h4, time) {
+    html[data-xmp-enabled="1"] [data-xmp-dark-dialog] :is(span, div, p, h1, h2, h3, h4, time) {
       color: rgb(231, 233, 234) !important;
     }
 
-    html[data-xmp-enabled="1"] [role="dialog"] svg {
+    html[data-xmp-enabled="1"] [data-xmp-dark-dialog] svg {
       color: rgb(231, 233, 234) !important;
       fill: rgb(231, 233, 234) !important;
     }
@@ -606,7 +647,7 @@
 
     /* 文章阅读进度条 */
     html[data-xmp-enabled="1"] [data-testid="progressBar-bar"] {
-      background-color: var(--xmp-pine) !important;
+      background-color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [data-xmp-tabbar] [data-testid="ScrollSnap-prevButtonWrapper"] button,
@@ -629,30 +670,30 @@
 
     html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="toolBar"] button:hover,
     html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="toolBar"] button:focus-visible {
-      background-color: var(--xmp-pine-soft) !important;
+      background-color: var(--xmp-accent-soft) !important;
     }
 
     html[data-xmp-enabled="1"] [data-xmp-composer] button:has(span):not([data-testid="tweetButtonInline"]):hover {
-      background-color: var(--xmp-pine-soft) !important;
+      background-color: var(--xmp-accent-soft) !important;
     }
 
     html[data-xmp-enabled="1"] [data-xmp-composer] [data-testid="tweetButtonInline"]:not(:disabled):hover {
-      background-color: var(--xmp-pine-deep) !important;
-      border-color: var(--xmp-pine-deep) !important;
+      background-color: var(--xmp-accent-deep) !important;
+      border-color: var(--xmp-accent-deep) !important;
     }
 
     html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button:hover {
-      background-color: var(--xmp-pine-soft) !important;
-      border-color: var(--xmp-pine) !important;
+      background-color: var(--xmp-accent-soft) !important;
+      border-color: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] [role="status"][data-keep-composer-open] button:hover * {
-      color: var(--xmp-pine) !important;
-      fill: var(--xmp-pine) !important;
+      color: var(--xmp-accent) !important;
+      fill: var(--xmp-accent) !important;
     }
 
     html[data-xmp-enabled="1"] :is(main, header[role="banner"]) :is(a, button, [role="button"], [role="tab"], [role="link"]):focus-visible {
-      outline: 2px solid var(--xmp-pine) !important;
+      outline: 2px solid var(--xmp-accent) !important;
       outline-offset: 2px;
     }
 
@@ -721,7 +762,7 @@
       html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button:hover > div:first-child,
       html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a:focus-visible > div:first-child,
       html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button:focus-visible > div:first-child {
-        background-color: var(--xmp-pine-soft) !important;
+        background-color: var(--xmp-accent-soft) !important;
       }
 
       html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav {
@@ -893,14 +934,14 @@
       }
 
       .xmp-nav-toggle:hover {
-        color: var(--xmp-pine);
-        background-color: var(--xmp-pine-soft);
+        color: var(--xmp-accent);
+        background-color: var(--xmp-accent-soft);
       }
 
       .xmp-nav-toggle:focus-visible {
-        color: var(--xmp-pine);
-        background-color: var(--xmp-pine-soft);
-        outline: 2px solid var(--xmp-pine);
+        color: var(--xmp-accent);
+        background-color: var(--xmp-accent-soft);
+        outline: 2px solid var(--xmp-accent);
         outline-offset: 2px;
       }
     }
@@ -947,8 +988,8 @@
     }
 
     html[data-xmp-enabled="1"] .xmp-media-toggle:hover {
-      border-color: var(--xmp-pine);
-      color: var(--xmp-pine);
+      border-color: var(--xmp-accent);
+      color: var(--xmp-accent);
     }
 
     html[data-xmp-enabled="1"] [data-xmp-media-block][data-xmp-media-loading] {
@@ -962,14 +1003,14 @@
     }
 
     html[data-xmp-enabled="1"] .xmp-media-toggle:focus-visible {
-      outline: 2px solid var(--xmp-pine);
+      outline: 2px solid var(--xmp-accent);
       outline-offset: 2px;
     }
 
     html[data-xmp-enabled="1"] [data-xmp-media-state="expanded"] .xmp-media-toggle {
-      color: var(--xmp-pine);
-      border-color: var(--xmp-pine);
-      background: var(--xmp-pine-soft);
+      color: var(--xmp-accent);
+      border-color: var(--xmp-accent);
+      background: var(--xmp-accent-soft);
     }
 
     html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div[role="link"]:has([data-testid="User-Name"]):has([data-testid="tweetText"]) .xmp-media-toggle {
@@ -1064,6 +1105,8 @@
   let railTimer = null;
   let homeReturn = null;
   let homeRestoreToken = 0;
+  let dialogObserver = null;
+  let dialogTimer = null;
   const warned = new Set();
   const mediaWarmups = new WeakMap();
   const mediaReveals = new WeakMap();
@@ -1214,9 +1257,11 @@
     markTabbar();
     markComposer();
     markAppBar();
+    markDialogs();
     markRailPanel();
     markRailLayout();
     ensureNavToggle();
+    watchDialogs();
     if (route === 'home' || route === 'profile') {
       if (!degraded) {
         startObserver();
@@ -1354,6 +1399,7 @@
     markTabbar();
     markComposer();
     markAppBar();
+    markDialogs();
     markRailPanel();
     markRailLayout();
     ensureNavToggle();
@@ -1461,6 +1507,37 @@
     }
   }
 
+  // 弹窗分深浅：深色弹窗保留 X 的浅色文字，浅色弹窗继续用纸面墨色。
+  function markDialogs() {
+    document.querySelectorAll('[role="dialog"]').forEach(dialog => {
+      if (dialog.hasAttribute('data-xmp-dark-dialog') || dialog.hasAttribute('data-xmp-light-dialog')) return;
+      let dark = false;
+      let node = dialog;
+      for (let depth = 0; node && depth < 4; depth += 1) {
+        const bg = window.getComputedStyle(node).backgroundColor;
+        if (bg && bg !== 'rgba(0, 0, 0, 0)') {
+          const match = bg.match(/rgba?\((\d+), (\d+), (\d+)/);
+          if (match) dark = (0.2126 * +match[1] + 0.7152 * +match[2] + 0.0722 * +match[3]) < 90;
+          break;
+        }
+        node = node.firstElementChild;
+      }
+      dialog.setAttribute(dark ? 'data-xmp-dark-dialog' : 'data-xmp-light-dialog', '');
+    });
+  }
+
+  function watchDialogs() {
+    if (dialogObserver || !document.body) return;
+    dialogObserver = new MutationObserver(() => {
+      if (dialogTimer) return;
+      dialogTimer = window.setTimeout(() => {
+        dialogTimer = null;
+        if (enabled) markDialogs();
+      }, 120);
+    });
+    dialogObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
   // 详情页/文章页的顶部条没有稳定 testid，从返回按钮向上找带 blur/背景的那一层，
   // 标成 data-xmp-appbar 交给主题规则。
   function markAppBar() {
@@ -1552,9 +1629,11 @@
     markTabbar();
     markComposer();
     markAppBar();
+    markDialogs();
     markRailPanel();
     markRailLayout();
     ensureNavToggle();
+    watchDialogs();
     if (route === 'home' || route === 'profile') {
       if (!degraded) {
         startObserver();
@@ -1694,6 +1773,7 @@
     markTabbar();
     markComposer();
     markAppBar();
+    markDialogs();
     markRailPanel();
     markRailLayout();
     if (route !== 'home' && route !== 'profile') return;
