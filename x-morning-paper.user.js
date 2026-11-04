@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         x-paper
 // @namespace    x-paper
-// @version      0.4.3
+// @version      0.4.4
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @author       venom
 // @license      MIT
@@ -2001,13 +2001,27 @@
     return `${url}${url.includes('?') ? '&' : '?'}name=orig`;
   }
 
-  function isPreviewablePhoto(photo) {
-    return !photo.querySelector('[data-testid="previewInterstitial"]') &&
-      !photo.closest('[data-testid="previewInterstitial"]');
+  // 视频的海报层是包住（或位于）previewInterstitial 的 tweetPhoto。折叠按钮悬停时
+  // 把海报当静帧预览，不触发播放；已展开的视频本身可见，不再弹预览。
+  function isVideoPoster(photo) {
+    return !!photo.querySelector('[data-testid="previewInterstitial"]') ||
+      !!photo.closest('[data-testid="previewInterstitial"]');
   }
 
   function mediaPhotos(scope) {
-    return [...scope.querySelectorAll(PHOTO_SELECTOR)].filter(isPreviewablePhoto);
+    return [...scope.querySelectorAll(PHOTO_SELECTOR)].filter(photo => !isVideoPoster(photo));
+  }
+
+  function mediaStills(scope) {
+    return [...scope.querySelectorAll(PHOTO_SELECTOR)];
+  }
+
+  function stillsLabel(stills) {
+    const videos = stills.filter(isVideoPoster).length;
+    const images = stills.length - videos;
+    if (videos > 0 && images > 0) return `${stills.length} 项 · 原图/封面`;
+    if (videos > 0) return videos > 1 ? `${videos} 个视频封面` : '视频封面';
+    return stills.length > 1 ? `${stills.length} 张 · 原图` : '原图';
   }
 
   function hidePhotoPreview() {
@@ -2023,7 +2037,7 @@
   // waitForOriginal: 折叠块里只有 120px 缩略图，放大后一片模糊；
   // 等原图解码（或 800ms 超时）再弹出。展开后的图片已有较大尺寸，立即显示再替换原图。
   function openPreview(key, photos, label, waitForOriginal) {
-    const urls = photos.map(photoUrl).filter(Boolean);
+    const urls = [...new Set(photos.map(photoUrl).filter(Boolean))];
     if (!urls.length) return;
     previewKey = key;
     const token = ++previewToken;
@@ -2087,7 +2101,7 @@
     if (!enabled || degraded || !widthQuery.matches || !(target instanceof Element)) return null;
     const photo = target.closest(PHOTO_SELECTOR);
     if (!photo || photo.closest('.xmp-photo-preview') || !photo.closest(PRIMARY)) return null;
-    if (!isPreviewablePhoto(photo)) return null;
+    if (isVideoPoster(photo)) return null;
     if (photo.closest('[data-xmp-media-loading]')) return null;
     const box = photo.getBoundingClientRect();
     if (box.width < 40 || box.height < 40) return null;
@@ -2116,10 +2130,10 @@
       const toggle = hoveredToggle(event.target);
       if (toggle) {
         const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
-        const photos = block ? mediaPhotos(block) : [];
-        if (photos.length === 0) return;
-        const label = photos.length > 1 ? `${photos.length} 张 · 原图` : '原图';
-        schedulePreview(toggle, () => openPreview(toggle, photos, label, true));
+        const stills = block ? mediaStills(block) : [];
+        if (stills.length === 0) return;
+        const label = stillsLabel(stills);
+        schedulePreview(toggle, () => openPreview(toggle, stills, label, true));
         return;
       }
       const photo = hoveredPhoto(event.target);

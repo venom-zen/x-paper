@@ -103,10 +103,13 @@
 - 媒体按钮只在 home 路由标注（`scanTimeline` 要求 `route === 'home'`），详情页不显示媒体按钮。
 - 悬浮原图预览有两个入口，都不需要先展开媒体：
   1. **折叠按钮** `.xmp-media-toggle`：`pointerover` 后延时 220ms，取 `aria-controls` 指向的媒体块里
-     全部图片并排预览；折叠块里只有 120px 缩略图，所以等 `name=orig` 解码（或 800ms 超时）再弹出，
-     标题 `N 张 · 原图`。
-  2. **已展开的图片** `[data-testid="tweetPhoto"]`（≥40px、非视频、非卡片、不在 `data-xmp-media-loading`
-     存态）：只预览悬停的那一张，先用已下载尺寸立即显示、原图解码完替换，标题 `第 n / N 张 · 原图`。
+     全部静帧（图片 + 视频海报）并排预览。视频海报是包住（或位于）`previewInterstitial` 的
+     `tweetPhoto`，折叠态只有 `amplify_video_thumb/...?name=120x120` 缩略图，同样换成 `name=orig`
+     （实测 120×68 → 1920×1080）；只显示封面静帧，不创建 `<video>`、不播放。标题按内容为
+     `N 张 · 原图`、`视频封面`、`N 个视频封面` 或 `N 项 · 原图/封面`。
+  2. **已展开的图片** `[data-testid="tweetPhoto"]`（≥40px、非视频海报、非卡片、不在
+     `data-xmp-media-loading` 存态）：只预览悬停的那一张，先用已下载尺寸立即显示、原图解码完替换，
+     标题 `第 n / N 张 · 原图`。已展开的视频本身在播放，不再弹封面预览。
   绘制层取内联 `background-image` 的 URL，取不到时退回 `img.currentSrc || img.src`；
   `pbs.twimg.com` 的 URL 把 `name=` 参数换成 `orig` 得到原图，已加载过的原图记在 `previewReady` 里。
   浮层 `pointer-events: none`；移出图片/按钮、点击、`Esc`、切路由、宽度跌破 1000px 或关闭脚本都会收起。

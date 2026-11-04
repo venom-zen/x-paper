@@ -118,10 +118,13 @@
 - 图片悬浮预览取的是**绘制层** URL（内联 `background-image`，退回 `img.currentSrc`），
   原图靠 `pbs.twimg.com` 的 `name=orig` 变体。浮层挂在 `body` 上、`pointer-events: none`，
   所以点击仍然命中底下的图片、由 X 打开自己的大图。预览有两个入口：折叠的 `.xmp-media-toggle`
-  （悬停即预览整块图片，多图并排、标题 `N 张 · 原图`）和已展开的图片（只预览悬停那张）。
+  （悬停即预览整块静帧：图片 + 视频海报，多张并排，标题按内容为 `N 张 · 原图`、`视频封面`
+  或 `N 项 · 原图/封面`）和已展开的图片（只预览悬停那张）。视频海报 = 包住/位于
+  `previewInterstitial` 的 `tweetPhoto`，`amplify_video_thumb` 的 `name=orig` 同样可用；预览只渲染
+  `<img>` 静帧，不创建 `<video>`、不播放；已展开的视频本身在播放，不弹封面预览。
   折叠块里只有 `name=120x120` 缩略图，放大后一片模糊，必须先等 orig 解码（或 800ms 超时）再弹出；
   展开后的图片可以先用已下载尺寸立即显示、原图解码完再替换（同一张图比例一致，不会跳动）。
-  视频（含 interstitial 的 tweetPhoto）、链接卡片、仍在 `data-xmp-media-loading` 存态的块都不预览。
+  链接卡片、仍在 `data-xmp-media-loading` 存态的块不预览；视频只在折叠按钮上预览封面。
   **不要用 `scroll` 事件收起预览**：X 加载图片时的滚动锚定会触发 scroll，把刚弹出的预览误关；
   用 `wheel`/`touchmove` 判定用户主动滚动。点击、`Esc`、切路由、宽度跌破 1000px 和关闭脚本也要收起。
 - 操作栏的上分割线在 `[role="group"]` 的 `border-top`；移除时不要误删媒体/正文的边框。
