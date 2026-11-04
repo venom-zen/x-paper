@@ -74,6 +74,9 @@
   时间线和单元格是虚拟化的，单元格可能暂时为空或 0 尺寸；不要据此判定选择器失效。
 - 详情页在缺少 600px 内层时间线锚点时可能进入 degraded（只应用主题）；不要假设详情页
   一定有轨道/宽列。改动详情排版前先看 `data-xmp-degraded`。
+- 个人主页操作行用 `div:has(> div > button[data-testid="userActions"])` 做通用锚点，行内除
+  `-follow`/`-unfollow` 外的按钮统一纸面样式；已关注用户的「接收通知」铃铛没有 testid 且图标带
+  X 内联浅色，必须用行级规则 + `svg` 图标色覆盖，不要按 testid 逐个补。
 - 个人主页（`/<handle>`，含 `/handle/media` 等子页）归为 `profile` 路由，和 home/status 共用宽版面；
   `RESERVED_HANDLES` 必须覆盖 X 自己的保留一级路径（home/explore/notifications/i/...），否则
   `/explore` 之类会被误判成个人主页。观察器只在 home/profile 运行；媒体折叠在首页和个人主页都生效
@@ -82,10 +85,32 @@
   背景同色，必须同时排除自身/后代带 `-follow`、`-unfollow` testid 的按钮。
 - `/i/connect_people`（推荐关注整页）归为 `people` 路由，共用宽版面；该页没有内层 600px
   容器，健康检查把内层锚点视为可选（只要求 header/nav/primaryColumn），否则会误降级。
-- 弹窗要按**实际底色**处理，不能一律强制浅色：`markDialogs()` 从 `[role="dialog"]` 向下找第一个
-  非透明背景，亮度 < 90 标 `data-xmp-dark-dialog` 并把文字/图标改回浅色；否则标
-  `data-xmp-light-dialog` 保持纸面墨色。一律强制浅色会把浅色弹窗的文字和关闭按钮“抹掉”。
-  body 上的 MutationObserver 负责补标后出现的弹窗。
+- home 的 tab 栏和发帖框在 JS 标记前就按 X 深色绘制，首帧会闪黑；必须用结构选择器提前上纸色：
+  tab 栏 `div:has(nav[role="navigation"]):not(:has([data-testid="tweet"]))`，发帖框
+  `div:has([data-testid="tweetTextarea_0"], [data-testid="toolBar"]):not(:has([data-testid="tweet"]))`。
+  只靠 `markTabbar`/`markComposer` 的 JS 标记会晚一帧到数百毫秒。
+- `markTabbar()` 在个人主页会把整列内容（含作者信息、帖子、推广卡）标成 `data-xmp-tabbar`，
+  随后 `[data-xmp-tabbar] div { background-color: transparent }` 会清掉认证卡的深绿背景。标记前必须
+  校验：高度 ≤120px、不含 `tweet`/`User-Name`；个人主页/推荐关注页不标记，改用结构规则给容器纸色
+  并把内层 `nav[role="navigation"]` 的底边改成细线（避免 X 的深色 1px 分割线）。
+- 顶栏文字规则必须排除 `[data-testid="icon-verified"]` 和 `-follow`/`-unfollow` 后代：
+  否则滚动后个人主页顶栏的认证徽章会被涂成墨色、关注按钮文字被改回墨色。
+- 推广卡（如「你尚未通过认证」）在纸面主题下保留自己的深色底：已知深绿变体用内联
+  `background-color: rgb(0, 67, 41)` 直接命中（空格两种写法都要匹配）；其他变体由
+  `markDarkSurfaces()` 按内联底色亮度标 `data-xmp-dark-surface` 兜底，卡内文字和关闭图标恢复纯白。
+  深绿卡内的文字/链接一律纯白（不能排除 `a` 后代），白底 CTA 再单独恢复深色文字。
+  “内联浅色→墨色”的规则必须排除 `[data-xmp-dark-surface]` 祖先/后代，否则深色卡里带内联浅色的
+  标题会被优先级更高的墨色规则压成黑色（用户侧不同账号的卡片配色可能不同，只靠固定颜色匹配会漏）。
+- 链接卡片内的内联白色文字（媒体角标）要保留白色，否则会被 `card.wrapper` 的墨色规则盖成
+  黑底黑字。
+- 弹窗一律**不接管配色**：内容类文字规则都加 `:not([role="dialog"] *)`，弹窗容器单独设 X 的浅色
+  基础色以断开 body 墨色继承。按底色强制浅色的做法会误判（深色弹窗里的白色卡片会让整个弹窗被认成
+  浅色）并压掉按钮原生配色，已废弃。
+- Premium/认证营销页（`/i/premium_sign_up`、`/i/verification`、`/i/flow/*`、`/premium`）归为
+  `standalone`，`setRoute()` 移除 `data-xmp-enabled` 让整页不套主题：这些页面自带深色模块
+  （`data-testid="trend"` 等），全局墨色会把它们压成黑底黑字。
+- 表面标记必须包在 `safe(label, fn)` 里：boot/扫描里一个标记函数抛错会静默带走后面的轨道面板标记、
+  展开按钮和观察器启动（曾因为 `markDarkSurfaces` 里一个未定义变量让个人主页整个失去左轨）。
 - 「你尚未通过认证」推广卡是深绿底（内联 `rgb(0, 67, 41)`），卡内文字和右上角关闭图标必须恢复浅色，
   否则关闭按钮在深绿底上不可见；「获得认证」CTA 保持白色胶囊 + 深色文字。
 - 用户悬浮资料卡 `[data-testid="HoverCard"]` 在主题里换成纸面浮起 + 细线；卡内链接用

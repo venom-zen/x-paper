@@ -8,7 +8,7 @@
 | Attribute | 值 | 作用 |
 |-----------|----|------|
 | `data-xmp-enabled` | `1` | `html` 上的主题作用域；关闭脚本时移除 |
-| `data-xmp-route` | `home` / `status` / `profile` / `people` / `other` | SPA 路由分类；版面 CSS 对 home/status/profile/people 生效。`profile` 是 `/<handle>` 及 `/handle/media` 等子页（`RESERVED_HANDLES` 排除 X 自己的保留一级路径）；`people` 是 `/i/connect_people`（「推荐关注」整页） |
+| `data-xmp-route` | `home` / `status` / `profile` / `people` / `standalone` / `other` | SPA 路由分类；版面 CSS 对 home/status/profile/people 生效，`standalone` 完全不套主题。`profile` 是 `/<handle>` 及 `/handle/media` 等子页（`RESERVED_HANDLES` 排除 X 自己的保留一级路径）；`people` 是 `/i/connect_people`（「推荐关注」整页） |
 | `data-xmp-degraded` | `1` | primary 或版面锚点缺失；只应用主题，关闭版面、噪音和媒体 CSS |
 | `data-xmp-inner-timeline` | 空 | 标记 primary 内的 600px 时间线容器，供版面 CSS 放宽到 100% |
 | `data-xmp-media-block` | 空 | 媒体块标记；折叠态 CSS 的隐藏目标 |
@@ -139,8 +139,12 @@
 - 观察器在 home 和 profile 运行（格式化时间、标记表面）；媒体折叠在 home 和 profile 都生效，
   详情页（status）不折叠。
 - 操作按钮：`[data-testid$="-follow"]`（关注）用暖橙实心 + 纸色文字，`:hover` 暖橙深色；
-  `[data-testid$="-unfollow"]`（正在关注）用纸面浮起 + 细线 + 墨色，`:hover` 转暖红；
-  `sendDMFromProfile`、`userActions`、`editProfileButton` 用纸面浮起 + 细线 + 墨色，悬停暖橙描边。
+  `[data-testid$="-unfollow"]`（正在关注）用纸面浮起 + 细线 + 墨色，`:hover` 转暖红。
+- 操作行通用规则：`div:has(> div > button[data-testid="userActions"])` 是操作行的稳定锚点
+  （「更多」按钮一定在行内），行内除关注类以外的 `button`/`a[role="button"]` 统一纸面浮起 + 细线 +
+  墨色，图标也改墨色，`:hover` 暖橙描边；`[aria-pressed="true"]` 的图标保留暖橙。已关注用户的
+  「接收通知」铃铛没有 testid（`aria-label="开启帖子通知"`，图标带 X 内联浅色），靠这条通用规则
+  覆盖，后续新增按钮同样生效。
   顶部返回条由 `data-xmp-appbar` / 结构选择器主题化，与详情页一致。
 
 ## 详情页与文章页表面
@@ -169,6 +173,24 @@
 - 顶部条、标签页和关注按钮沿用同一套规则：顶部条走 `data-xmp-appbar` / 结构选择器，标签选中暖橙，
   关注按钮暖橙实心 + 纸色文字。
 
+## 首帧与提前着色
+
+- 首次进入/刷新 home 时，tab 栏（`rgba(0,0,0,0.65)` + blur）和发帖框（纯黑）会在 JS 标记前按 X 深色
+  绘制。主题用结构选择器提前上纸色，消除首帧闪黑：
+  - tab 栏：`[data-testid="primaryColumn"] div:has(nav[role="navigation"]):not(:has([data-testid="tweet"]))`
+  - 发帖框：`div:has([data-testid="tweetTextarea_0"], [data-testid="toolBar"]):not(:has([data-testid="tweet"]))`
+  JS 的 `data-xmp-tabbar` / `data-xmp-composer` 标记仍保留，负责边框、间距和子元素透明等细节。
+  实测把这两个标记全部移除后，顶部 400px 内不再有深色层。
+- `markTabbar()` 只标记"只含标签栏"的小容器（高度 ≤120px、不含 `tweet`/`User-Name`）。个人主页的
+  标签页没有独立容器，向上会爬到整列；误标会让 `[data-xmp-tabbar] div` 的透明规则清掉整列卡片的
+  背景（包括深绿的「你尚未通过认证」卡）。未标记的标签页（个人主页、推荐关注）由结构规则兜底：
+  容器纸色 + `nav[role="navigation"]` 的底边改细线。
+- 顶部条徽章：`[data-xmp-appbar]` 的文字规则排除 `icon-verified`、`-follow`/`-unfollow` 后代，
+  已认证徽章保持 X 原本的蓝色渐变，关注按钮保持纸色文字。
+- 内联深色卡片：`markDarkSurfaces()` 扫描 primary 里带内联 `background-color` 的元素，亮度 < 90 标
+  `data-xmp-dark-surface` 并恢复浅色文字/图标（C 端推广卡在不同账号下颜色可能不同，用它兜底）；
+  已知深绿「你尚未通过认证」卡另有 CSS 直接命中（`background-color: rgb(0, 67, 41)`）。
+
 ## 返回首页的位置恢复
 
 X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。脚本在**离开 home** 时记录
@@ -183,19 +205,27 @@ X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。
 
 ## 弹窗与悬浮卡
 
-- 弹窗按**实际底色**分深浅：`markDialogs()` 从 `[role="dialog"]` 向下最多四层找第一个非透明背景，
-  亮度 < 90 标 `data-xmp-dark-dialog`，否则标 `data-xmp-light-dialog`；`MutationObserver` 观察 body，
-  新弹窗出现后 120ms 内补标。深色弹窗内文字/图标恢复成 X 的浅色 `rgb(231,233,234)`，
-  浅色弹窗继续用纸面墨色——只在深色弹窗上强制浅色，避免把浅色弹窗的文字和关闭按钮“抹掉”。
-- 用户悬浮资料卡 `[data-testid="HoverCard"]`（X 原本是 `rgb(20,20,20)` 深色卡）换成纸面浮起 +
-  细线 + 阴影；卡内文字墨色，`http(s)` 链接暖橙，关注/正在关注按钮沿用主按钮规则。
+- 弹窗保持 X 原生配色，主题不往里灌墨色：
+  - 内容类文字规则（`tweetText`、`User-Name`、`time`、`[role="tab"]`、`[role="group"]`、
+    `card.wrapper`、文章正文等）都带 `:not([role="dialog"] *)`，不会命中弹窗内部。
+  - `html[data-xmp-enabled="1"] [role="dialog"] { color: rgb(231,233,234) }` 只设弹窗容器的基础色，
+    断开 `body` 墨色的继承；X 自己写了显式颜色的元素（按钮、角标、次要文字）不受影响。
+  - 早期"按弹窗底色强制浅色文字"的做法会误判底色并压掉按钮原生配色，已废弃。
+- Premium 订阅页和认证申请页（`/i/premium_sign_up`、`/i/verification`、`/i/flow/*`、`/premium`）
+  归为 `standalone`：`setRoute()` 移除 `data-xmp-enabled`，整页不套主题（这些页面本身是深色设计，
+  且带 X 自己的深色模块，全局墨色会把文字压成黑底黑字）。离开该路由时 `setRoute()` 会重新上色。
+- 用户悬浮资料卡 `[data-testid="HoverCard"]` 不在弹窗内，仍按纸面浮起 + 细线渲染。
 - 「你尚未通过认证」推广卡是**深绿底**（内联 `background-color: rgb(0, 67, 41)`），保留深色卡：
-  卡内文字和右上角关闭图标恢复浅色（`... :is(span, div, p, svg):not(a *)`），否则标题和关闭按钮
-  都会被纸面墨色吞掉；「获得认证」CTA 是白色胶囊 + 深色文字，保持原样。
-- 滚动后个人主页顶栏的关注按钮由 `[data-xmp-appbar]` 标记，顶栏的文字规则已排除
-  `-follow`/`-unfollow` 的后代，避免把按钮文字改回墨色。
-- 关注按钮的文字曾被「非帖子单元格的 [role=button] span」暖橙规则染成与背景同色；
-  该规则现在排除自身或后代带 `[data-testid$="-follow"]` / `[data-testid$="-unfollow"]` 的按钮。
+  卡内文字、链接和右上角关闭图标一律纯白（不能排除 `a` 后代），白底「获得认证」CTA 用内联白底
+  `rgb(239,243,244)` 单独恢复深色文字。X 各版本的内联样式串空格写法不一致，两种都匹配；
+  未知配色由 `markDarkSurfaces()` 兜底——同时「内联浅色→墨色」规则排除
+  `[data-xmp-dark-surface]` 的祖先/后代，深色卡里的浅色文字不会再被转成黑色。
+- 链接卡片里的媒体角标由 X 用内联白色文字压在 `rgba(0,0,0,.77)` 上；`card.wrapper` 的墨色规则
+  只作用于 primary 内，并保留卡片内的内联白色文字。
+- `markDarkSurfaces()` 扫描 primary 内带内联 `background-color` 的元素，亮度 < 90 标
+  `data-xmp-dark-surface`（文字/图标转白，跳过 `a`/`button` 后代），兜底其他深色推广卡变体。
+- 表面标记统一走 `safe(label, fn)`：单个标记函数抛错只记录一次 `warnOnce`，不会带走同一轮里
+  后续的轨道面板、展开按钮和观察器启动。
 
 ## 降级
 

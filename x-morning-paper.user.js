@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         x-paper
 // @namespace    x-paper
-// @version      0.6.0
+// @version      0.6.6
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @author       venom
 // @license      MIT
@@ -88,10 +88,10 @@
       box-shadow: none !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="tweetText"],
-    html[data-xmp-enabled="1"] [data-testid="tweetText"] *,
-    html[data-xmp-enabled="1"] [data-testid="tweetTextarea_0"],
-    html[data-xmp-enabled="1"] [data-testid="tweetTextarea_0"] * {
+    html[data-xmp-enabled="1"] [data-testid="tweetText"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="tweetText"] *:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="tweetTextarea_0"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="tweetTextarea_0"] *:not([role="dialog"] *){
       color: var(--xmp-ink) !important;
       font-family: var(--xmp-ui-font) !important;
     }
@@ -101,7 +101,7 @@
       line-height: 1.65 !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="tweetText"] a {
+    html[data-xmp-enabled="1"] [data-testid="tweetText"] a:not([role="dialog"] *){
       color: var(--xmp-accent) !important;
     }
 
@@ -109,63 +109,64 @@
       color: var(--xmp-accent) !important;
     }
 
-    /* X 把查看数、标题等文字写成内联浅色（深色主题的 --xmpColorlessText），纸面上必须换成墨色 */
-    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [style*="color: rgb(231, 233, 234)"] {
+    /* X 把查看数、标题等文字写成内联浅色（深色主题的 --xmpColorlessText），纸面上必须换成墨色；
+       但深色推广卡内例外——那里的浅色是给深底用的，转墨色会变成黑底黑字 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [style*="color: rgb(231, 233, 234)"]:not([data-xmp-dark-surface], [data-xmp-dark-surface] *) {
       color: var(--xmp-ink) !important;
     }
 
 
-    html[data-xmp-enabled="1"] [data-testid="tweetTextarea_0"] {
+    html[data-xmp-enabled="1"] [data-testid="tweetTextarea_0"]:not([role="dialog"] *){
       background-color: transparent !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="User-Name"] {
+    html[data-xmp-enabled="1"] [data-testid="User-Name"]:not([role="dialog"] *){
       color: var(--xmp-ink) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="User-Name"] [dir="ltr"],
-    html[data-xmp-enabled="1"] time {
+    html[data-xmp-enabled="1"] [data-testid="User-Name"] [dir="ltr"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] time:not([role="dialog"] *){
       color: var(--xmp-ink-secondary) !important;
       font-size: 13px !important;
       line-height: 1.4 !important;
     }
 
-    html[data-xmp-enabled="1"] [role="tab"] {
+    html[data-xmp-enabled="1"] [role="tab"]:not([role="dialog"] *){
       color: var(--xmp-ink-secondary) !important;
       font-size: 15px !important;
       line-height: 1.4 !important;
       font-weight: 500 !important;
     }
 
-    html[data-xmp-enabled="1"] [role="tab"][aria-selected="true"],
-    html[data-xmp-enabled="1"] [role="tab"][aria-selected="true"] * {
+    html[data-xmp-enabled="1"] [role="tab"][aria-selected="true"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [role="tab"][aria-selected="true"] *:not([role="dialog"] *){
       color: var(--xmp-accent) !important;
     }
 
-    html[data-xmp-enabled="1"] [role="group"] {
+    html[data-xmp-enabled="1"] [role="group"]:not([role="dialog"] *){
       color: var(--xmp-ink-secondary) !important;
       padding-bottom: 8px !important;
     }
 
-    html[data-xmp-enabled="1"] [role="group"] svg {
+    html[data-xmp-enabled="1"] [role="group"] svg:not([role="dialog"] *){
       width: 16px !important;
       height: 16px !important;
       color: var(--xmp-ink-secondary) !important;
       fill: var(--xmp-ink-secondary) !important;
     }
 
-    html[data-xmp-enabled="1"] [role="group"] span {
+    html[data-xmp-enabled="1"] [role="group"] span:not([role="dialog"] *){
       font-size: 13px !important;
       color: var(--xmp-ink-secondary) !important;
     }
 
-    html[data-xmp-enabled="1"] [role="group"] button:hover svg,
-    html[data-xmp-enabled="1"] [role="group"] a:hover svg {
+    html[data-xmp-enabled="1"] [role="group"] button:hover svg:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [role="group"] a:hover svg:not([role="dialog"] *){
       color: var(--xmp-accent) !important;
       fill: var(--xmp-accent) !important;
     }
 
-    html[data-xmp-enabled="1"] [role="group"] button:hover span {
+    html[data-xmp-enabled="1"] [role="group"] button:hover span:not([role="dialog"] *){
       color: var(--xmp-accent) !important;
     }
 
@@ -174,18 +175,18 @@
       fill: var(--xmp-like) !important;
     }
 
-    html[data-xmp-enabled="1"] [role="group"] [data-testid="retweet"][aria-pressed="true"] svg,
-    html[data-xmp-enabled="1"] [role="group"] [data-testid="bookmark"][aria-pressed="true"] svg {
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="retweet"][aria-pressed="true"] svg:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="bookmark"][aria-pressed="true"] svg:not([role="dialog"] *){
       color: var(--xmp-accent) !important;
       fill: var(--xmp-accent) !important;
     }
 
-    html[data-xmp-enabled="1"] [role="group"] [data-testid="like"][aria-pressed="true"] span {
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="like"][aria-pressed="true"] span:not([role="dialog"] *){
       color: var(--xmp-like) !important;
     }
 
-    html[data-xmp-enabled="1"] [role="group"] [data-testid="retweet"][aria-pressed="true"] span,
-    html[data-xmp-enabled="1"] [role="group"] [data-testid="bookmark"][aria-pressed="true"] span {
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="retweet"][aria-pressed="true"] span:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [role="group"] [data-testid="bookmark"][aria-pressed="true"] span:not([role="dialog"] *){
       color: var(--xmp-accent) !important;
     }
 
@@ -194,10 +195,10 @@
       color: var(--xmp-ink) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="trend"],
-    html[data-xmp-enabled="1"] [data-testid="trend"] *,
-    html[data-xmp-enabled="1"] [data-testid="UserCell"],
-    html[data-xmp-enabled="1"] [data-testid="UserCell"] * {
+    html[data-xmp-enabled="1"] [data-testid="trend"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="trend"] *:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="UserCell"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="UserCell"] *:not([role="dialog"] *){
       color: var(--xmp-ink) !important;
     }
 
@@ -211,6 +212,23 @@
     html[data-xmp-enabled="1"] header nav button > div:first-child > div[dir="ltr"],
     html[data-xmp-enabled="1"] header nav button > div:first-child > div[dir="ltr"] * {
       color: var(--xmp-ink) !important;
+    }
+
+    /* 首次进入/刷新 home 时，tab 栏和发帖框会在 JS 标记前按 X 深色绘制；这里用结构选择器
+       提前套上纸色，消除首帧闪黑（JS 的 data-xmp-* 标记仍保留，用于边框和间距等细节） */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(nav[role="navigation"]):not(:has([data-testid="tweet"])) {
+      background-color: var(--xmp-paper) !important;
+      backdrop-filter: none !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has([data-testid="tweetTextarea_0"], [data-testid="toolBar"]):not(:has([data-testid="tweet"])):not([role="dialog"] *){
+      background-color: var(--xmp-paper) !important;
+      background-image: none !important;
+    }
+
+    /* 未标 tabbar 的标签页（个人主页、推荐关注等）内层 nav 还留着 X 的深色分割线 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] nav[role="navigation"]:not([data-xmp-tabbar] *) {
+      border-bottom-color: var(--xmp-hairline) !important;
     }
 
     [data-xmp-tabbar] {
@@ -232,15 +250,15 @@
       background-image: none !important;
     }
 
-    [data-xmp-tabbar] [role="tab"] {
+    [data-xmp-tabbar] [role="tab"]:not([role="dialog"] *){
       background-color: var(--xmp-paper) !important;
     }
 
-    [data-xmp-tabbar] [role="tab"][aria-selected="true"] {
+    [data-xmp-tabbar] [role="tab"][aria-selected="true"]:not([role="dialog"] *){
       border-bottom-color: var(--xmp-accent) !important;
     }
 
-    [data-xmp-tabbar] [role="tab"][aria-selected="true"] div[style*="background-color"] {
+    [data-xmp-tabbar] [role="tab"][aria-selected="true"] div[style*="background-color"]:not([role="dialog"] *){
       background-color: var(--xmp-accent) !important;
     }
 
@@ -294,12 +312,12 @@
       color: var(--xmp-ink) !important;
     }
 
-    [data-xmp-composer] [data-testid="tweetTextarea_0"] {
+    [data-xmp-composer] [data-testid="tweetTextarea_0"]:not([role="dialog"] *){
       background-color: transparent !important;
       color: var(--xmp-ink) !important;
     }
 
-    [data-xmp-composer] [data-testid="tweetTextarea_0_label"] * {
+    [data-xmp-composer] [data-testid="tweetTextarea_0_label"] *:not([role="dialog"] *){
       color: var(--xmp-ink-secondary) !important;
     }
 
@@ -348,35 +366,42 @@
       color: var(--xmp-accent) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="card.wrapper"],
-    html[data-xmp-enabled="1"] [data-testid="card.layoutSmall.media"],
-    html[data-xmp-enabled="1"] [data-testid="card.layoutLarge.media"] {
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid="card.wrapper"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="card.layoutSmall.media"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="card.layoutLarge.media"]:not([role="dialog"] *){
       border-color: var(--xmp-hairline) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="card.wrapper"],
-    html[data-xmp-enabled="1"] [data-testid="card.wrapper"] * {
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid="card.wrapper"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid="card.wrapper"] *:not([role="dialog"] *){
       color: var(--xmp-ink) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="card.wrapper"] a {
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid="card.wrapper"] a:not([role="dialog"] *){
       color: var(--xmp-accent) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="twitter-article-title"],
-    html[data-xmp-enabled="1"] [data-testid="twitter-article-title"] *,
-    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"],
-    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] *,
-    html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"],
-    html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"] *,
-    html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"],
-    html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"] * {
+    /* 链接卡片里的媒体角标由 X 用内联白色压在 rgba(0,0,0,.77) 上；保留它的白色，:not([role="dialog"] *)
+       否则会被卡片正文的墨色规则覆盖成黑底黑字 */:not([role="dialog"] *)
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid="card.wrapper"] [style*="color: rgb(255, 255, 255)"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid="card.wrapper"] [style*="color: rgb(255, 255, 255)"] *:not([role="dialog"] *){
+      color: #FFFFFF !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="twitter-article-title"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="twitter-article-title"] *:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] *:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"] *:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"]:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"] *:not([role="dialog"] *){
       color: var(--xmp-ink) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] a,
-    html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"] a,
-    html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"] a {
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] a:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleRichTextView"] a:not([role="dialog"] *),
+    html[data-xmp-enabled="1"] [data-testid="longformRichTextComponent"] a:not([role="dialog"] *){
       color: var(--xmp-accent) !important;
     }
 
@@ -389,7 +414,7 @@
       color: var(--xmp-ink) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div[role="link"]:has([data-testid="User-Name"]):has([data-testid="tweetText"]) {
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div[role="link"]:has([data-testid="User-Name"]):has([data-testid="tweetText"]):not([role="dialog"] *){
       border-color: var(--xmp-hairline) !important;
     }
 
@@ -412,7 +437,7 @@
       border-bottom-color: var(--xmp-rule) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"] [data-testid="Tweet-User-Avatar"] ~ div:last-child:not([data-testid="User-Name"], [data-testid="tweetText"]):not(:has([data-testid="User-Name"], [data-testid="tweetText"])) {
+    html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"] [data-testid="Tweet-User-Avatar"] ~ div:last-child:not([data-testid="User-Name"], [data-testid="tweetText"]):not(:has([data-testid="User-Name"], [data-testid="tweetText"])):not([role="dialog"] *){
       background-color: var(--xmp-rule) !important;
       border-radius: 1px !important;
     }
@@ -492,6 +517,28 @@
       color: var(--xmp-ink) !important;
     }
 
+    /* 个人主页操作行里可能新增按钮（如已关注用户的「接收通知」铃铛，没有 testid）：
+       按行结构统一成纸面浮起 + 细线 + 墨色，关注/正在关注保留自己的实心与描边样式 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > button[data-testid="userActions"]) :is(button, a[role="button"]):not([data-testid$="-follow"], [data-testid$="-unfollow"]) {
+      background-color: var(--xmp-paper-raised) !important;
+      border: 1px solid var(--xmp-hairline) !important;
+      color: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > button[data-testid="userActions"]) :is(button, a[role="button"]):not([data-testid$="-follow"], [data-testid$="-unfollow"]):hover {
+      border-color: var(--xmp-accent) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > button[data-testid="userActions"]) :is(button, a[role="button"]):not([data-testid$="-follow"], [data-testid$="-unfollow"]) svg {
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > button[data-testid="userActions"]) [aria-pressed="true"] svg {
+      color: var(--xmp-accent) !important;
+      fill: var(--xmp-accent) !important;
+    }
+
     html[data-xmp-enabled="1"] [data-testid="primaryColumn"] :is([data-testid="sendDMFromProfile"], [data-testid="userActions"], [data-testid="editProfileButton"]) * {
       color: var(--xmp-ink) !important;
       fill: var(--xmp-ink) !important;
@@ -510,17 +557,29 @@
       box-shadow: inset 0 -1px 0 var(--xmp-hairline);
     }
 
-    html[data-xmp-enabled="1"] [data-xmp-appbar] :is(span, svg):not([data-testid$="-follow"] *, [data-testid$="-unfollow"] *),
-    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > div > [data-testid="app-bar-back"]) :is(span, svg):not([data-testid$="-follow"] *, [data-testid$="-unfollow"] *) {
+    html[data-xmp-enabled="1"] [data-xmp-appbar] :is(span, svg):not([data-testid$="-follow"] *, [data-testid$="-unfollow"] *, [data-testid="icon-verified"]),
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(> div > div > [data-testid="app-bar-back"]) :is(span, svg):not([data-testid$="-follow"] *, [data-testid$="-unfollow"] *, [data-testid="icon-verified"]) {
       color: var(--xmp-ink) !important;
       fill: var(--xmp-ink) !important;
     }
 
-    /* 「你尚未通过认证」推广卡是深绿底（内联 rgb(0,67,41)）：保留深色卡，把卡内文字和
-       右上角关闭图标恢复为浅色，否则纸面墨色会变成黑底黑字、关闭按钮也看不见 */
-    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [style*="background-color: rgb(0, 67, 41)"] :is(span, div, p, svg):not(a *) {
-      color: rgb(231, 233, 234) !important;
-      fill: rgb(231, 233, 234) !important;
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-xmp-dark-surface],
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-xmp-dark-surface] :is(span, div, p, svg):not(a *, button *) {
+      color: #FFFFFF !important;
+      fill: #FFFFFF !important;
+    }
+
+    /* 「你尚未通过认证」推广卡是深绿底（内联 rgb(0,67,41)）：保留深色卡，卡内文字、链接和
+       右上角关闭图标一律纯白（不同账号下文字可能包在链接里，不能排除 a 的后代）；
+       白底「获得认证」CTA 单独恢复为深色文字。内联样式串的空格写法各版本不一致，两种都匹配。 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] :is([style*="background-color: rgb(0, 67, 41)"], [style*="background-color: rgb(0,67,41)"]) :is(span, div, p, svg, a) {
+      color: #FFFFFF !important;
+      fill: #FFFFFF !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] :is([style*="background-color: rgb(0, 67, 41)"], [style*="background-color: rgb(0,67,41)"]) :is([style*="background-color: rgb(239, 243, 244)"], [style*="background-color: rgb(239,243,244)"]),
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] :is([style*="background-color: rgb(0, 67, 41)"], [style*="background-color: rgb(0,67,41)"]) :is([style*="background-color: rgb(239, 243, 244)"], [style*="background-color: rgb(239,243,244)"]) * {
+      color: rgb(15, 20, 25) !important;
     }
 
     /* 用户悬浮资料卡：X 用 rgb(20,20,20) 深色卡 + 16px 圆角，纸面下换成纸面浮起 + 细线 */
@@ -598,19 +657,10 @@
       color: var(--xmp-ink-secondary) !important;
     }
 
-    /* 深色弹窗（Premium、认证、回复框、图片查看器等）保留 X 的深色外观：
-       纸面墨色在深色底上不可读，恢复成 X 的浅色文字。浅色弹窗不标记，继续用墨色。 */
-    html[data-xmp-enabled="1"] [data-xmp-dark-dialog] {
+    /* 弹窗保持 X 原生配色：只把弹窗容器的基础色设回浅色，断开 body 墨色的继承；
+       X 自己写了显式颜色的元素（按钮、角标、次要文字）都不受影响 */
+    html[data-xmp-enabled="1"] [role="dialog"] {
       color: rgb(231, 233, 234) !important;
-    }
-
-    html[data-xmp-enabled="1"] [data-xmp-dark-dialog] :is(span, div, p, h1, h2, h3, h4, time) {
-      color: rgb(231, 233, 234) !important;
-    }
-
-    html[data-xmp-enabled="1"] [data-xmp-dark-dialog] svg {
-      color: rgb(231, 233, 234) !important;
-      fill: rgb(231, 233, 234) !important;
     }
 
     /* 文章内嵌的引用帖：X 用纯黑底 + 深灰边，墨色文字在其上几乎不可读 */
@@ -639,8 +689,8 @@
       fill: var(--xmp-ink) !important;
     }
 
-    /* 文章末尾的升级横幅 */
-    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] [role="status"] {
+    /* 文章末尾的升级横幅 */:not([role="dialog"] *)
+    html[data-xmp-enabled="1"] [data-testid="twitterArticleReadView"] [role="status"]:not([role="dialog"] *){
       background-color: var(--xmp-paper-raised) !important;
       border: 1px solid var(--xmp-hairline) !important;
     }
@@ -1105,8 +1155,6 @@
   let railTimer = null;
   let homeReturn = null;
   let homeRestoreToken = 0;
-  let dialogObserver = null;
-  let dialogTimer = null;
   const warned = new Set();
   const mediaWarmups = new WeakMap();
   const mediaReveals = new WeakMap();
@@ -1117,6 +1165,15 @@
     if (warned.has(key)) return;
     warned.add(key);
     console.warn(`[x-paper] ${message}`);
+  }
+
+  // 单个表面标记失败不应中断整轮启动/扫描（否则后面的轨道、按钮都会静默丢失）。
+  function safe(label, run) {
+    try {
+      run();
+    } catch (error) {
+      warnOnce(`surface-${label}`, `${label} 失败：${error}`);
+    }
   }
 
   function readEnabled() {
@@ -1254,14 +1311,13 @@
     checkSelectorHealth();
     formatTimestamps();
     scheduleSurfaceRefresh();
-    markTabbar();
-    markComposer();
-    markAppBar();
-    markDialogs();
-    markRailPanel();
-    markRailLayout();
+    safe('tabbar', markTabbar);
+    safe('composer', markComposer);
+    safe('appbar', markAppBar);
+    safe('darkSurface', markDarkSurfaces);
+    safe('railPanel', markRailPanel);
+    safe('railLayout', markRailLayout);
     ensureNavToggle();
-    watchDialogs();
     if (route === 'home' || route === 'profile') {
       if (!degraded) {
         startObserver();
@@ -1280,7 +1336,12 @@
   ]);
   const PROFILE_PATH = /^\/([A-Za-z0-9_]{1,15})(?:\/(?:with_replies|media|likes|highlights|articles|followers|following|affiliates|verified_followers))?\/?$/;
 
+  // X 的付费/认证营销页（Premium 订阅、认证申请）本身是深色设计，主题完全不介入，
+  // 否则全局墨色会把它们深色模块里的文字压成黑底黑字。
+  const STANDALONE_PATH = /^\/i\/(?:premium_sign_up|verification|en\/verification|flow\/)/;
+
   function classifyRoute(pathname) {
+    if (STANDALONE_PATH.test(pathname) || pathname === '/premium') return 'standalone';
     if (pathname === '/' || pathname === '/home') return 'home';
     if (pathname.includes('/status/')) return 'status';
     const match = pathname.match(PROFILE_PATH);
@@ -1295,7 +1356,10 @@
 
   function setRoute() {
     route = classifyRoute(window.location.pathname);
-    document.documentElement.dataset.xmpRoute = route;
+    const root = document.documentElement;
+    root.dataset.xmpRoute = route;
+    if (route === 'standalone') root.removeAttribute('data-xmp-enabled');
+    else if (enabled) root.dataset.xmpEnabled = '1';
   }
 
   function patchHistory() {
@@ -1383,6 +1447,11 @@
     const previousRoute = route;
     setRoute();
     hidePhotoPreview();
+    if (route === 'standalone') {
+      stopObserver();
+      setNavExpanded(false);
+      return;
+    }
     if (previousRoute === 'home' && route !== 'home') captureHomeReturn();
     if (previousRoute !== 'home' && route === 'home') restoreHomeReturn();
     if (route !== 'home') {
@@ -1396,12 +1465,12 @@
     checkSelectorHealth();
     formatTimestamps();
     scheduleSurfaceRefresh();
-    markTabbar();
-    markComposer();
-    markAppBar();
-    markDialogs();
-    markRailPanel();
-    markRailLayout();
+    safe('tabbar', markTabbar);
+    safe('composer', markComposer);
+    safe('appbar', markAppBar);
+    safe('darkSurface', markDarkSurfaces);
+    safe('railPanel', markRailPanel);
+    safe('railLayout', markRailLayout);
     ensureNavToggle();
     if (!isWideRoute(route)) setNavExpanded(false);
     if (route === 'home' || route === 'profile') {
@@ -1448,9 +1517,9 @@
     if (timestampTimer) window.clearTimeout(timestampTimer);
     timestampTimer = window.setTimeout(() => {
       timestampTimer = null;
-      formatTimestamps();
-      markComposer();
-      markAppBar();
+      safe('timestamps', formatTimestamps);
+      safe('composer', markComposer);
+      safe('appbar', markAppBar);
     }, 1200);
   }
 
@@ -1469,9 +1538,18 @@
     while (tabbar.parentElement && tabbar.parentElement !== content) {
       tabbar = tabbar.parentElement;
     }
-    if (tabbar.parentElement === content) {
-      tabbar.setAttribute('data-xmp-tabbar', '');
-    }
+    if (tabbar.parentElement !== content) return;
+    // 个人主页的标签页没有独立容器，向上会爬到整列（含作者信息/帖子/推广卡）；
+    // 只有"只含标签栏"的小容器才标记，否则 [data-xmp-tabbar] div 的透明规则会清掉
+    // 认证卡等卡片的背景。
+    const box = tabbar.getBoundingClientRect();
+    const valid = box.height > 0 && box.height <= 120 &&
+      !tabbar.querySelector(TWEET) && !tabbar.querySelector('[data-testid="UserName"]');
+    if (valid) tabbar.setAttribute('data-xmp-tabbar', '');
+    else tabbar.removeAttribute('data-xmp-tabbar');
+    primary.querySelectorAll('[data-xmp-tabbar]').forEach(node => {
+      if (node !== tabbar) node.removeAttribute('data-xmp-tabbar');
+    });
   }
 
   function markComposer() {
@@ -1507,35 +1585,20 @@
     }
   }
 
-  // 弹窗分深浅：深色弹窗保留 X 的浅色文字，浅色弹窗继续用纸面墨色。
-  function markDialogs() {
-    document.querySelectorAll('[role="dialog"]').forEach(dialog => {
-      if (dialog.hasAttribute('data-xmp-dark-dialog') || dialog.hasAttribute('data-xmp-light-dialog')) return;
-      let dark = false;
-      let node = dialog;
-      for (let depth = 0; node && depth < 4; depth += 1) {
-        const bg = window.getComputedStyle(node).backgroundColor;
-        if (bg && bg !== 'rgba(0, 0, 0, 0)') {
-          const match = bg.match(/rgba?\((\d+), (\d+), (\d+)/);
-          if (match) dark = (0.2126 * +match[1] + 0.7152 * +match[2] + 0.0722 * +match[3]) < 90;
-          break;
-        }
-        node = node.firstElementChild;
+  // 内联深色底的卡片（「你尚未通过认证」等推广卡）保留深色底，卡内文字/图标恢复浅色；
+  // 深绿色的已知变体有 CSS 直接命中，这里兜底其他内联深色变体。
+  function markDarkSurfaces() {
+    const primary = document.querySelector(PRIMARY);
+    if (primary) {
+      for (const node of primary.querySelectorAll('[style*="background-color"]')) {
+        if (node.hasAttribute('data-xmp-dark-surface') || node.hasAttribute('data-xmp-light-surface')) continue;
+        const match = (node.style.backgroundColor || '').match(/rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)/);
+        if (!match) continue;
+        if (match[4] !== undefined && +match[4] < 0.4) continue;
+        const dark = (0.2126 * +match[1] + 0.7152 * +match[2] + 0.0722 * +match[3]) < 90;
+        node.setAttribute(dark ? 'data-xmp-dark-surface' : 'data-xmp-light-surface', '');
       }
-      dialog.setAttribute(dark ? 'data-xmp-dark-dialog' : 'data-xmp-light-dialog', '');
-    });
-  }
-
-  function watchDialogs() {
-    if (dialogObserver || !document.body) return;
-    dialogObserver = new MutationObserver(() => {
-      if (dialogTimer) return;
-      dialogTimer = window.setTimeout(() => {
-        dialogTimer = null;
-        if (enabled) markDialogs();
-      }, 120);
-    });
-    dialogObserver.observe(document.body, { childList: true, subtree: true });
+    }
   }
 
   // 详情页/文章页的顶部条没有稳定 testid，从返回按钮向上找带 blur/背景的那一层，
@@ -1609,6 +1672,10 @@
   function boot() {
     if (!enabled) return;
     setRoute();
+    if (route === 'standalone') {
+      patchHistory();
+      return;
+    }
     patchHistory();
     const primary = document.querySelector(PRIMARY);
     if (!primary) {
@@ -1626,14 +1693,13 @@
     checkSelectorHealth();
     formatTimestamps();
     scheduleSurfaceRefresh();
-    markTabbar();
-    markComposer();
-    markAppBar();
-    markDialogs();
-    markRailPanel();
-    markRailLayout();
+    safe('tabbar', markTabbar);
+    safe('composer', markComposer);
+    safe('appbar', markAppBar);
+    safe('darkSurface', markDarkSurfaces);
+    safe('railPanel', markRailPanel);
+    safe('railLayout', markRailLayout);
     ensureNavToggle();
-    watchDialogs();
     if (route === 'home' || route === 'profile') {
       if (!degraded) {
         startObserver();
@@ -1770,17 +1836,19 @@
     const primary = document.querySelector(PRIMARY);
     if (!primary) return;
     formatTimestamps();
-    markTabbar();
-    markComposer();
-    markAppBar();
-    markDialogs();
-    markRailPanel();
-    markRailLayout();
+    safe('tabbar', markTabbar);
+    safe('composer', markComposer);
+    safe('appbar', markAppBar);
+    safe('darkSurface', markDarkSurfaces);
+    safe('railPanel', markRailPanel);
+    safe('railLayout', markRailLayout);
     if (route !== 'home' && route !== 'profile') return;
     const cells = [...primary.querySelectorAll(CELL)];
     if (cells.length > 0 && !commonAncestor(cells)) return;
-    primary.querySelectorAll(TWEET).forEach(tweet => {
-      if (!tweet.parentElement.closest(TWEET)) annotateTweet(tweet);
+    safe('media', () => {
+      primary.querySelectorAll(TWEET).forEach(tweet => {
+        if (!tweet.parentElement.closest(TWEET)) annotateTweet(tweet);
+      });
     });
   }
 
