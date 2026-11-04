@@ -128,8 +128,10 @@
   `pbs.twimg.com` 的 URL 把 `name=` 参数换成 `orig` 得到原图，已加载过的原图记在 `previewReady` 里。
   浮层 `pointer-events: none`；移出图片/按钮、点击、`Esc`、切路由、宽度跌破 1000px 或关闭脚本都会收起。
   **不要监听 `scroll` 事件**：X 加载图片时的滚动锚定会触发 scroll，把刚打开的预览误关；只在
-  `wheel`/`touchmove` 时收起。浮层尺寸按图片数量分级（单图最多 88vh，2 张 66vh，3 张以上 30vh 并换行），
-  保证整卡不超过 92vh。
+  `wheel`/`touchmove` 时收起。浮层尺寸按图片数量分级（单图最多 88vh，2 张 66vh，3 张以上 30vh 并换行）。
+  浮层是 `position: fixed; left: 50%`，宽度 auto 时 shrink-to-fit 只按右半视口计算；必须设
+  `width: max-content` 再加 `max-width: min(1600px, 92vw)`，否则两张竖图并排会被误判放不下而换行，
+  卡片高度超过 92vh、图片溢出纸框。3/4 张和 `many` 由 `flex-wrap` 和 `max-width` 决定每行数量。
 
 ## 个人主页
 
@@ -194,13 +196,20 @@
 ## 返回首页的位置恢复
 
 X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。脚本在**离开 home** 时记录
-`window.scrollY` 和视口内第一条完整可见帖子的状态链接（`captureHomeReturn`），**回到 home** 时
-（`previousRoute !== 'home' && route === 'home'`）用 `restoreHomeReturn` 复位：
+`window.scrollY`、视口内第一条完整可见帖子的时间戳链接和已展开媒体的帖子（`captureHomeReturn`），
+**回到 home** 时（`previousRoute !== 'home' && route === 'home'`）用 `restoreHomeReturn` 复位：
 
-- 帖子还在 DOM 里：把它滚回离开时的视口位置（`cell.top` 与记录值比对，差 2px 以上才动）。
-- 帖子还没渲染出来：先等 2 秒，之后按像素位置回填（用当前文档高度钳制），并在 6 秒内每 250ms
-  校正一次，避免 X 稍后的滚动恢复又把它拉走。
-- 用户 `wheel`/`touchmove` 主动滚动即放弃；不在 home 路由时自动停止。
+- 锚点取单元格里带 `time[datetime]` 的链接，不能取引用帖链接；返回后按该链接定位单元格，
+  把它钉回离开时的 `cell.top`（差 1px 以上才动）。
+- 重建期间 X 会连续增删单元格、折叠媒体，因此每帧（rAF）校正一次，而不是 250ms 轮询；
+  布局静止 1.5s 后停止，最多 10s。
+- 已展开的媒体按单元格时间戳链接记录；重建后的帖子标注时恢复为 `expanded`，避免返回后集体
+  折叠导致页面高度突变和定位漂移。
+- 锚点还没渲染出来时先等 2 秒，之后按像素位置回填（用当前文档高度钳制），至少校正到 6 秒。
+- 用户 `wheel`/`touchmove`/`PageUp`/`PageDown`/`Home`/`End`/方向键/空格主动滚动即放弃；
+  离开 home 路由时自动停止。
+- 日志和调试时注意：X 自己也会在 `popstate` 后调用 `scrollTo`/`scrollBy`；锚点已对齐时脚本不会再发
+  滚动调用。
 - 只在 SPA 内导航生效；整页刷新交给浏览器自己的滚动恢复。
 
 ## 弹窗与悬浮卡

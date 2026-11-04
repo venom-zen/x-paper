@@ -1087,6 +1087,9 @@
       transform: translate(-50%, -50%);
       z-index: 1400;
       display: none;
+      /* left:50% + width:auto makes shrink-to-fit use only the right half of the
+         viewport; max-content lets the card grow to its real max-width. */
+      width: max-content;
       flex-direction: column;
       align-items: center;
       gap: 8px;
@@ -1386,9 +1389,30 @@
     });
   }
 
-  // X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。
-  // 离开首页时记住滚动量和当时第一条完整可见的帖子，回来后按它复位；帖子还没渲染出来时
-  // 先等 2s 让 X 补内容，再按像素位置回填，并在 6s 内持续校正（用户主动滚动即放弃）。
+  // 帖子时间戳链接指向帖子本身；引用帖的链接也在单元格里，必须优先取带 time 的那个，
+  // 否则锚点可能落到被引用的帖子上，返回后对齐到别的单元格。
+  function cellStatusLink(cell) {
+    if (!cell) return null;
+    const links = cell.querySelectorAll('a[href*="/status/"]');
+    for (const link of links) {
+      if (link.querySelector('time[datetime]')) return link;
+    }
+    return links[0] || null;
+  }
+
+  // 返回途中重建的帖子按离开前的展开态标注；只在 home 生效，避免这份记录影响个人主页的扫描。
+  function wantsExpandedMedia(tweet) {
+    if (route !== 'home') return false;
+    if (!homeReturn || !homeReturn.expanded || homeReturn.expanded.size === 0) return false;
+    const link = cellStatusLink(tweet.closest(CELL));
+    return !!link && homeReturn.expanded.has(link.getAttribute('href'));
+  }
+
+  // X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。离开首页时记住滚动量、
+  // 当时第一条可见的帖子和已展开媒体的帖子；回来后把该帖子滚回原来的视口位置，
+  // 并恢复那些媒体块的展开态，避免重建后集体折叠、页面高度突变。
+  // 重建期间 X 会连续增删单元格和媒体，因此每帧把锚点钉在记录位置上，布局静止
+  // 1.5s 后停止；用户主动滚动（滚轮、触摸、滚动按键）即放弃校正。
   function captureHomeReturn() {
     const primary = document.querySelector(PRIMARY);
     const y = Math.round(window.scrollY);
@@ -1400,12 +1424,17 @@
     for (const cell of primary.querySelectorAll(CELL)) {
       const rect = cell.getBoundingClientRect();
       if (rect.bottom <= 80) continue;
-      const link = cell.querySelector('a[href*="/status/"]');
+      const link = cellStatusLink(cell);
       if (!link) continue;
       anchor = { href: link.getAttribute('href'), top: Math.round(rect.top) };
       break;
     }
-    homeReturn = { y, anchor };
+    const expanded = new Set();
+    for (const tweet of primary.querySelectorAll('[data-xmp-media-state="expanded"]')) {
+      const link = cellStatusLink(tweet.closest(CELL));
+      if (link) expanded.add(link.getAttribute('href'));
+    }
+    homeReturn = { y, anchor, expanded };
   }
 
   function restoreHomeReturn() {
@@ -1413,33 +1442,86 @@
     if (!state) return;
     const token = ++homeRestoreToken;
     let cancelled = false;
-    const cancel = () => { cancelled = true; };
-    ['wheel', 'touchmove'].forEach(type => {
-      window.addEventListener(type, cancel, { passive: true, once: true });
-    });
+    let frame = 0;
+    let anchorCell = null;
+    let lastSignature = '';
+    let lastChange = performance.now();
     const started = performance.now();
-    const tick = () => {
-      if (cancelled || token !== homeRestoreToken || route !== 'home') return;
-      const elapsed = performance.now() - started;
-      let aligned = false;
-      if (state.anchor) {
-        const link = document.querySelector(`a[href="${state.anchor.href}"]`);
-        const cell = link ? link.closest(CELL) : null;
-        if (cell) {
-          const delta = Math.round(cell.getBoundingClientRect().top) - state.anchor.top;
-          if (Math.abs(delta) > 2) window.scrollBy(0, delta);
-          aligned = true;
+    const detach = () => {
+      window.removeEventListener('wheel', onUserScroll);
+      window.removeEventListener('touchmove', onUserScroll);
+      window.removeEventListener('keydown', onScrollKey, true);
+    };
+    const cancel = () => {
+      cancelled = true;
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      detach();
+    };
+    const onUserScroll = () => cancel();
+    const onScrollKey = event => {
+      const target = event.target;
+      if (target instanceof Element && target.closest('input, textarea, [contenteditable="true"]')) return;
+      if (['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', ' '].includes(event.key)) cancel();
+    };
+    window.addEventListener('wheel', onUserScroll, { passive: true });
+    window.addEventListener('touchmove', onUserScroll, { passive: true });
+    window.addEventListener('keydown', onScrollKey, true);
+    const locate = () => {
+      if (anchorCell && anchorCell.isConnected) {
+        const link = cellStatusLink(anchorCell);
+        if (link && link.getAttribute('href') === state.anchor.href) return anchorCell;
+      }
+      anchorCell = null;
+      for (const cell of document.querySelectorAll(CELL)) {
+        const link = cellStatusLink(cell);
+        if (link && link.getAttribute('href') === state.anchor.href) {
+          anchorCell = cell;
+          break;
         }
       }
-      // 锚点还没渲染出来时先等 X 补内容，否则按像素滚动会被短页面钳到底部。
-      if (!aligned && elapsed >= 2000) {
+      return anchorCell;
+    };
+    const finish = () => {
+      cancel();
+      if (homeReturn === state) homeReturn = null;
+    };
+    const tick = () => {
+      if (cancelled) return;
+      if (token !== homeRestoreToken || route !== 'home') {
+        detach();
+        return;
+      }
+      const now = performance.now();
+      const elapsed = now - started;
+      let cell = null;
+      if (state.anchor) cell = locate();
+      if (cell) {
+        const delta = Math.round(cell.getBoundingClientRect().top) - state.anchor.top;
+        if (Math.abs(delta) > 1) window.scrollBy(0, delta);
+      } else if (elapsed >= 2000) {
+        // 锚点还没渲染出来时先等 X 补内容，否则按像素滚动会被短页面钳到底部。
         const max = Math.max(0, document.scrollingElement.scrollHeight - window.innerHeight);
         const target = Math.min(state.y, max);
         if (Math.abs(window.scrollY - target) > 2) window.scrollTo(0, target);
       }
-      if (elapsed < 6000) window.setTimeout(tick, 250);
+      // 文档高度和锚点的文档位置变化都说明时间线还在重建，延长校正窗口。
+      const signature = cell
+        ? `${document.scrollingElement.scrollHeight}:${Math.round(cell.getBoundingClientRect().top + window.scrollY)}`
+        : String(document.scrollingElement.scrollHeight);
+      if (signature !== lastSignature) {
+        lastSignature = signature;
+        lastChange = now;
+      }
+      // 锚点迟迟没渲染出来时至少校正到 6s；锚点已在 DOM 中则布局静止 1.5s 后停止。
+      const settled = elapsed > 2500 && now - lastChange > 1500;
+      if (elapsed < 10000 && (!settled || (!cell && elapsed < 6000))) {
+        frame = requestAnimationFrame(tick);
+      } else {
+        finish();
+      }
     };
-    window.setTimeout(tick, 120);
+    frame = requestAnimationFrame(tick);
   }
 
   function onRouteChange() {
@@ -2120,7 +2202,7 @@
     if (existingButton && existingBlock && tweet.contains(existingBlock) &&
         media.every(item => existingBlock.contains(item))) {
       if (!tweet.hasAttribute('data-xmp-media-state')) {
-        tweet.dataset.xmpMediaState = 'collapsed';
+        tweet.dataset.xmpMediaState = wantsExpandedMedia(tweet) ? 'expanded' : 'collapsed';
       }
       if (existingButton.dataset.xmpKind !== info.kind ||
           existingButton.dataset.xmpCount !== String(info.count)) {
@@ -2153,8 +2235,8 @@
       const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
       if (block) warmMedia(block);
     });
-    tweet.dataset.xmpMediaState = 'collapsed';
-    renderButton(toggle, info, 'collapsed');
+    tweet.dataset.xmpMediaState = wantsExpandedMedia(tweet) ? 'expanded' : 'collapsed';
+    renderButton(toggle, info, tweet.dataset.xmpMediaState);
     mediaBlock.parentElement.insertBefore(toggle, mediaBlock);
   }
 
