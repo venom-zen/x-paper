@@ -74,6 +74,16 @@
   时间线和单元格是虚拟化的，单元格可能暂时为空或 0 尺寸；不要据此判定选择器失效。
 - 详情页在缺少 600px 内层时间线锚点时可能进入 degraded（只应用主题）；不要假设详情页
   一定有轨道/宽列。改动详情排版前先看 `data-xmp-degraded`。
+- 个人主页（`/<handle>`，含 `/handle/media` 等子页）归为 `profile` 路由，和 home/status 共用宽版面；
+  `RESERVED_HANDLES` 必须覆盖 X 自己的保留一级路径（home/explore/notifications/i/...），否则
+  `/explore` 之类会被误判成个人主页。观察器只在 home/profile 运行；媒体折叠在首页和个人主页都生效
+  （详情页不折叠）。关注/正在关注/私信/更多按 testid 后缀主题化，
+  关注用松绿实心；注意「非帖子单元格的 [role=button] span」松绿规则会把关注按钮文字染成与
+  背景同色，必须同时排除自身/后代带 `-follow`、`-unfollow` testid 的按钮。
+- `/i/connect_people`（推荐关注整页）归为 `people` 路由，共用宽版面；该页没有内层 600px
+  容器，健康检查把内层锚点视为可选（只要求 header/nav/primaryColumn），否则会误降级。
+- X 的弹窗保持深色外观，主题必须把 `[role="dialog"]` 内的文字恢复成浅色，否则纸面墨色会在
+  `rgb(20,20,20)` 的弹窗上变成黑底黑字（Premium/认证页是整页 dialog）。
 - 详情页/文章页的推广回复和首页推广帖用同一个标记（`cellInnerDiv` 内含
   `[data-testid="placementTracking"]`），`NOISE_CSS` 的推广规则要覆盖 home 和 status 两个路由；
   推荐关注（`UserCell`）只在首页隐藏，搜索/通知页的用户列表保持可见。

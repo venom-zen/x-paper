@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         x-paper
 // @namespace    x-paper
-// @version      0.4.4
+// @version      0.5.1
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @author       venom
 // @license      MIT
@@ -351,7 +351,7 @@
       fill: var(--xmp-pine) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"]:not(:has([data-testid="tweet"])) [role="button"] span {
+    html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"]:not(:has([data-testid="tweet"])) [role="button"]:not([data-testid$="-follow"], [data-testid$="-unfollow"]):not(:has([data-testid$="-follow"], [data-testid$="-unfollow"])) span {
       color: var(--xmp-pine) !important;
     }
 
@@ -456,6 +456,58 @@
       color: var(--xmp-pine) !important;
     }
 
+    /* 个人主页的操作按钮：关注用松绿实心，正在关注 / 私信 / 更多用纸面浮起 + 细线，
+       悬停取消关注时用暖红提示 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-follow"] {
+      background-color: var(--xmp-pine) !important;
+      border-color: var(--xmp-pine) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-follow"] :is(span, div, svg) {
+      color: var(--xmp-paper) !important;
+      fill: var(--xmp-paper) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-follow"]:hover {
+      background-color: var(--xmp-pine-deep) !important;
+      border-color: var(--xmp-pine-deep) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-unfollow"] {
+      background-color: var(--xmp-paper-raised) !important;
+      border-color: var(--xmp-hairline) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-unfollow"] :is(span, div, svg) {
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-unfollow"]:hover {
+      background-color: var(--xmp-paper) !important;
+      border-color: var(--xmp-like) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [data-testid$="-unfollow"]:hover * {
+      color: var(--xmp-like) !important;
+      fill: var(--xmp-like) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] :is([data-testid="sendDMFromProfile"], [data-testid="userActions"], [data-testid="editProfileButton"]) {
+      background-color: var(--xmp-paper-raised) !important;
+      border-color: var(--xmp-hairline) !important;
+      color: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] :is([data-testid="sendDMFromProfile"], [data-testid="userActions"], [data-testid="editProfileButton"]) * {
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] :is([data-testid="sendDMFromProfile"], [data-testid="userActions"], [data-testid="editProfileButton"]):hover {
+      border-color: var(--xmp-pine) !important;
+    }
+
     /* 详情页/文章页顶部条：X 用半透明黑 + blur，纸面下换成纸色 + 细线。
        结构选择器让它一出现就是纸色；data-xmp-appbar 是结构变化时的运行时兜底。 */
     html[data-xmp-enabled="1"] [data-xmp-appbar],
@@ -503,6 +555,21 @@
 
     html[data-xmp-enabled="1"] [data-testid="inline_reply_offscreen"] [data-testid="tweetButtonInline"]:disabled span {
       color: var(--xmp-ink-secondary) !important;
+    }
+
+    /* 弹窗（Premium、认证、回复框、图片查看器等）保留 X 的深色外观：
+       纸面墨色在深色底上不可读，统一恢复成 X 的浅色文字 */
+    html[data-xmp-enabled="1"] [role="dialog"] {
+      color: rgb(231, 233, 234) !important;
+    }
+
+    html[data-xmp-enabled="1"] [role="dialog"] :is(span, div, p, h1, h2, h3, h4, time) {
+      color: rgb(231, 233, 234) !important;
+    }
+
+    html[data-xmp-enabled="1"] [role="dialog"] svg {
+      color: rgb(231, 233, 234) !important;
+      fill: rgb(231, 233, 234) !important;
     }
 
     /* 文章内嵌的引用帖：X 用纯黑底 + 深灰边，墨色文字在其上几乎不可读 */
@@ -605,16 +672,14 @@
     }
 
     @media (min-width: 1000px) {
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header[role="banner"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header[role="banner"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header[role="banner"] {
         width: 88px !important;
         min-width: 88px !important;
         flex: 0 0 88px !important;
         background: var(--xmp-paper) !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav {
         position: fixed !important;
         left: 0 !important;
         top: var(--xmp-nav-top, 0px) !important;
@@ -629,117 +694,95 @@
         transition: width 160ms ease, box-shadow 160ms ease;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav a span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav button span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav a span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav button span {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a span,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button span {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav button > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav button > div:first-child > div[dir="ltr"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a > div:first-child > div[dir="ltr"],
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button > div:first-child > div[dir="ltr"] {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav a,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav button,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav a,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav button {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button {
         justify-content: center !important;
         align-items: center !important;
         flex: 0 0 auto !important;
         height: auto !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav a > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav button > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav a > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav button > div:first-child {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button > div:first-child {
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav a:hover > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav button:hover > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav a:focus-visible > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header nav button:focus-visible > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav a:hover > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav button:hover > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav a:focus-visible > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header nav button:focus-visible > div:first-child {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a:hover > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button:hover > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a:focus-visible > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button:focus-visible > div:first-child {
         background-color: var(--xmp-pine-soft) !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav {
         width: 240px !important;
         box-shadow: 4px 0 16px rgba(27, 27, 27, 0.12);
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav a span,
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav button span {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a span,
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button span {
         display: inline !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav button > div:first-child > div[dir="ltr"] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a > div:first-child > div[dir="ltr"],
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button > div:first-child > div[dir="ltr"] {
         display: block !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav a,
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) header nav button {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a,
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button {
         justify-content: flex-start !important;
         align-items: flex-start !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] header[role="banner"] [data-testid="SideNav_NewTweet_Button"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] header[role="banner"] [data-testid="SideNav_NewTweet_Button"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"] {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="sidebarColumn"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] [data-testid="sidebarColumn"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="sidebarColumn"] {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] main,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] main {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) main {
         align-items: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] main > div,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] main > div {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) main > div {
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] main > div > div > div,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] main > div > div > div {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) main > div > div > div {
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="primaryColumn"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] [data-testid="primaryColumn"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="primaryColumn"] {
         width: 760px !important;
         max-width: 760px !important;
         flex: 0 0 760px !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-xmp-inner-timeline],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] [data-xmp-inner-timeline] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-xmp-inner-timeline] {
         width: 100% !important;
         max-width: 100% !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="cellInnerDiv"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="tweetText"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] [data-testid="cellInnerDiv"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] [data-testid="tweetText"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="cellInnerDiv"],
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="tweetText"] {
         max-width: 100% !important;
       }
 
       @media (max-width: 1599px) and (min-width: 1280px) {
-        html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="primaryColumn"],
-        html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] [data-testid="primaryColumn"] {
+        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="primaryColumn"] {
           width: 720px !important;
           max-width: 720px !important;
           flex: 0 0 720px !important;
@@ -747,15 +790,14 @@
       }
 
       @media (max-width: 1279px) and (min-width: 1000px) {
-        html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="primaryColumn"],
-        html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] [data-testid="primaryColumn"] {
+        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="primaryColumn"] {
           width: 680px !important;
           max-width: 680px !important;
           flex: 0 0 680px !important;
         }
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-xmp-rail-panel] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-xmp-rail-panel] {
         left: 0 !important;
         right: auto !important;
         width: 88px !important;
@@ -764,30 +806,30 @@
         z-index: 1000 !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-xmp-rail-panel] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-xmp-rail-panel] {
         width: 240px !important;
         min-width: 240px !important;
         max-width: 240px !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="SideNav_AccountSwitcher_Button"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="SideNav_AccountSwitcher_Button"] {
         width: 72px !important;
         min-width: 0 !important;
         padding: 6px !important;
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="SideNav_AccountSwitcher_Button"] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="SideNav_AccountSwitcher_Button"] {
         width: 224px !important;
         padding: 12px !important;
         justify-content: flex-start !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:last-child {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:last-child {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):not([data-xmp-nav-expanded="1"]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:not(:first-child) {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):not([data-xmp-nav-expanded="1"]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:not(:first-child) {
         display: none !important;
       }
 
@@ -828,8 +870,7 @@
         white-space: nowrap;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] .xmp-nav-toggle,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="status"] .xmp-nav-toggle {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) .xmp-nav-toggle {
         display: inline-flex;
       }
 
@@ -873,11 +914,11 @@
   `;
 
   const MEDIA_CSS = `
-    html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-xmp-media-state="collapsed"] [data-xmp-media-block] {
+    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="profile"]) [data-xmp-media-state="collapsed"] [data-xmp-media-block] {
       display: none !important;
     }
 
-    html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-xmp-media-state="expanded"] [data-xmp-media-block] {
+    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="profile"]) [data-xmp-media-state="expanded"] [data-xmp-media-block] {
       max-height: 70vh !important;
       overflow-y: auto !important;
       overscroll-behavior: contain;
@@ -1176,16 +1217,35 @@
     markRailPanel();
     markRailLayout();
     ensureNavToggle();
-    if (route === 'home' && !degraded) {
-      startObserver();
-      scanTimeline();
+    if (route === 'home' || route === 'profile') {
+      if (!degraded) {
+        startObserver();
+        scanTimeline();
+      }
     }
   }
+
+  // 保留给 X 自己的一级路径；其余 /<handle> 视为个人主页（含 /handle/media 等子页）。
+  const RESERVED_HANDLES = new Set([
+    'home', 'explore', 'notifications', 'messages', 'i', 'search', 'settings', 'compose',
+    'login', 'logout', 'signup', 'tos', 'privacy', 'premium', 'grok', 'jobs', 'communities',
+    'about', 'download', 'account', 'lists', 'bookmarks', 'verified', 'connect_people',
+    'topics', 'intent', 'share', 'hashtag', 'rules', 'help', 'ads', 'create', 'migrate',
+    'oauth', 'welcome', 'flow', 'sms', 'accessibility', 'safety', 'following',
+  ]);
+  const PROFILE_PATH = /^\/([A-Za-z0-9_]{1,15})(?:\/(?:with_replies|media|likes|highlights|articles|followers|following|affiliates|verified_followers))?\/?$/;
 
   function classifyRoute(pathname) {
     if (pathname === '/' || pathname === '/home') return 'home';
     if (pathname.includes('/status/')) return 'status';
+    const match = pathname.match(PROFILE_PATH);
+    if (match && !RESERVED_HANDLES.has(match[1].toLowerCase())) return 'profile';
+    if (pathname === '/i/connect_people') return 'people';
     return 'other';
+  }
+
+  function isWideRoute(value) {
+    return value === 'home' || value === 'status' || value === 'profile' || value === 'people';
   }
 
   function setRoute() {
@@ -1297,10 +1357,12 @@
     markRailPanel();
     markRailLayout();
     ensureNavToggle();
-    if (route !== 'home' && route !== 'status') setNavExpanded(false);
-    if (route === 'home' && !degraded) {
-      startObserver();
-      scanTimeline();
+    if (!isWideRoute(route)) setNavExpanded(false);
+    if (route === 'home' || route === 'profile') {
+      if (!degraded) {
+        startObserver();
+        scanTimeline();
+      }
     } else {
       stopObserver();
     }
@@ -1493,9 +1555,11 @@
     markRailPanel();
     markRailLayout();
     ensureNavToggle();
-    if (route === 'home' && !degraded) {
-      startObserver();
-      scanTimeline();
+    if (route === 'home' || route === 'profile') {
+      if (!degraded) {
+        startObserver();
+        scanTimeline();
+      }
     } else {
       stopObserver();
     }
@@ -1539,8 +1603,7 @@
     }
     const header = document.querySelector('header[role="banner"]');
     const nav = document.querySelector('[data-testid^="AppTabBar_"]');
-    const inner = findInnerTimelineContainer(primary);
-    if (!header || !nav || !inner) {
+    if (!header || !nav) {
       if (layoutRetry < 5) {
         layoutRetry += 1;
         window.setTimeout(() => {
@@ -1552,7 +1615,10 @@
       return;
     }
     layoutRetry = 0;
-    if (!inner.hasAttribute('data-xmp-inner-timeline')) {
+    // 内层 600px 时间线容器是可选锚点：个人主页以外的一些列表页（如 /i/connect_people）
+    // 没有它，但主列本身可以放宽，不应因此降级。
+    const inner = findInnerTimelineContainer(primary);
+    if (inner && !inner.hasAttribute('data-xmp-inner-timeline')) {
       inner.setAttribute('data-xmp-inner-timeline', '');
     }
     clearDegraded();
@@ -1589,7 +1655,7 @@
   }
 
   function startObserver() {
-    if (!enabled || degraded || route !== 'home' || !widthQuery.matches) return;
+    if (!enabled || degraded || !isWideRoute(route) || route === 'status' || !widthQuery.matches) return;
     const primary = document.querySelector(PRIMARY);
     if (!primary) return;
     if (observer && observedPrimary === primary) return;
@@ -1621,7 +1687,7 @@
   }
 
   function scanTimeline() {
-    if (!enabled || degraded || route !== 'home' || !widthQuery.matches) return;
+    if (!enabled || degraded || !isWideRoute(route) || route === 'status' || !widthQuery.matches) return;
     const primary = document.querySelector(PRIMARY);
     if (!primary) return;
     formatTimestamps();
@@ -1630,6 +1696,7 @@
     markAppBar();
     markRailPanel();
     markRailLayout();
+    if (route !== 'home' && route !== 'profile') return;
     const cells = [...primary.querySelectorAll(CELL)];
     if (cells.length > 0 && !commonAncestor(cells)) return;
     primary.querySelectorAll(TWEET).forEach(tweet => {
@@ -2170,7 +2237,7 @@
       cleanupAllMedia();
       setNavExpanded(false);
     }
-    if (widthQuery.matches && route === 'home' && !degraded) {
+    if (widthQuery.matches && (route === 'home' || route === 'profile') && !degraded) {
       startObserver();
       scanTimeline();
     }

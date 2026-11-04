@@ -8,7 +8,7 @@
 | Attribute | 值 | 作用 |
 |-----------|----|------|
 | `data-xmp-enabled` | `1` | `html` 上的主题作用域；关闭脚本时移除 |
-| `data-xmp-route` | `home` / `status` / `other` | SPA 路由分类；版面 CSS 只对 home/status 生效 |
+| `data-xmp-route` | `home` / `status` / `profile` / `people` / `other` | SPA 路由分类；版面 CSS 对 home/status/profile/people 生效。`profile` 是 `/<handle>` 及 `/handle/media` 等子页（`RESERVED_HANDLES` 排除 X 自己的保留一级路径）；`people` 是 `/i/connect_people`（「推荐关注」整页） |
 | `data-xmp-degraded` | `1` | primary 或版面锚点缺失；只应用主题，关闭版面、噪音和媒体 CSS |
 | `data-xmp-inner-timeline` | 空 | 标记 primary 内的 600px 时间线容器，供版面 CSS 放宽到 100% |
 | `data-xmp-media-block` | 空 | 媒体块标记；折叠态 CSS 的隐藏目标 |
@@ -22,7 +22,7 @@
 | `data-xmp-appbar` | 空 | 详情页/文章页顶部条；主题用结构选择器直接命中（节点出现即纸色），`markAppBar()` 从 `[data-testid="app-bar-back"]` 向上找带 `backdrop-filter: blur` 或非透明背景的祖先标记它，只作 X 改嵌套后的兜底 |
 | `data-xmp-preview-open` | `1` | `.xmp-photo-preview` 悬浮原图预览的显示开关；移出图片/按钮、滚轮或触摸滚动、点击、按 `Esc`、切路由或关闭脚本时移除 |
 
-`button.xmp-nav-toggle` 是脚本创建并挂到 `body` 的轨道展开按钮：≥1000px、home/status 且未
+`button.xmp-nav-toggle` 是脚本创建并挂到 `body` 的轨道展开按钮：≥1000px、home/status/profile 且未
 降级时显示在「更多」项下方（收起 72px、展开 224px），样式与普通导航项一致，`aria-expanded`
 与文案同步；账号悬浮卡或账号菜单打开时隐藏，关闭脚本或降级时移除或隐藏。悬停和
 `:focus-within` 不再触发展开。两个位置由脚本写入 `html` 的 `--xmp-nav-top`（logo 下方的
@@ -48,7 +48,7 @@
 | 主导航容器 | `header[role="banner"]` | 原宽 595px；内部 nav 原为 `position: fixed; left: 320px; width: 275px` |
 | 导航链接 | `[data-testid^="AppTabBar_"]` | 选择器健康检查的 nav 锚点 |
 | 发帖 / 账号 | `SideNav_NewTweet_Button` / `SideNav_AccountSwitcher_Button` | 左轨中隐藏文字标签 |
-| 正文列 / 右栏 | `[data-testid="primaryColumn"]` / `[data-testid="sidebarColumn"]` | 右栏在 home/status 隐藏 |
+| 正文列 / 右栏 | `[data-testid="primaryColumn"]` / `[data-testid="sidebarColumn"]` | 右栏在 home/status/profile 隐藏 |
 | 内层时间线 | primary 内计算样式 `max-width: 600px` 的容器 | 加 `data-xmp-inner-timeline` 后放宽 |
 | 时间线单元格 | `[data-testid="cellInnerDiv"]` | 时间线根 = 这些单元格的最近公共容器 |
 | 帖子 / 正文 | `[data-testid="tweet"]` / `[data-testid="tweetText"]` | 顶层帖子没有祖先 `tweet` |
@@ -117,6 +117,18 @@
   `wheel`/`touchmove` 时收起。浮层尺寸按图片数量分级（单图最多 88vh，2 张 66vh，3 张以上 30vh 并换行），
   保证整卡不超过 92vh。
 
+## 个人主页
+
+- 路由：`/<handle>`（含 `/<handle>/media` 等子页）归为 `profile`，与 home/status 共用宽版面：
+  88px 轨道、隐藏右栏、正文列 680/720/760px 居中；横幅、头像随列宽缩放，轨道展开按钮和账号入口
+  同样生效。`checkSelectorHealth` 需要的内层 600px 容器在个人主页存在，不会降级。
+- 观察器在 home 和 profile 运行（格式化时间、标记表面）；媒体折叠在 home 和 profile 都生效，
+  详情页（status）不折叠。
+- 操作按钮：`[data-testid$="-follow"]`（关注）用松绿实心 + 纸色文字，`:hover` 松绿深色；
+  `[data-testid$="-unfollow"]`（正在关注）用纸面浮起 + 细线 + 墨色，`:hover` 转暖红；
+  `sendDMFromProfile`、`userActions`、`editProfileButton` 用纸面浮起 + 细线 + 墨色，悬停松绿描边。
+  顶部返回条由 `data-xmp-appbar` / 结构选择器主题化，与详情页一致。
+
 ## 详情页与文章页表面
 
 - 顶部条（`帖子`/`文章`）是 `rgba(0,0,0,0.65)` + `backdrop-filter: blur(12px)`，没有稳定 testid。
@@ -135,6 +147,14 @@
   一段 2×8 的短尾，位于头像行的上一行里（`div:has(+ div > div > Tweet-User-Avatar) > * > * > div:only-child`），
   两段都要涂 `--xmp-rule`，否则短尾保持 X 的深色 `rgb(51,54,57)`。
 
+## 推荐关注整页
+
+- `/i/connect_people`（个人主页「推荐关注」里的「显示更多」）归为 `people`，与 home/status/profile
+  共用宽版面；该页没有内层 600px 时间线容器，因此 `checkSelectorHealth` 把内层锚点视为**可选**，
+  只要求 header、nav 和 primaryColumn，找不到内层容器时不再降级。
+- 顶部条、标签页和关注按钮沿用同一套规则：顶部条走 `data-xmp-appbar` / 结构选择器，标签选中松绿，
+  关注按钮松绿实心 + 纸色文字。
+
 ## 返回首页的位置恢复
 
 X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。脚本在**离开 home** 时记录
@@ -147,12 +167,22 @@ X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。
 - 用户 `wheel`/`touchmove` 主动滚动即放弃；不在 home 路由时自动停止。
 - 只在 SPA 内导航生效；整页刷新交给浏览器自己的滚动恢复。
 
+## 弹窗
+
+- X 的弹窗（Premium `/i/premium_sign_up`、认证、回复框、图片查看器）保持深色外观；主题不套纸面，
+  改为把文字恢复成 X 的浅色：
+  `html[data-xmp-enabled="1"] [role="dialog"] :is(span, div, p, h1, h2, h3, h4, time) { color: rgb(231,233,234) }`，
+  svg 同步改 `fill`。否则纸面墨色（#1B1B1B）落在 `rgb(20,20,20)` 的弹窗底上会变成黑底黑字。
+- 关注按钮的文字曾被「非帖子单元格的 [role=button] span」松绿规则染成与背景同色；
+  该规则现在排除自身或后代带 `[data-testid$="-follow"]` / `[data-testid$="-unfollow"]` 的按钮。
+
 ## 降级
 
 | 缺失 / 条件 | 行为 |
 |-------------|------|
 | `primaryColumn` 缺失 | 设置 `data-xmp-degraded`，只应用主题；移除媒体标注 |
-| header/nav 或内层时间线容器缺失 | 同 primary 缺失，主题模式 |
+| header/nav 缺失 | 同 primary 缺失，主题模式 |
+| 内层 600px 时间线容器缺失 | 不降级：主列照常放宽，只是跳过内层容器的 100% 规则（`/i/connect_people` 等列表页） |
 | 没有 `cellInnerDiv`（加载/空时间线） | 保留主题、版面；启动观察器等待单元格 |
 | 有 `cellInnerDiv` 但找不到公共容器 | 保留主题、版面；跳过媒体按钮标注；保留观察器 |
 | 媒体块 / 公共祖先找不到 | 该帖子保持原媒体可见，不插入按钮 |
