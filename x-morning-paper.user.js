@@ -1,10 +1,14 @@
 // ==UserScript==
 // @name         x-paper
+// @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
 // @version      0.6.6
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
+// @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
 // @license      MIT
+// @homepageURL  https://github.com/venom-zen/x-paper
+// @supportURL   https://github.com/venom-zen/x-paper/issues
 // @match        https://x.com/*
 // @run-at       document-start
 // @grant        GM_getValue

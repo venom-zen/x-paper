@@ -37,7 +37,8 @@
 ## 安装
 
 1. 安装 [Tampermonkey](https://www.tampermonkey.net/)。
-2. 新建用户脚本，粘贴 `x-morning-paper.user.js` 的内容并保存。
+2. 从 [Greasy Fork](https://greasyfork.org/scripts/603745-x-paper) 安装；或新建用户脚本，
+   粘贴 `x-morning-paper.user.js` 的内容并保存。
 3. 打开 <https://x.com/home>。Tampermonkey 菜单提供「关闭 x-paper」和「开启 x-paper」。
 
 在 Chrome + Tampermonkey 下开发和验证。脚本只申请 `GM_getValue`、`GM_setValue`、
