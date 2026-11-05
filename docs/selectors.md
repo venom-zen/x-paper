@@ -21,10 +21,11 @@
 | `data-xmp-rail-panel` | 空 | 账号入口所在的固定侧栏层；脚本把它的 left/width 从 275px 收回到 88px（展开 240px），避免账号入口和菜单跑出视口 |
 | `data-xmp-appbar` | 空 | 详情页/文章页顶部条；主题用结构选择器直接命中（节点出现即纸色），`markAppBar()` 从 `[data-testid="app-bar-back"]` 向上找带 `backdrop-filter: blur` 或非透明背景的祖先标记它，只作 X 改嵌套后的兜底 |
 | `data-xmp-preview-open` | `1` | `.xmp-photo-preview` 悬浮原图预览的显示开关；移出图片/按钮、滚轮或触摸滚动、点击、按 `Esc`、切路由或关闭脚本时移除 |
-| `data-xmp-paper-surface` | 空 | 探索/搜索页已有 1px 边框的深色表面（模块卡、侧栏卡、搜索框外壳）；背景换纸面浮起，边框换细线 |
-| `data-xmp-paper-chip` | 空 | 探索/搜索页无边框的深色胶囊（模块按钮、计数条）；背景换纸面浮起，用 inset 阴影补 1px 细线，避免加 border 撑大布局 |
-| `data-xmp-paper-text` | 空 | 深底上为浅色文字写的颜色；纸面下改墨色。只标记有直接文字的元素，品牌色不受影响 |
-| `data-xmp-paper-link` | 空 | 深底/模块内的 X 蓝文字链接；纸面下改暖橙 |
+| `data-xmp-paper-surface` | 空 | 探索/搜索页已有 1px 边框的深色表面（模块卡、侧栏卡、搜索框外壳）；Grok 抽屉输入卡也使用。背景换纸面浮起，边框换细线 |
+| `data-xmp-paper-chip` | 空 | 探索/搜索页/Grok 抽屉无边框的深色胶囊（模块按钮、Grok 面板）；背景换纸面浮起，用 inset 阴影补 1px 细线，避免加 border 撑大布局 |
+| `data-xmp-paper-text` | 空 | 深底上为浅色文字写的颜色；纸面下改墨色。只标记有直接文字的元素，品牌色不受影响；Grok 里跳过彩色气泡 |
+| `data-xmp-paper-link` | 空 | 深底/模块/Grok 抽屉内的 X 蓝文字链接；纸面下改暖橙 |
+| `data-xmp-paper-icon` | 空 | Grok 抽屉里落在纸面/深底上的成对图标；纸面下改次要墨色。彩色气泡里的图标不标记 |
 | `data-xmp-module` | 空 | 含 `[class*="jf-element"]` 的探索聚合模块单元格；模块内按钮描边和图标配色的作用域 |
 | `data-xmp-surface-scan` | 空 | 已扫描过的单元格或侧栏；React 替换内容时由变更记录撤掉并重扫，避免每轮重复扫描 |
 
@@ -81,6 +82,8 @@
 | 探索聚合模块 | 单元格内 `[class*="jf-element"]` | 选举、体育赛程、比赛提供方等聚合卡；标 `data-xmp-module`，按计算样式扫深色表面 |
 | 探索/搜索侧栏卡 | `[data-testid="sidebarColumn"]` 内计算背景亮度 < 90 的块 | 宽度 ≥200、高度 ≥20 的深色容器视为卡片，标 `data-xmp-paper-surface` |
 | 搜索过滤单选 | `[data-testid="radioGroupPeople"]` / `radioGroupLocation` | 选中态与未选中态按 `input:checked` 和纸面细线重绘 |
+| Grok 抽屉 | `[data-testid="GrokDrawer"]` / `GrokDrawerHeader` / `chat-drawer-main` | 抽屉根在 body 末尾；打开/关闭会替换根节点 |
+| 评论按钮 | `[data-testid="reply"]` | 捕获阶段拦截；只对 home/profile/explore/search 生效 |
 | 首页 tab 栏 | 首页主内容容器的第一个子元素；含 `[role="tablist"]` | 标 `data-xmp-tabbar`；容器和子 div/nav 都要纸色 |
 | 首页发帖框 | 主内容容器的发帖框包装层；含 `[data-testid="tweetTextarea_0"]` 和 `toolBar` | 标 `data-xmp-composer`；外层和子 div 都要纸色 |
 | 发帖按钮 | `[data-testid="tweetButtonInline"]` | 主按钮使用 `--xmp-accent` |
@@ -248,6 +251,57 @@
 - 内联深色卡片：`markDarkSurfaces()` 扫描 primary 里带内联 `background-color` 的元素，亮度 < 90 标
   `data-xmp-dark-surface` 并恢复浅色文字/图标（C 端推广卡在不同账号下颜色可能不同，用它兜底）；
   已知深绿「你尚未通过认证」卡另有 CSS 直接命中（`background-color: rgb(0, 67, 41)`）。
+
+## Grok 抽屉
+
+- 抽屉根是 `[data-testid="GrokDrawer"]`，在 `body` 末尾、`primaryColumn` 外；入口按钮是
+  `[data-testid="GrokDrawerHeader"]`（`aria-label="Grok"`），聊天按钮是
+  `[data-testid="chat-drawer-main"]`。
+- X 打开/关闭抽屉时会**整块替换根节点**，挂在旧根上的观察器会失效。`watchGrokDrawer()` 在
+  document 捕获阶段监听入口点击，点击后 300ms/1500ms 重新 `ensureGrokObserver()` 并扫描；
+  抽屉根上的 MutationObserver 负责之后的流式内容（200ms 防抖）。
+- `markGrokSurfaces()` 复用 `scanPaperSurfaces()` 标记深色面板/输入卡，再用
+  `nearestPaperBackground()` 只翻转最近底色为纸面或深底的文字/图标；用户消息的彩色气泡
+  （例如蓝色气泡）里的白字和白图标保持原样。图标标记为 `data-xmp-paper-icon`。
+- Grok 抽屉的深色面板是 `[data-testid="GrokDrawer"]` 的第一个 div（无边框，标
+  `data-xmp-paper-chip`）；输入卡是 376×104、`border-radius:24px`、1px 边框的 div（标
+  `data-xmp-paper-surface`）；编辑器是 `div[role="textbox"][aria-label="Ask anything"]`。
+- 抽屉头部 `GrokDrawerHeader` 和聊天按钮 `chat-drawer-main` 沿用纸面浮起 + 细线规则。
+
+## 评论弹窗
+
+- 只拦截评论按钮 `[data-testid="reply"]`：在 document 捕获阶段 preventDefault + stopPropagation
+  + stopImmediatePropagation，阻止 X 跳到 `/compose/post`；帖子正文/时间链接不拦截。
+  只对 home/profile/explore/search 生效，`[role="dialog"]` 内不拦截。
+- 从 `reply.closest('[data-testid="tweet"]')` 找到顶层帖子，再用
+  `cellStatusLink(cell)` 取带 `time[datetime]` 的 `/handle/status/id` 链接。
+- 数据接口：`/i/api/graphql/<queryId>/TweetDetail`，当前 queryId
+  `qpemjmVMoTWDvcRT43JIVQ`；`variables` 由 `focalTweetId` 等组成，`features` 42 个开关、
+  `fieldToggles` 8 个开关保存在脚本顶部。请求头：
+  - `authorization`: X Web 公开 bearer（脚本常量，非账号凭据）
+  - `x-csrf-token`: 页面 `ct0` cookie
+  - `x-twitter-auth-type: OAuth2Session`、`x-twitter-active-user: yes`、
+    `x-twitter-client-language`、`content-type: application/json`
+  - 实测不需要 `x-client-transaction-id`；`credentials: 'include'`。
+  - HTTP 400/404 时从 `main.*.js` 正则 `queryId:"...",operationName:"TweetDetail"` 重新发现
+    queryId 并重试一次。
+- 响应：`data.threaded_conversation_with_injections_v2.instructions[].entries[]`。
+  - `TimelineTimelineItem` 的 `content.itemContent`、`TimelineTimelineModule` 的
+    `content.items[].item.itemContent` 都可能含推文。
+  - `TweetWithVisibilityResults` 需要 `.tweet` 解包；按 `rest_id` 去重。
+  - 用户：`core.user_results.result.core.name/screen_name`、`avatar.image_url`。
+  - 正文：`note_tweet.note_tweet_results.result.text` 优先，否则 `legacy.full_text`；
+    媒体：`legacy.extended_entities.media`；查看数：`views.count`；时间：`legacy.created_at`。
+- 渲染：所有文字用 `textContent`；先解码 HTML 实体，再把 t.co 链接替换为 `display_url`；
+  媒体 t.co URL 从正文删除，渲染 `media_url_https` 缩略图（视频/GIF 加角标）。
+  不使用 innerHTML 拼接用户内容。
+- 弹窗结构：`.xmp-comments`（fixed overlay）+ `.xmp-comments-panel` + `.xmp-comments-body`
+  （溢出滚动）。关闭：`×`、`Esc`、点击 backdrop、切路由、关闭脚本；请求用 AbortController，
+  关闭后忽略迟到响应。失败时显示「重试」和「在新标签页打开帖子」。
+- **不要**在打开时给 `html`/`body` 加 `overflow: hidden`：Chrome 会把首页滚动位置清到 0。
+  改为在 overlay 上阻止 `wheel`/`touchmove`（`.xmp-comments-body` 内放行），键盘滚动键
+  同样阻止；关闭后首页滚动位置不变。
+- 只渲染接口返回的第一页评论，不加载更多；弹窗内不能回复/点赞。
 
 ## 返回首页的位置恢复
 

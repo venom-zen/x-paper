@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.7.1
+// @version      0.7.2
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -27,8 +27,66 @@
   const CELL = '[data-testid="cellInnerDiv"]';
   const TWEET = '[data-testid="tweet"]';
   const MEDIA_SELECTOR = '[data-testid="tweetPhoto"], [data-testid="previewInterstitial"]';
-  const STYLE_IDS = ['xmp-preflight', 'xmp-theme', 'xmp-layout', 'xmp-noise', 'xmp-media', 'xmp-preview'];
+  const STYLE_IDS = ['xmp-preflight', 'xmp-theme', 'xmp-layout', 'xmp-noise', 'xmp-media', 'xmp-preview', 'xmp-comments'];
   const NAV_TOGGLE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 4.6 4.9 6l5.65 5.65L4.9 17.3l1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L6.3 4.6Zm8 0L12.9 6l5.65 5.65-5.65 5.65 1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L14.3 4.6Z"/></svg>';
+
+  const TWEET_DETAIL_QUERY_ID = 'qpemjmVMoTWDvcRT43JIVQ';
+  // X Web 的公开 bearer token，不是账号凭据；评论请求只读，并使用浏览器当前会话 cookie。
+  const TWEET_DETAIL_BEARER = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
+  const TWEET_DETAIL_FEATURES = {
+    "rweb_video_screen_enabled": false,
+    "rweb_cashtags_enabled": true,
+    "profile_label_improvements_pcf_label_in_post_enabled": true,
+    "responsive_web_profile_redirect_enabled": true,
+    "rweb_tipjar_consumption_enabled": false,
+    "verified_phone_label_enabled": false,
+    "creator_subscriptions_tweet_preview_api_enabled": true,
+    "responsive_web_graphql_timeline_navigation_enabled": true,
+    "premium_content_api_read_enabled": false,
+    "communities_web_enable_tweet_community_results_fetch": true,
+    "c9s_tweet_anatomy_moderator_badge_enabled": true,
+    "responsive_web_grok_analyze_button_fetch_trends_enabled": false,
+    "responsive_web_grok_analyze_post_followups_enabled": true,
+    "rweb_cashtags_composer_attachment_enabled": true,
+    "responsive_web_jetfuel_frame": true,
+    "rweb_sports_post_context_enabled": true,
+    "x_elections_post_context_enabled": true,
+    "responsive_web_grok_share_attachment_enabled": true,
+    "responsive_web_grok_annotations_enabled": true,
+    "articles_preview_enabled": true,
+    "responsive_web_edit_tweet_api_enabled": true,
+    "rweb_conversational_replies_downvote_enabled": false,
+    "graphql_is_translatable_rweb_tweet_is_translatable_enabled": true,
+    "view_counts_everywhere_api_enabled": true,
+    "longform_notetweets_consumption_enabled": true,
+    "responsive_web_twitter_article_tweet_consumption_enabled": true,
+    "content_disclosure_indicator_enabled": true,
+    "content_disclosure_ai_generated_indicator_enabled": true,
+    "responsive_web_grok_show_grok_translated_post": true,
+    "responsive_web_grok_analysis_button_from_backend": true,
+    "post_ctas_fetch_enabled": false,
+    "freedom_of_speech_not_reach_fetch_enabled": true,
+    "standardized_nudges_misinfo": true,
+    "tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled": true,
+    "longform_notetweets_rich_text_read_enabled": true,
+    "longform_notetweets_inline_media_enabled": false,
+    "responsive_web_nested_quote_preview_enabled": true,
+    "responsive_web_grok_image_annotation_enabled": true,
+    "responsive_web_grok_imagine_annotation_enabled": true,
+    "responsive_web_made_on_x_label_enabled": false,
+    "responsive_web_grok_community_note_auto_translation_is_enabled": true,
+    "responsive_web_enhance_cards_enabled": false,
+  };
+  const TWEET_DETAIL_FIELD_TOGGLES = {
+    "withPayments": false,
+    "withDmBlocks": false,
+    "withArticleRichContentState": true,
+    "withArticlePlainText": false,
+    "withArticleSummaryText": true,
+    "withArticleVoiceOver": true,
+    "withGrokAnalyze": false,
+    "withDisallowedReplyControls": false,
+  };
 
   const PREFLIGHT_CSS = `
     html {
@@ -435,6 +493,23 @@
     html[data-xmp-enabled="1"] [data-testid="chat-drawer-main"] svg {
       color: var(--xmp-ink) !important;
       fill: var(--xmp-ink) !important;
+    }
+
+    /* Grok 抽屉：深色面板/输入卡由 markGrokSurfaces() 标记；文字和图标按最近的底色翻色，
+       彩色气泡里的白字/白图标保持原样 */
+    html[data-xmp-enabled="1"] [data-testid="GrokDrawer"] {
+      color: var(--xmp-ink) !important;
+      font-family: var(--xmp-ui-font) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="GrokDrawer"] [role="textbox"] {
+      color: var(--xmp-ink) !important;
+      caret-color: var(--xmp-accent);
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-paper-icon] {
+      color: var(--xmp-ink-secondary) !important;
+      fill: var(--xmp-ink-secondary) !important;
     }
 
     html[data-xmp-enabled="1"] [data-testid="cellInnerDiv"] > div {
@@ -1301,6 +1376,286 @@
     }
   `;
 
+  const COMMENTS_CSS = `
+    .xmp-comments {
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .xmp-comments-backdrop {
+      position: absolute;
+      inset: 0;
+      background-color: rgba(27, 27, 27, 0.48);
+    }
+
+    .xmp-comments-panel {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      width: min(720px, 94vw);
+      max-height: min(86vh, 900px);
+      overflow: hidden;
+      color: var(--xmp-ink);
+      background-color: var(--xmp-paper);
+      border: 1px solid var(--xmp-hairline);
+      border-radius: 16px;
+      box-shadow: 0 24px 64px rgba(27, 27, 27, 0.28);
+      font-family: var(--xmp-ui-font);
+    }
+
+    .xmp-comments-panel:focus {
+      outline: none;
+    }
+
+    .xmp-comments-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--xmp-hairline);
+    }
+
+    .xmp-comments-header h2 {
+      margin: 0;
+      color: var(--xmp-ink);
+      font-size: 18px;
+      line-height: 1.3;
+      font-weight: 700;
+    }
+
+    .xmp-comments-close {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      color: var(--xmp-ink);
+      background-color: var(--xmp-paper-raised);
+      border: 1px solid var(--xmp-hairline);
+      border-radius: 9999px;
+      font: inherit;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .xmp-comments-close:hover {
+      color: var(--xmp-accent);
+      border-color: var(--xmp-accent);
+      background-color: var(--xmp-accent-soft);
+    }
+
+    .xmp-comments-close:focus-visible {
+      outline: 2px solid var(--xmp-accent);
+      outline-offset: 2px;
+    }
+
+    .xmp-comments-body {
+      min-height: 120px;
+      padding: 0 18px 18px;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scrollbar-width: thin;
+      scrollbar-color: #C9C4B6 var(--xmp-paper);
+    }
+
+    .xmp-comments-status,
+    .xmp-comments-error,
+    .xmp-comments-empty {
+      padding: 40px 8px;
+      color: var(--xmp-ink-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .xmp-comments-note {
+      padding: 16px 8px 4px;
+      color: var(--xmp-ink-secondary);
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .xmp-comments-error button {
+      margin-top: 12px;
+      padding: 8px 16px;
+      color: var(--xmp-paper);
+      background-color: var(--xmp-accent);
+      border: 1px solid var(--xmp-accent);
+      border-radius: 9999px;
+      font: inherit;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .xmp-comments-error button:hover {
+      background-color: var(--xmp-accent-deep);
+      border-color: var(--xmp-accent-deep);
+    }
+
+    .xmp-comments-original {
+      margin-top: 14px;
+      padding: 14px;
+      background-color: var(--xmp-paper-raised);
+      border: 1px solid var(--xmp-hairline);
+      border-radius: 12px;
+    }
+
+    .xmp-comments-original-label {
+      margin-bottom: 8px;
+      color: var(--xmp-ink-secondary);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-reply {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 10px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--xmp-rule);
+    }
+
+    .xmp-comments-original .xmp-comments-reply {
+      padding: 0;
+      border-bottom: 0;
+    }
+
+    .xmp-comments-reply:last-child {
+      border-bottom: 0;
+    }
+
+    .xmp-comments-avatar {
+      display: block;
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      background-color: var(--xmp-paper-raised);
+      border-radius: 9999px;
+    }
+
+    .xmp-comments-main {
+      min-width: 0;
+    }
+
+    .xmp-comments-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 6px;
+      color: var(--xmp-ink-secondary);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-name {
+      color: var(--xmp-ink);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .xmp-comments-handle,
+    .xmp-comments-time {
+      color: var(--xmp-ink-secondary);
+    }
+
+    .xmp-comments-text {
+      margin-top: 4px;
+      color: var(--xmp-ink);
+      font-size: 15px;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .xmp-comments-text a {
+      color: var(--xmp-accent);
+      text-decoration: none;
+    }
+
+    .xmp-comments-text a:hover {
+      text-decoration: underline;
+    }
+
+    .xmp-comments-media {
+      display: grid;
+      gap: 4px;
+      margin-top: 8px;
+      overflow: hidden;
+      border-radius: 10px;
+    }
+
+    .xmp-comments-media.one {
+      grid-template-columns: 1fr;
+    }
+
+    .xmp-comments-media.many {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .xmp-comments-media-item {
+      position: relative;
+      display: block;
+      overflow: hidden;
+      background-color: var(--xmp-paper-raised);
+    }
+
+    .xmp-comments-media img {
+      display: block;
+      width: 100%;
+      max-height: 240px;
+      object-fit: cover;
+    }
+
+    .xmp-comments-media.one img {
+      max-height: 320px;
+    }
+
+    .xmp-comments-media-badge {
+      position: absolute;
+      left: 8px;
+      bottom: 8px;
+      padding: 2px 6px;
+      color: #FFFFFF;
+      background-color: rgba(27, 27, 27, 0.72);
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+      color: var(--xmp-ink-secondary);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    @media (max-width: 640px) {
+      .xmp-comments {
+        padding: 0;
+      }
+
+      .xmp-comments-panel {
+        width: 100%;
+        height: 100%;
+        max-height: 100vh;
+        border: 0;
+        border-radius: 0;
+      }
+    }
+  `;
+
   let enabled = true;
   let degraded = false;
   let route = 'other';
@@ -1320,6 +1675,14 @@
   let surfaceObserver = null;
   let surfaceScanTimer = null;
   let surfacePrimary = null;
+  let grokObserver = null;
+  let grokTimer = null;
+  let grokRoot = null;
+  let grokClickBound = false;
+  let commentsModal = null;
+  let commentsAbort = null;
+  let commentsReturnFocus = null;
+  let commentsKeyHandler = null;
   const warned = new Set();
   const mediaWarmups = new WeakMap();
   const mediaReveals = new WeakMap();
@@ -1390,6 +1753,7 @@
     injectStyle('xmp-noise', NOISE_CSS);
     injectStyle('xmp-media', MEDIA_CSS);
     injectStyle('xmp-preview', PREVIEW_CSS);
+    injectStyle('xmp-comments', COMMENTS_CSS);
   }
 
   function removeStyles() {
@@ -1449,6 +1813,8 @@
     enabled = false;
     stopObserver();
     stopSurfaceObserver();
+    stopGrokObserver();
+    closeComments();
     clearSurfaceMarkers();
     cleanupAllMedia();
     hidePhotoPreview();
@@ -1486,6 +1852,7 @@
     safe('railLayout', markRailLayout);
     if (isSurfaceRoute(route)) safe('exploreSurfaces', markExploreSurfaces);
     ensureNavToggle();
+    ensureGrokObserver();
     if (route === 'home' || route === 'profile') {
       if (!degraded) {
         startObserver();
@@ -1703,6 +2070,7 @@
     const previousRoute = route;
     setRoute();
     hidePhotoPreview();
+    closeComments();
     if (route === 'standalone') {
       stopObserver();
       stopSurfaceObserver();
@@ -1732,6 +2100,7 @@
     safe('railLayout', markRailLayout);
     if (isSurfaceRoute(route)) safe('exploreSurfaces', markExploreSurfaces);
     ensureNavToggle();
+    ensureGrokObserver();
     if (!isWideRoute(route)) setNavExpanded(false);
     if (route === 'home' || route === 'profile') {
       if (!degraded) {
@@ -1782,6 +2151,8 @@
       safe('tabbar', markTabbar);
       safe('composer', markComposer);
       safe('appbar', markAppBar);
+      ensureGrokObserver();
+      scheduleGrokScan();
       if (isSurfaceRoute(route)) syncSurfaceRoute(route);
     }, 1200);
   }
@@ -1871,6 +2242,7 @@
     'data-xmp-paper-chip',
     'data-xmp-paper-text',
     'data-xmp-paper-link',
+    'data-xmp-paper-icon',
     'data-xmp-module',
     'data-xmp-surface-scan',
   ];
@@ -1925,8 +2297,23 @@
     }
   }
 
+  // 最近的实心底色：用于判断文字/图标是否落在纸面或深底上，而不是彩色气泡里。
+  function nearestPaperBackground(node, boundary) {
+    for (let current = node; current && current !== boundary; current = current.parentElement) {
+      const style = window.getComputedStyle(current);
+      const rgb = colorParts(style.backgroundColor);
+      if (!rgb) continue;
+      return {
+        paper: current.hasAttribute('data-xmp-paper-surface') || current.hasAttribute('data-xmp-paper-chip'),
+        dark: isDarkColor(style.backgroundColor),
+      };
+    }
+    return null;
+  }
+
   // 只处理带直接文字的元素：品牌色（党派色、比分绿勾）不在浅色阈值内，保持原样。
-  function markPaperText(root) {
+  // 传入 boundary 时跳过落在彩色（非纸面/非深底）气泡里的浅色文字。
+  function markPaperText(root, boundary) {
     for (const node of root.querySelectorAll(SURFACE_TEXT_SELECTOR)) {
       if (node.closest('[role="dialog"]')) continue;
       if (node.closest('img, [style*="background-image"], [data-testid="tweetPhoto"], [data-testid="previewInterstitial"]')) continue;
@@ -1938,6 +2325,10 @@
         }
       }
       if (!hasOwnText) continue;
+      if (boundary) {
+        const bg = nearestPaperBackground(node, boundary);
+        if (bg && !bg.paper && !bg.dark) continue;
+      }
       const color = window.getComputedStyle(node).color;
       if (isLightColor(color)) node.setAttribute('data-xmp-paper-text', '');
       else if (isXBlue(color)) node.setAttribute('data-xmp-paper-link', '');
@@ -1994,6 +2385,20 @@
     }
     markSearchChrome(primary);
     markSidebarSurfaces();
+  }
+
+  // Grok 抽屉是独立浮层，深色面板/输入卡按计算样式标记；文字和图标只翻纸面/深底上的，
+  // 彩色气泡（如用户消息）里的白字保持原样。
+  function markGrokSurfaces() {
+    const drawer = document.querySelector('[data-testid="GrokDrawer"]');
+    if (!drawer) return;
+    scanPaperSurfaces(drawer, 40);
+    markPaperText(drawer, drawer);
+    for (const icon of drawer.querySelectorAll('svg')) {
+      const bg = nearestPaperBackground(icon, drawer);
+      if (bg && !bg.paper && !bg.dark) continue;
+      icon.setAttribute('data-xmp-paper-icon', '');
+    }
   }
 
   function clearSurfaceMarkers() {
@@ -2072,6 +2477,67 @@
       window.clearTimeout(surfaceScanTimer);
       surfaceScanTimer = null;
     }
+  }
+
+  // Grok 抽屉在 primary 外，打开/切换对话时会流式替换内容；单独观察抽屉并防抖重扫。
+  function scheduleGrokScan() {
+    if (grokTimer) return;
+    grokTimer = window.setTimeout(() => {
+      grokTimer = null;
+      ensureGrokObserver();
+      safe('grok', markGrokSurfaces);
+    }, 200);
+  }
+
+  function ensureGrokObserver() {
+    if (!enabled) return;
+    const drawer = document.querySelector('[data-testid="GrokDrawer"]');
+    if (!drawer) {
+      if (grokObserver) {
+        grokObserver.disconnect();
+        grokObserver = null;
+        grokRoot = null;
+      }
+      return;
+    }
+    if (grokObserver && grokRoot === drawer) return;
+    if (grokObserver) grokObserver.disconnect();
+    grokRoot = drawer;
+    grokObserver = new MutationObserver(scheduleGrokScan);
+    grokObserver.observe(drawer, { childList: true, subtree: true });
+    scheduleGrokScan();
+  }
+
+  function stopGrokObserver() {
+    if (grokObserver) {
+      grokObserver.disconnect();
+      grokObserver = null;
+    }
+    grokRoot = null;
+    if (grokTimer) {
+      window.clearTimeout(grokTimer);
+      grokTimer = null;
+    }
+  }
+
+  // X 打开/关闭 Grok 抽屉时会整块替换 GrokDrawer 根节点，原来挂在根上的观察器会失效。
+  // 在 Grok 入口点击后延迟重挂并扫描一次，之后由新根上的观察器接管流式内容。
+  function watchGrokDrawer() {
+    if (grokClickBound) return;
+    grokClickBound = true;
+    const sync = () => {
+      if (!enabled) return;
+      safe('grok', () => {
+        ensureGrokObserver();
+        scheduleGrokScan();
+      });
+    };
+    document.addEventListener('click', event => {
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target || !target.closest('[data-testid="GrokDrawerHeader"], [aria-label="Grok"]')) return;
+      window.setTimeout(sync, 300);
+      window.setTimeout(sync, 1500);
+    }, true);
   }
 
   // 探索/搜索只做换肤不做版面：进入这两页起表面观察器，离开时停掉并清标记（DOM 复用时不留纸面样式）。
@@ -2186,6 +2652,7 @@
     safe('railLayout', markRailLayout);
     if (isSurfaceRoute(route)) safe('exploreSurfaces', markExploreSurfaces);
     ensureNavToggle();
+    ensureGrokObserver();
     if (route === 'home' || route === 'profile') {
       if (!degraded) {
         startObserver();
@@ -2878,6 +3345,379 @@
     }
   }
 
+  // ---------- 评论弹窗 ----------
+  // 只读使用 X Web 的 TweetDetail 接口：使用浏览器当前会话（cookie）和公开 bearer，
+  // 不点赞、不回复、不修改任何账号状态。接口失效时弹窗给出重试和“新标签页打开”兜底。
+  function commentsEl(tag, className, text) {
+    const node = document.createElement(tag);
+    if (className) node.className = className;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  }
+
+  function decodeCommentText(value) {
+    const area = document.createElement('textarea');
+    area.innerHTML = value || '';
+    return area.value;
+  }
+
+  function appendCommentText(container, tweet) {
+    let raw = decodeCommentText(commentText(tweet));
+    const media = tweet.legacy?.extended_entities?.media || tweet.legacy?.entities?.media || [];
+    for (const item of media) {
+      if (item.url) raw = raw.split(item.url).join('');
+    }
+    raw = raw.replace(/[ \t]+\n/g, '\n').replace(/[ \t]+$/, '');
+    const urls = commentEntities(tweet).urls || [];
+    if (urls.length === 0) {
+      container.textContent = raw;
+      return;
+    }
+    const map = new Map(urls.map(item => [item.url, item]));
+    const parts = raw.split(/(https:\/\/t\.co\/[A-Za-z0-9]+)/g);
+    for (const part of parts) {
+      const entity = map.get(part);
+      if (!entity) {
+        container.appendChild(document.createTextNode(part));
+        continue;
+      }
+      const link = commentsEl('a', null, entity.display_url || entity.expanded_url || part);
+      link.href = entity.expanded_url || part;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      container.appendChild(link);
+    }
+  }
+
+  function commentUser(tweet) {
+    const user = tweet.core?.user_results?.result;
+    return {
+      name: user?.core?.name || user?.legacy?.name || '未知用户',
+      handle: user?.core?.screen_name || user?.legacy?.screen_name || '',
+      avatar: user?.avatar?.image_url || user?.legacy?.profile_image_url_https || '',
+    };
+  }
+
+  function commentText(tweet) {
+    return tweet.note_tweet?.note_tweet_results?.result?.text || tweet.legacy?.full_text || '';
+  }
+
+  function commentEntities(tweet) {
+    return tweet.note_tweet?.note_tweet_results?.result?.entity_set || tweet.legacy?.entities || {};
+  }
+
+  function commentThumbnail(url) {
+    if (!url) return '';
+    try {
+      const parsed = new URL(url);
+      parsed.searchParams.set('name', 'small');
+      return parsed.toString();
+    } catch (error) {
+      return url;
+    }
+  }
+
+  function commentCount(value) {
+    return new Intl.NumberFormat('zh-CN', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0);
+  }
+
+  function appendCommentMedia(container, tweet) {
+    const media = (tweet.legacy?.extended_entities?.media || tweet.legacy?.entities?.media || []).slice(0, 4);
+    if (media.length === 0) return;
+    const grid = commentsEl('div', `xmp-comments-media ${media.length > 1 ? 'many' : 'one'}`);
+    for (const item of media) {
+      const src = commentThumbnail(item.media_url_https);
+      if (!src) continue;
+      const wrap = commentsEl('div', 'xmp-comments-media-item');
+      const image = document.createElement('img');
+      image.loading = 'lazy';
+      image.alt = '';
+      image.src = src;
+      wrap.appendChild(image);
+      if (item.type === 'video') wrap.appendChild(commentsEl('span', 'xmp-comments-media-badge', '视频'));
+      else if (item.type === 'animated_gif') wrap.appendChild(commentsEl('span', 'xmp-comments-media-badge', 'GIF'));
+      grid.appendChild(wrap);
+    }
+    container.appendChild(grid);
+  }
+
+  function renderComment(tweet) {
+    const row = commentsEl('div', 'xmp-comments-reply');
+    const user = commentUser(tweet);
+    const avatar = document.createElement('img');
+    avatar.className = 'xmp-comments-avatar';
+    avatar.loading = 'lazy';
+    avatar.alt = '';
+    avatar.src = user.avatar;
+    row.appendChild(avatar);
+
+    const main = commentsEl('div', 'xmp-comments-main');
+    const meta = commentsEl('div', 'xmp-comments-meta');
+    meta.appendChild(commentsEl('span', 'xmp-comments-name', user.name));
+    if (user.handle) meta.appendChild(commentsEl('span', 'xmp-comments-handle', `@${user.handle}`));
+    const time = formatPostTime(tweet.legacy?.created_at || '');
+    if (time) meta.appendChild(commentsEl('span', 'xmp-comments-time', time));
+    main.appendChild(meta);
+
+    const text = commentsEl('div', 'xmp-comments-text');
+    appendCommentText(text, tweet);
+    if (text.textContent.trim() || text.children.length > 0) main.appendChild(text);
+    appendCommentMedia(main, tweet);
+
+    const stats = [];
+    if (tweet.legacy?.reply_count) stats.push(`回复 ${commentCount(tweet.legacy.reply_count)}`);
+    if (tweet.legacy?.retweet_count) stats.push(`转发 ${commentCount(tweet.legacy.retweet_count)}`);
+    if (tweet.legacy?.favorite_count) stats.push(`喜欢 ${commentCount(tweet.legacy.favorite_count)}`);
+    if (tweet.views?.count) stats.push(`${commentCount(tweet.views.count)} 查看`);
+    if (stats.length > 0) {
+      const statsRow = commentsEl('div', 'xmp-comments-stats');
+      for (const stat of stats) statsRow.appendChild(commentsEl('span', null, stat));
+      main.appendChild(statsRow);
+    }
+
+    row.appendChild(main);
+    return row;
+  }
+
+  function unwrapTweetResult(result) {
+    if (!result) return null;
+    if (result.__typename === 'TweetWithVisibilityResults') return result.tweet || null;
+    return result;
+  }
+
+  function collectThreadTweets(payload) {
+    const instructions = payload?.data?.threaded_conversation_with_injections_v2?.instructions;
+    if (!Array.isArray(instructions)) return [];
+    const tweets = [];
+    const seen = new Set();
+    const add = itemContent => {
+      const tweet = unwrapTweetResult(itemContent?.tweet_results?.result);
+      if (!tweet?.rest_id || seen.has(tweet.rest_id)) return;
+      seen.add(tweet.rest_id);
+      tweets.push(tweet);
+    };
+    for (const instruction of instructions) {
+      for (const entry of instruction.entries || []) {
+        const content = entry.content;
+        if (content?.__typename === 'TimelineTimelineItem') add(content.itemContent);
+        else if (content?.__typename === 'TimelineTimelineModule') {
+          for (const item of content.items || []) add(item.item?.itemContent);
+        }
+      }
+    }
+    return tweets;
+  }
+
+  function tweetDetailParams(tweetId) {
+    const variables = {
+      focalTweetId: tweetId,
+      with_rux_injections: false,
+      rankingMode: 'Relevance',
+      includePromotedContent: true,
+      withCommunity: true,
+      withQuickPromoteEligibilityTweetFields: true,
+      withBirdwatchNotes: true,
+      withVoice: true,
+    };
+    return new URLSearchParams({
+      variables: JSON.stringify(variables),
+      features: JSON.stringify(TWEET_DETAIL_FEATURES),
+      fieldToggles: JSON.stringify(TWEET_DETAIL_FIELD_TOGGLES),
+    });
+  }
+
+  function tweetDetailHeaders() {
+    const ct0 = document.cookie.split('; ').find(item => item.startsWith('ct0='))?.slice(4);
+    if (!ct0) throw new Error('缺少 CSRF token');
+    return {
+      authorization: TWEET_DETAIL_BEARER,
+      'x-csrf-token': ct0,
+      'x-twitter-auth-type': 'OAuth2Session',
+      'x-twitter-active-user': 'yes',
+      'x-twitter-client-language': (document.documentElement.lang || 'en').toLowerCase(),
+      'content-type': 'application/json',
+    };
+  }
+
+  async function discoverTweetDetailQueryId(signal) {
+    const script = [...document.querySelectorAll('script[src]')]
+      .map(item => item.src)
+      .find(src => /\/client-web\/main\.[^/]+\.js$/.test(src));
+    if (!script) return null;
+    const text = await fetch(script, { credentials: 'same-origin', signal }).then(response => response.text());
+    return text.match(/queryId:"([^"]+)",operationName:"TweetDetail"/)?.[1] || null;
+  }
+
+  async function requestTweetDetail(tweetId, signal) {
+    let queryId = TWEET_DETAIL_QUERY_ID;
+    const request = async id => fetch(
+      `/i/api/graphql/${id}/TweetDetail?${tweetDetailParams(tweetId).toString()}`,
+      { credentials: 'include', headers: tweetDetailHeaders(), signal },
+    );
+    let response = await request(queryId);
+    if (!response.ok && (response.status === 400 || response.status === 404)) {
+      const fresh = await discoverTweetDetailQueryId(signal);
+      if (fresh && fresh !== queryId) {
+        queryId = fresh;
+        response = await request(queryId);
+      }
+    }
+    if (!response.ok) throw new Error(`评论接口 HTTP ${response.status}`);
+    const payload = await response.json();
+    if (payload.errors?.length) throw new Error(payload.errors[0].message || '评论接口返回错误');
+    return collectThreadTweets(payload);
+  }
+
+  function renderComments(body, tweets, tweetId) {
+    body.textContent = '';
+    const original = tweets.find(tweet => tweet.rest_id === tweetId) || tweets[0];
+    const replies = tweets.filter(tweet => tweet !== original);
+    const title = commentsModal?.querySelector('.xmp-comments-header h2');
+    if (title) title.textContent = replies.length > 0 ? `评论 · ${replies.length}` : '评论';
+    if (original) {
+      const block = commentsEl('div', 'xmp-comments-original');
+      block.appendChild(commentsEl('div', 'xmp-comments-original-label', '原帖'));
+      block.appendChild(renderComment(original));
+      body.appendChild(block);
+    }
+    if (replies.length === 0) {
+      body.appendChild(commentsEl('div', 'xmp-comments-empty', '暂无评论'));
+      return;
+    }
+    for (const reply of replies) body.appendChild(renderComment(reply));
+    const total = Number(original?.legacy?.reply_count || 0);
+    if (total > replies.length) body.appendChild(commentsEl('div', 'xmp-comments-note', '仅显示首屏评论'));
+  }
+
+  function renderCommentsError(body, tweetId, href) {
+    body.textContent = '';
+    const error = commentsEl('div', 'xmp-comments-error');
+    error.appendChild(document.createTextNode('评论加载失败，可能是 X 接口已更新。'));
+    error.appendChild(document.createElement('br'));
+    const retry = commentsEl('button', null, '重试');
+    retry.type = 'button';
+    retry.addEventListener('click', () => {
+      closeComments();
+      openComments(tweetId, href);
+    });
+    const open = commentsEl('button', null, '在新标签页打开帖子');
+    open.type = 'button';
+    open.style.marginLeft = '8px';
+    open.addEventListener('click', () => window.open(href, '_blank', 'noopener,noreferrer'));
+    error.appendChild(retry);
+    error.appendChild(open);
+    body.appendChild(error);
+  }
+
+  function closeComments() {
+    if (commentsAbort) {
+      commentsAbort.abort();
+      commentsAbort = null;
+    }
+    if (commentsKeyHandler) {
+      document.removeEventListener('keydown', commentsKeyHandler, true);
+      commentsKeyHandler = null;
+    }
+    if (commentsModal) {
+      commentsModal.remove();
+      commentsModal = null;
+    }
+    if (commentsReturnFocus?.isConnected) {
+      commentsReturnFocus.focus({ preventScroll: true });
+    }
+    commentsReturnFocus = null;
+  }
+
+  function openComments(tweetId, href) {
+    if (!enabled || !tweetId) return;
+    closeComments();
+    const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const overlay = commentsEl('div', 'xmp-comments');
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', '帖子评论');
+    const backdrop = commentsEl('div', 'xmp-comments-backdrop');
+    const panel = commentsEl('section', 'xmp-comments-panel');
+    panel.tabIndex = -1;
+
+    const header = commentsEl('header', 'xmp-comments-header');
+    header.appendChild(commentsEl('h2', null, '评论'));
+    const close = commentsEl('button', 'xmp-comments-close', '×');
+    close.type = 'button';
+    close.setAttribute('aria-label', '关闭评论');
+    header.appendChild(close);
+
+    const body = commentsEl('div', 'xmp-comments-body');
+    body.appendChild(commentsEl('div', 'xmp-comments-status', '正在加载评论…'));
+    panel.appendChild(header);
+    panel.appendChild(body);
+    overlay.appendChild(backdrop);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    commentsModal = overlay;
+    commentsReturnFocus = returnFocus;
+    commentsAbort = new AbortController();
+    const token = commentsAbort;
+
+    const onKeyDown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeComments();
+        return;
+      }
+      if (!['PageDown', 'PageUp', 'Home', 'End', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) return;
+      const target = event.target;
+      if (target instanceof Element && target.closest('input, textarea, [contenteditable="true"]')) return;
+      event.preventDefault();
+    };
+    commentsKeyHandler = onKeyDown;
+    document.addEventListener('keydown', onKeyDown, true);
+    close.addEventListener('click', closeComments);
+    overlay.addEventListener('click', event => {
+      if (event.target === overlay || event.target === backdrop) closeComments();
+    });
+    const blockBackgroundScroll = event => {
+      if (event.target instanceof Element && event.target.closest('.xmp-comments-body')) return;
+      event.preventDefault();
+    };
+    overlay.addEventListener('wheel', blockBackgroundScroll, { passive: false });
+    overlay.addEventListener('touchmove', blockBackgroundScroll, { passive: false });
+    panel.focus({ preventScroll: true });
+
+    requestTweetDetail(tweetId, token.signal)
+      .then(tweets => {
+        if (!commentsModal || commentsAbort !== token) return;
+        renderComments(body, tweets, tweetId);
+      })
+      .catch(error => {
+        if (!commentsModal || commentsAbort !== token || error.name === 'AbortError') return;
+        warnOnce('comments', `评论加载失败：${error}`);
+        renderCommentsError(body, tweetId, href);
+      });
+  }
+
+  function watchComments() {
+    document.addEventListener('click', event => {
+      if (!enabled || commentsModal) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) return;
+      const reply = target.closest('[data-testid="reply"]');
+      if (!reply || target.closest('[role="dialog"]')) return;
+      if (route !== 'home' && route !== 'profile' && route !== 'explore' && route !== 'search') return;
+      const tweet = reply.closest(TWEET);
+      if (!tweet) return;
+      const link = cellStatusLink(tweet.closest(CELL));
+      if (!link) return;
+      const match = link.getAttribute('href').match(/^\/([^/]+)\/status\/(\d+)/);
+      if (!match) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      openComments(match[2], link.getAttribute('href'));
+    }, true);
+  }
+
   function init() {
     registerMenu();
     watchPhotoPreview();
@@ -2885,6 +3725,8 @@
     if (!enabled) return;
     document.documentElement.dataset.xmpEnabled = '1';
     injectStyles();
+    watchGrokDrawer();
+    watchComments();
     if (typeof widthQuery.addEventListener === 'function') {
       widthQuery.addEventListener('change', handleWidthChange);
     }

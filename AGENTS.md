@@ -10,14 +10,17 @@
 - 作者 `venom`，MIT 许可（`LICENSE`）；userscript 头部保留 `@author` / `@license`。
 - 入口：`x-morning-paper.user.js`。文档：`README.md`、`docs/selectors.md`。测试：
   `test/fixture.html`。截图：`screenshots/`。
-- 只使用 `GM_getValue`、`GM_setValue`、`GM_registerMenuCommand`、`GM_addStyle`；不发起
-  网络请求，不读取账号数据，不发布、点赞、关注、私信或修改任何账号状态。
+- 只使用 `GM_getValue`、`GM_setValue`、`GM_registerMenuCommand`、`GM_addStyle`；除评论弹窗
+  的只读 `TweetDetail` 请求外，不发起网络请求，不读取账号数据用于展示以外的用途，不发布、点赞、
+  关注、私信或修改任何账号状态。评论请求使用当前浏览器会话（`ct0` cookie）和 X Web 的公开
+  bearer，只用于渲染帖子与评论；不发送、不转推、不点赞。
 - 当前行为以代码、README 和 `docs/selectors.md` 为准。不要按已删除的旧设计记录回退
   当前行为。
 - 已经落地的、与初版设计不同的行为：无日期刊头、无操作栏上分割线、无正文列左右框线、
   无头像框线、引用帖媒体折叠、帖子时间显示具体时刻、通知/Toast 纸面化、左轨点击展开、
   图片悬浮原图预览、详情页/文章页表面纸面化、探索/搜索共用宽版面（右栏隐藏、左轨发帖入口
-  收成 FAB）。不要按旧设计回退（尤其不要把左轨改回 hover/focus-within 自动展开）。
+  收成 FAB）、评论按钮打开页面内纸面弹窗、Grok 抽屉纸面化。不要按旧设计回退（尤其不要把
+  左轨改回 hover/focus-within 自动展开）。
 
 ## 工作方式
 
@@ -45,7 +48,8 @@
    重扫，标签页不可见时浏览器会节流定时器。截图/检查前等待 3–5s，确认扫描完成，必要时再查询
    一次 DOM。SPA 进入探索/搜索后至少等 1.5s 再判定模块是否已换纸面。
 5. **状态矩阵**：真实 X 的 1920×953、1440×900；X 深色/浅色设置；首页、详情、探索/搜索（宽版面）、
-   通知；单图、网格、轮播、视频、引用帖、引用卡片、混合媒体；hover、focus、媒体折叠/展开。
+   通知；单图、网格、轮播、视频、引用帖、引用卡片、混合媒体；hover、focus、媒体折叠/展开；
+   Grok 抽屉打开/关闭/输入卡；评论弹窗打开/关闭、首页滚动位置、正文跳转仍进入状态页。
 6. **边界**：999/1000px 是版面分界；1000px 应用轨道/680 列/媒体按钮，999px 只应用主题。
 7. **fixture**：`node --check x-morning-paper.user.js`；`python -m http.server 8765` 后打开
    `http://127.0.0.1:8765/test/fixture.html`，检查媒体、路由、降级、存储回退和 1920/1000/999。
@@ -234,6 +238,46 @@
   搜索过滤 radio 用 `input:checked` + 纸面细线重绘，选中态暖橙实心 + 纸色勾。
 - 探索/搜索的帖子媒体保持 X 原生展开，不注入媒体按钮；媒体折叠只在首页和个人主页生效。
 
+### Grok 抽屉
+
+- Grok 抽屉在 `body` 末尾、`primaryColumn` 外；根节点是 `[data-testid="GrokDrawer"]`，
+  打开/关闭时会**整块替换根节点**，挂在旧根上的 MutationObserver 会失效。入口按钮是
+  `[data-testid="GrokDrawerHeader"]`（也匹配 `[aria-label="Grok"]`），在 document 捕获阶段
+  监听点击，点击后 300ms/1500ms 重新挂观察器并扫描。
+- 抽屉的深色面板和输入卡按计算样式标记（复用 `scanPaperSurfaces`）；文字/图标只翻**最近底色**
+  是纸面或深底的，用户消息的彩色气泡里的白字/白图标保持原样（`nearestPaperBackground`）。
+  标记属性是 `data-xmp-paper-surface/chip/text/icon`，图标属性新增 `data-xmp-paper-icon`。
+- 抽屉内容流式更新由 `[data-testid="GrokDrawer"]` 子树的 MutationObserver 防抖重扫；关闭/重开
+  由点击后的延迟重挂兜底。不要在 `body` 上挂全量观察器。
+
+### 评论弹窗
+
+- 只拦截 `[data-testid="reply"]`（评论按钮）的点击；在 document 捕获阶段
+  `preventDefault + stopPropagation + stopImmediatePropagation`，阻止 X 跳到 `/compose/post`。
+  帖子正文/时间链接不拦截，仍然进入状态页。只对 home/profile/explore/search 生效；弹窗内和
+  `[role="dialog"]` 内不拦截。
+- 节点定位：`reply.closest('[data-testid="tweet"]')` 取顶层帖子，再用 `cellStatusLink(cell)`
+  找带 `time[datetime]` 的 `/handle/status/id` 链接；不要取引用帖链接。
+- 数据：只读请求 `/i/api/graphql/<queryId>/TweetDetail`。当前 queryId 为
+  `qpemjmVMoTWDvcRT43JIVQ`；请求头用公开 bearer + `ct0` cookie（`x-csrf-token`）、
+  `x-twitter-auth-type: OAuth2Session`、`x-twitter-active-user: yes`、`content-type: application/json`；
+  实测不需要 `x-client-transaction-id`。`features`/`fieldToggles` 对象在脚本顶部；X 改版后
+  需要从真实请求或 `main.*.js` 更新。HTTP 400/404 时从 `main.*.js` 正则
+  `queryId:"...",operationName:"TweetDetail"` 重新发现 queryId 并重试一次。
+- 响应解析：`data.threaded_conversation_with_injections_v2.instructions[].entries[]`；
+  `TimelineTimelineItem` 和 `TimelineTimelineModule` 都可能含推文；`TweetWithVisibilityResults`
+  用 `.tweet` 解包；按 `rest_id` 去重。用户字段在 `core.user_results.result.core/avatar`，
+  长文在 `note_tweet.note_tweet_results.result.text`，媒体在
+  `legacy.extended_entities.media`，查看数在 `views.count`。
+- 渲染：`textContent` 渲染正文（先解码 HTML 实体），t.co 链接换成 `display_url`；媒体里的
+  t.co URL 从正文删除，仅渲染缩略图/封面。所有用户内容不拼 `innerHTML`。
+- 弹窗打开时**不要**把 `html/body` 设 `overflow: hidden`（Chrome 会把滚动位置清到 0，关掉后
+  首页跳回顶部）。改用 overlay 上 `wheel`/`touchmove` 阻止背景滚动，body 区域放行；键盘
+  滚动键在弹窗内阻止。关闭后首页滚动位置保持。
+- 关闭入口：`×`、`Esc`、点击 backdrop；切路由或关闭脚本也关闭。请求用 AbortController，
+  关闭后忽略迟到的响应；接口失败时弹窗内提供「重试」和「在新标签页打开帖子」兜底。
+  只展示接口返回的第一页评论，不加载更多。
+
 ### 时间
 
 - 可见时间来自 `time[datetime]`；用本地时间格式化：当天 `HH:mm`，昨天 `昨天·HH:mm`，更早
@@ -263,6 +307,11 @@
 - 帖子外层的链接卡片媒体保持原生，不参与折叠。
 - 悬浮原图预览只覆盖图片：视频、GIF 和链接卡片缩略图不预览；预览按悬停的那一张显示，
   轮播只预览当前可见的 slide，不能在浮层里翻页。
+- 评论弹窗依赖 X 的私有 `TweetDetail` 接口和当前 `features`/`queryId`；X 改版后可能返回
+  400/404，脚本会尝试从 `main.*.js` 重新发现 queryId 并重试一次，仍失败则显示兜底按钮。
+  只展示第一页评论，不能继续加载更多，也不能在弹窗里回复/点赞。
+- Grok 抽屉的对话气泡按最近底色翻色；如果 X 给消息加新的彩色表面，白字/白图标会按“彩色气泡”
+  保持原样，需要时再在 `nearestPaperBackground` 的白名单里补规则。
 - X 的 A/B 布局、实验性卡片和生成 class 会继续变化；`docs/selectors.md` 是维护入口。
 
 ## 提交前检查
