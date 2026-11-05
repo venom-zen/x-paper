@@ -11,9 +11,9 @@
 - 入口：`x-morning-paper.user.js`。文档：`README.md`、`docs/selectors.md`。测试：
   `test/fixture.html`。截图：`screenshots/`。
 - 只使用 `GM_getValue`、`GM_setValue`、`GM_registerMenuCommand`、`GM_addStyle`。网络请求只有：
-  评论弹窗的 `TweetDetail` 读取，以及用户主动点击评论弹窗「喜欢」时的 `FavoriteTweet` /
-  `UnfavoriteTweet`。请求使用当前浏览器会话（`ct0` cookie）和 X Web 的公开 bearer；不发布、
-  不关注、不私信、不修改其他账号状态。回复通过 X 原生 composer 在独立窗口由用户完成。
+  评论弹窗的 `TweetDetail` 读取，用户主动点击评论弹窗「喜欢」时的 `FavoriteTweet` /
+  `UnfavoriteTweet`，以及用户主动提交回复时的 `CreateTweet`。请求使用当前浏览器会话
+  （`ct0` cookie）和 X Web 的公开 bearer；不发布其他内容，不关注、不私信、不修改其他账号状态。
 - 当前行为以代码、README 和 `docs/selectors.md` 为准。不要按已删除的旧设计记录回退
   当前行为。
 - 已经落地的、与初版设计不同的行为：无日期刊头、无操作栏上分割线、无正文列左右框线、
@@ -50,7 +50,8 @@
 5. **状态矩阵**：真实 X 的 1920×953、1440×900；X 深色/浅色设置；首页、详情、探索/搜索（宽版面）、
    通知；单图、网格、轮播、视频、引用帖、引用卡片、混合媒体；hover、focus、媒体折叠/展开；
    Grok 抽屉打开/关闭/输入卡；评论弹窗打开/关闭、首页滚动位置、正文跳转仍进入状态页；
-   评论点赞/取消、资料卡、回复 popup、嵌套楼层和非评论内容过滤。
+   评论点赞/取消（空心→暖橙实心）、资料卡、弹窗内回复输入框、嵌套楼层连接线/圆角终点、
+   非评论内容过滤。
 6. **边界**：999/1000px 是版面分界；1000px 应用轨道/680 列/媒体按钮，999px 只应用主题。
 7. **fixture**：`node --check x-morning-paper.user.js`；`python -m http.server 8765` 后打开
    `http://127.0.0.1:8765/test/fixture.html`，检查媒体、路由、降级、存储回退和 1920/1000/999。
@@ -276,17 +277,31 @@
 - **层级**：用 `legacy.in_reply_to_status_id_str` 建树；只保留能连到 focal 的回复。
   `renderReplyGroup` 为每个顶层回复创建 `.xmp-comments-thread`，只给
   `.xmp-comments-replies > .xmp-comments-thread` 加底部分割线（最后一个除外），父子回复之间
-  不能有分割线；嵌套 `.xmp-comments-children` 左缩进 20px + 14px padding + 2px 竖线，子行
-  `::before` 画 14px 短横线接到头像（`|_`），有子回复的行加 `.has-children`，`::after` 从头像
-  下方画竖线接上子树；每条非原帖评论显示「回复 @parentHandle」。不要退回扁平列表。
+  不能有分割线；嵌套 `.xmp-comments-children` 左缩进 20px + 16px padding，不再用整组
+  `border-left`。每个子 `.xmp-comments-thread::before` 沿父头像中心画竖线、`::after` 画 14px
+  短横线接到子头像（`|_`）；有子回复的行加 `.has-children`，`::after` 从头像下方画竖线接上
+  子树。最后一个子线程用 `:last-child::before` 的 16×35 border-left + border-bottom +
+  `border-bottom-left-radius: 8px` 在头像中心圆角转弯并停止，不能延伸到最后一个头像下方；
+  每条非原帖评论显示「回复 @parentHandle」。不要退回扁平列表。
 - 互动：
   - 点赞/取消点赞：`FavoriteTweet`（`lI07N6Otwv1PhnEgXILM7A`）/
     `UnfavoriteTweet`（`ZYKSe-w7KEslx3JhSIk5LA`），POST body
     `{variables:{tweet_id},queryId}`，头部与 TweetDetail 相同；实测不需要
     `x-client-transaction-id`。乐观更新计数/`aria-pressed`，失败回滚并用 `warnOnce` 记录。
-  - 回复：**在独立窗口**打开 `/compose/post?in_reply_to=<rest_id>`，使用 X 原生 composer；
-    不要在同一页用隐藏 anchor 打开（composer 关闭后首页会回到顶部/重新渲染），也不要在弹窗里
-    自行调用 CreateTweet。弹窗保持打开，popup 关闭后首页和评论上下文都不变。
+  - 回复：弹窗内嵌纸面输入框（`.xmp-comments-composer`），提交时 POST
+    `/i/api/graphql/<queryId>/CreateTweet`，当前 queryId 为 `l4hk8uVGvR-a8kzQ4nOhPA`。
+    body 为 `{variables:{tweet_text, reply:{in_reply_to_tweet_id,exclude_reply_user_ids:[]},
+    media:{media_entities:[],possibly_sensitive:false},semantic_annotation_ids:[],
+    disallowed_reply_options:null}, features, fieldToggles, queryId}`；`batch_compose` 不能传
+    `'off'`（GraphQL 校验失败），省略即可。HTTP 400/404 时从 `main.*.js` 正则
+    `queryId:"...",operationName:"CreateTweet"` 重新发现 queryId。提交成功后关闭输入框、
+    重新请求 TweetDetail 刷新首屏评论并保留弹窗滚动位置；失败时把接口错误显示在输入框下方。
+    只支持纯文字、280 字；不要打开 X 原生 composer 的独立窗口或同一页隐藏 anchor。
+    X 时间线里的回复按钮能在页面内打开 composer 且保留滚动，但只覆盖时间线里已有的原帖、
+    无法回复弹窗里的任意评论；弹窗统一用 CreateTweet。
+  - 点赞图标：未点赞用空心 path `COMMENT_HEART_OUTLINE_PATH`，点赞后用实心
+    `COMMENT_HEART_PATH` 和 `--xmp-accent` 暖橙色；`applyLikeState` 同时更新 `path.d`、
+    `aria-pressed` 和计数。
   - 资料：与主页 HoverCard 一致的悬浮卡。头像/用户名 `pointerenter` 250ms 后展示，离开
     180ms 收起，进入卡片取消收起；「资料」按钮可点击钉住/取消。卡片挂到 `body`、fixed、
     z-index 2100，不被弹窗 overflow 裁切；滚动/缩放/外部点击/关闭弹窗都移除。数据来自同一条
@@ -297,9 +312,10 @@
 - 弹窗打开时**不要**把 `html/body` 设 `overflow: hidden`（Chrome 会把滚动位置清到 0，关掉后
   首页跳回顶部）。改用 overlay 上 `wheel`/`touchmove` 阻止背景滚动，body 区域放行；键盘
   滚动键在弹窗内阻止。关闭后首页滚动位置保持。
-- 关闭入口：`×`、`Esc`、点击 backdrop；切路由或关闭脚本也关闭。请求用 AbortController，
-  关闭后忽略迟到的响应；接口失败时弹窗内提供「重试」和「在新标签页打开帖子」兜底。
-  只展示接口返回的第一页评论，不加载更多。
+- 关闭入口：`×`、`Esc`、点击 backdrop；切路由或关闭脚本也关闭。输入框打开时 `Esc` 只收起
+  输入框，不关闭弹窗；提交中不允许关闭输入框。请求用 AbortController，关闭后忽略迟到的响应；
+  接口失败时弹窗内提供「重试」和「在新标签页打开帖子」兜底。只展示接口返回的第一页评论，
+  不加载更多。
 
 ### 时间
 
@@ -330,12 +346,12 @@
 - 帖子外层的链接卡片媒体保持原生，不参与折叠。
 - 悬浮原图预览只覆盖图片：视频、GIF 和链接卡片缩略图不预览；预览按悬停的那一张显示，
   轮播只预览当前可见的 slide，不能在浮层里翻页。
-- 评论弹窗依赖 X 的私有 `TweetDetail` 接口和当前 `features`/`queryId`；X 改版后可能返回
-  400/404，脚本会尝试从 `main.*.js` 重新发现 queryId 并重试一次，仍失败则显示兜底按钮。
-  只展示第一页评论，不继续加载更多。点赞/取消点赞依赖 `FavoriteTweet`/`UnfavoriteTweet`
-  的 queryId；回复在独立窗口打开 X 原生 composer，不在弹窗内嵌输入框。
-- 评论层级按 `in_reply_to_status_id_str` 建树；父评论不在首屏时挂到原帖下。对话里混入的
-  推荐/广告帖按 conversation id 过滤；X 若改变 conversation 字段，需要补过滤规则。
+- 评论弹窗依赖 X 的私有 `TweetDetail`、`FavoriteTweet`/`UnfavoriteTweet` 和 `CreateTweet`
+  接口和当前 `features`/`queryId`；X 改版后可能返回 400/404，脚本会尝试从 `main.*.js` 重新
+  发现 queryId 并重试一次，仍失败则显示兜底按钮或输入框错误。只展示第一页评论，不继续加载
+  更多；回复只支持纯文字（280 字），不支持图片、视频或投票。
+- 评论层级按 `in_reply_to_status_id_str` 建树；父评论不在首屏的回复直接丢弃（推荐/旁支）。
+  对话里混入的推荐/广告帖按 conversation id 过滤；X 若改变 conversation 字段，需要补过滤规则。
 - Grok 抽屉的对话气泡按最近底色翻色；如果 X 给消息加新的彩色表面，白字/白图标会按“彩色气泡”
   保持原样，需要时再在 `nearestPaperBackground` 的白名单里补规则。
 - X 的 A/B 布局、实验性卡片和生成 class 会继续变化；`docs/selectors.md` 是维护入口。

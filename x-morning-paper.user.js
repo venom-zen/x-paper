@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.7.3
+// @version      0.7.4
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -33,7 +33,8 @@
   const TWEET_DETAIL_QUERY_ID = 'qpemjmVMoTWDvcRT43JIVQ';
   const FAVORITE_TWEET_QUERY_ID = 'lI07N6Otwv1PhnEgXILM7A';
   const UNFAVORITE_TWEET_QUERY_ID = 'ZYKSe-w7KEslx3JhSIk5LA';
-  // X Web 的公开 bearer token，不是账号凭据；评论请求只读，并使用浏览器当前会话 cookie。
+  const CREATE_TWEET_QUERY_ID = 'l4hk8uVGvR-a8kzQ4nOhPA';
+  // X Web 的公开 bearer token，不是账号凭据；请求使用浏览器当前会话 cookie。
   const TWEET_DETAIL_BEARER = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
   const TWEET_DETAIL_FEATURES = {
     "rweb_video_screen_enabled": false,
@@ -1545,8 +1546,23 @@
       padding: 0;
     }
 
-    /* 嵌套回复的短横线：从子树竖线接到子头像，形成 |_ 的连接感 */
-    .xmp-comments-children > .xmp-comments-thread > .xmp-comments-reply::before {
+    /* 嵌套回复的连接线：竖线沿父头像中心向下，末端转弯接到子头像左边。 */
+    .xmp-comments-thread {
+      position: relative;
+    }
+
+    .xmp-comments-children > .xmp-comments-thread::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background-color: var(--xmp-rule);
+      pointer-events: none;
+    }
+
+    .xmp-comments-children > .xmp-comments-thread::after {
       content: "";
       position: absolute;
       left: -14px;
@@ -1555,6 +1571,22 @@
       height: 2px;
       background-color: var(--xmp-rule);
       pointer-events: none;
+    }
+
+    /* 最后一个回复是分支终点：竖线停在子头像中心并转弯，转弯处做圆角。 */
+    .xmp-comments-children > .xmp-comments-thread:last-child::before {
+      bottom: auto;
+      width: 16px;
+      height: 35px;
+      box-sizing: border-box;
+      background: transparent;
+      border-left: 2px solid var(--xmp-rule);
+      border-bottom: 2px solid var(--xmp-rule);
+      border-bottom-left-radius: 8px;
+    }
+
+    .xmp-comments-children > .xmp-comments-thread:last-child::after {
+      display: none;
     }
 
     .xmp-comments-avatar {
@@ -1698,13 +1730,131 @@
 
     .xmp-comments-action.is-active,
     .xmp-comments-action.is-active svg {
-      color: var(--xmp-like);
-      fill: var(--xmp-like);
+      color: var(--xmp-accent);
+      fill: var(--xmp-accent);
     }
 
     .xmp-comments-action:focus-visible {
       outline: 2px solid var(--xmp-accent);
       outline-offset: 2px;
+    }
+
+    .xmp-comments-action.is-open {
+      color: var(--xmp-accent);
+    }
+
+    .xmp-comments-composer {
+      margin-top: 10px;
+      padding: 10px;
+      background-color: var(--xmp-paper-raised);
+      border: 1px solid var(--xmp-hairline);
+      border-radius: 10px;
+    }
+
+    .xmp-comments-composer-label {
+      margin-bottom: 6px;
+      color: var(--xmp-ink-secondary);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-composer-label span {
+      color: var(--xmp-accent);
+    }
+
+    .xmp-comments-composer-input {
+      display: block;
+      width: 100%;
+      min-height: 64px;
+      max-height: 180px;
+      padding: 8px 10px;
+      color: var(--xmp-ink);
+      background-color: var(--xmp-paper);
+      border: 1px solid var(--xmp-hairline);
+      border-radius: 8px;
+      font: inherit;
+      font-size: 14px;
+      line-height: 1.5;
+      resize: vertical;
+    }
+
+    .xmp-comments-composer-input:focus {
+      outline: none;
+      border-color: var(--xmp-accent);
+      box-shadow: 0 0 0 2px var(--xmp-accent-soft);
+    }
+
+    .xmp-comments-composer-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .xmp-comments-composer-count {
+      margin-right: auto;
+      color: var(--xmp-ink-secondary);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-composer-cancel,
+    .xmp-comments-composer-submit {
+      padding: 6px 12px;
+      border-radius: 9999px;
+      font: inherit;
+      font-size: 12px;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    .xmp-comments-composer-cancel {
+      color: var(--xmp-ink-secondary);
+      background-color: transparent;
+      border: 1px solid var(--xmp-hairline);
+    }
+
+    .xmp-comments-composer-submit {
+      color: #FFFFFF;
+      background-color: var(--xmp-accent);
+      border: 1px solid var(--xmp-accent);
+    }
+
+    .xmp-comments-composer-submit:not(:disabled):hover {
+      background-color: var(--xmp-accent-deep);
+      border-color: var(--xmp-accent-deep);
+    }
+
+    .xmp-comments-composer-submit:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .xmp-comments-composer-cancel:hover {
+      color: var(--xmp-accent);
+      border-color: var(--xmp-accent);
+    }
+
+    .xmp-comments-composer-cancel:focus-visible,
+    .xmp-comments-composer-submit:focus-visible {
+      outline: 2px solid var(--xmp-accent);
+      outline-offset: 2px;
+    }
+
+    .xmp-comments-composer-error {
+      margin-top: 6px;
+      color: var(--xmp-like);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-notice {
+      padding: 8px 18px;
+      color: var(--xmp-accent-deep);
+      background-color: var(--xmp-accent-soft);
+      border-bottom: 1px solid var(--xmp-hairline);
+      font-size: 12px;
+      line-height: 1.4;
     }
 
     .xmp-comments-reply-to {
@@ -1720,8 +1870,7 @@
 
     .xmp-comments-children {
       margin-left: 20px;
-      padding-left: 14px;
-      border-left: 2px solid var(--xmp-rule);
+      padding-left: 16px;
     }
 
     .xmp-comments-reply.has-children {
@@ -1881,6 +2030,9 @@
   let commentsReturnFocus = null;
   let commentsKeyHandler = null;
   let commentsProfile = null;
+  let commentsComposer = null;
+  let commentsTweetId = null;
+  let commentsHref = null;
   let profileShowTimer = null;
   let profileHideTimer = null;
   const warned = new Set();
@@ -3546,8 +3698,9 @@
   }
 
   // ---------- 评论弹窗 ----------
-  // 只读使用 X Web 的 TweetDetail 接口：使用浏览器当前会话（cookie）和公开 bearer，
-  // 不点赞、不回复、不修改任何账号状态。接口失效时弹窗给出重试和“新标签页打开”兜底。
+  // TweetDetail 读取评论，FavoriteTweet/UnfavoriteTweet 处理用户主动点赞，
+  // CreateTweet 处理用户在弹窗内主动提交的文字回复。请求使用浏览器当前会话（cookie）
+  // 和 X Web 的公开 bearer；接口失效时弹窗给出重试和“新标签页打开”兜底。
   function commentsEl(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -3647,6 +3800,7 @@
   }
 
   const COMMENT_HEART_PATH = 'M12 21.638h-.014C9.403 21.59 1.95 14.856 1.95 8.478 1.95 5.42 4.356 3 7.392 3c1.689 0 3.292.78 4.608 2.256C13.316 3.78 14.919 3 16.608 3c3.036 0 5.442 2.42 5.442 5.478 0 6.378-7.453 13.112-10.036 13.16H12z';
+  const COMMENT_HEART_OUTLINE_PATH = 'M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z';
   const COMMENT_REPLY_PATH = 'M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z';
   const COMMENT_PROFILE_PATH = 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-7 2-7 5v2h14v-2c0-3-3-5-7-5z';
 
@@ -3801,6 +3955,8 @@
     button.setAttribute('aria-label', liked ? '取消喜欢' : '喜欢');
     button.dataset.count = String(count);
     countElement.textContent = commentCount(count);
+    const path = button.querySelector('path');
+    if (path) path.setAttribute('d', liked ? COMMENT_HEART_PATH : COMMENT_HEART_OUTLINE_PATH);
   }
 
   async function toggleCommentLike(tweet, button, countElement) {
@@ -3834,17 +3990,142 @@
     }
   }
 
-  // 回复交给 X 原生 composer：在独立窗口打开带 in_reply_to 的 composer，首页和评论弹窗
-  // 都不会被卸载或重新渲染；不要在弹窗里自行调用 CreateTweet。
-  function openNativeReply(tweet) {
-    if (!tweet?.rest_id) return;
-    const href = `/compose/post?in_reply_to=${tweet.rest_id}`;
-    const width = 620;
-    const height = 760;
-    const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
-    const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
-    const popup = window.open(href, 'xmp-reply', `popup=1,width=${width},height=${height},left=${left},top=${top}`);
-    if (!popup) window.open(href, '_blank', 'noopener,noreferrer');
+  async function requestCreateTweet(text, replyToId, signal) {
+    const variables = {
+      tweet_text: text,
+      reply: { in_reply_to_tweet_id: replyToId, exclude_reply_user_ids: [] },
+      media: { media_entities: [], possibly_sensitive: false },
+      semantic_annotation_ids: [],
+      disallowed_reply_options: null,
+    };
+    let queryId = CREATE_TWEET_QUERY_ID;
+    const send = async id => fetch(`/i/api/graphql/${id}/CreateTweet`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: tweetDetailHeaders(),
+      body: JSON.stringify({
+        variables,
+        features: TWEET_DETAIL_FEATURES,
+        fieldToggles: TWEET_DETAIL_FIELD_TOGGLES,
+        queryId: id,
+      }),
+      signal,
+    });
+    let response = await send(queryId);
+    if (!response.ok && (response.status === 400 || response.status === 404)) {
+      const fresh = await discoverCreateTweetQueryId(signal);
+      if (fresh && fresh !== queryId) {
+        queryId = fresh;
+        response = await send(queryId);
+      }
+    }
+    if (!response.ok) throw new Error(`回复接口 HTTP ${response.status}`);
+    const payload = await response.json();
+    if (payload.errors?.length) throw new Error(payload.errors[0].message || '回复接口返回错误');
+    return payload;
+  }
+
+  async function submitCommentReply(tweet, input, submit, cancel, error) {
+    const text = input.value.trim();
+    if (!text || submit.dataset.busy) return;
+    if (commentsComposer) commentsComposer.busy = true;
+    submit.dataset.busy = '1';
+    submit.disabled = true;
+    cancel.disabled = true;
+    const label = submit.textContent;
+    submit.textContent = '发布中…';
+    error.hidden = true;
+    try {
+      await requestCreateTweet(text, tweet.rest_id);
+      if (commentsComposer) commentsComposer.busy = false;
+      closeCommentsComposer(false);
+      refreshComments('回复已发布');
+    } catch (failure) {
+      if (commentsComposer) commentsComposer.busy = false;
+      submit.disabled = false;
+      cancel.disabled = false;
+      submit.textContent = label;
+      error.textContent = `回复失败：${failure.message || failure}`;
+      error.hidden = false;
+      warnOnce('comments-reply', `回复失败：${failure}`);
+    } finally {
+      delete submit.dataset.busy;
+    }
+  }
+
+  function closeCommentsComposer(restoreFocus = true) {
+    if (!commentsComposer || commentsComposer.busy) return;
+    const { element, button } = commentsComposer;
+    commentsComposer = null;
+    element.remove();
+    button.classList.remove('is-open');
+    if (restoreFocus && button.isConnected) button.focus({ preventScroll: true });
+  }
+
+  function openCommentsComposer(tweet, button, anchor) {
+    if (!tweet?.rest_id || !commentsModal || commentsComposer?.busy) return;
+    if (commentsComposer?.tweet?.rest_id === tweet.rest_id && commentsComposer.button === button) {
+      closeCommentsComposer();
+      return;
+    }
+    closeCommentsComposer();
+    const user = commentUser(tweet);
+    const form = commentsEl('div', 'xmp-comments-composer');
+    const label = commentsEl('div', 'xmp-comments-composer-label');
+    label.appendChild(document.createTextNode('回复 '));
+    label.appendChild(commentsEl('span', null, `@${user.handle || user.name}`));
+
+    const input = document.createElement('textarea');
+    input.className = 'xmp-comments-composer-input';
+    input.placeholder = '发布你的回复…';
+    input.rows = 3;
+    input.maxLength = 280;
+    input.setAttribute('aria-label', `回复 @${user.handle || user.name}`);
+
+    const footer = commentsEl('div', 'xmp-comments-composer-footer');
+    const count = commentsEl('span', 'xmp-comments-composer-count', '0/280');
+    const cancel = commentsEl('button', 'xmp-comments-composer-cancel', '取消');
+    cancel.type = 'button';
+    const submit = commentsEl('button', 'xmp-comments-composer-submit', '回复');
+    submit.type = 'button';
+    submit.disabled = true;
+    footer.appendChild(count);
+    footer.appendChild(cancel);
+    footer.appendChild(submit);
+
+    const error = commentsEl('div', 'xmp-comments-composer-error');
+    error.hidden = true;
+    form.appendChild(label);
+    form.appendChild(input);
+    form.appendChild(footer);
+    form.appendChild(error);
+    anchor.appendChild(form);
+    commentsComposer = { tweet, button, element: form, busy: false };
+
+    button.classList.add('is-open');
+    input.addEventListener('input', () => {
+      const length = input.value.length;
+      count.textContent = `${length}/280`;
+      submit.disabled = input.value.trim().length === 0 || length > 280;
+      if (!error.hidden) {
+        error.hidden = true;
+        error.textContent = '';
+      }
+    });
+    cancel.addEventListener('click', () => closeCommentsComposer());
+    submit.addEventListener('click', () => submitCommentReply(tweet, input, submit, cancel, error));
+    input.addEventListener('keydown', event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        closeCommentsComposer();
+      } else if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        submit.click();
+      }
+    });
+    input.focus({ preventScroll: true });
+    form.scrollIntoView({ block: 'nearest' });
   }
 
   function renderComment(tweet, options = {}) {
@@ -3908,7 +4189,7 @@
     const likeCount = Number(tweet.legacy?.favorite_count) || 0;
     const likeButton = commentsEl('button', 'xmp-comments-action');
     likeButton.type = 'button';
-    likeButton.appendChild(commentsIcon(COMMENT_HEART_PATH));
+    likeButton.appendChild(commentsIcon(COMMENT_HEART_OUTLINE_PATH));
     const likeCountElement = commentsEl('span', 'xmp-comments-action-count', commentCount(likeCount));
     likeButton.appendChild(likeCountElement);
     applyLikeState(likeButton, likeCountElement, !!tweet.legacy?.favorited, likeCount);
@@ -3920,7 +4201,7 @@
     replyButton.setAttribute('aria-label', '回复这条评论');
     replyButton.appendChild(commentsIcon(COMMENT_REPLY_PATH));
     replyButton.appendChild(commentsEl('span', null, '回复'));
-    replyButton.addEventListener('click', () => openNativeReply(tweet));
+    replyButton.addEventListener('click', () => openCommentsComposer(tweet, replyButton, main));
     actions.appendChild(replyButton);
 
     const profileButton = commentsEl('button', 'xmp-comments-action');
@@ -4005,11 +4286,20 @@
     return text.match(/queryId:"([^"]+)",operationName:"TweetDetail"/)?.[1] || null;
   }
 
+  async function discoverCreateTweetQueryId(signal) {
+    const script = [...document.querySelectorAll('script[src]')]
+      .map(item => item.src)
+      .find(src => /\/client-web\/main\.[^/]+\.js$/.test(src));
+    if (!script) return null;
+    const text = await fetch(script, { credentials: 'same-origin', signal }).then(response => response.text());
+    return text.match(/queryId:"([^"]+)",operationName:"CreateTweet"/)?.[1] || null;
+  }
+
   async function requestTweetDetail(tweetId, signal) {
     let queryId = TWEET_DETAIL_QUERY_ID;
     const request = async id => fetch(
       `/i/api/graphql/${id}/TweetDetail?${tweetDetailParams(tweetId).toString()}`,
-      { credentials: 'include', headers: tweetDetailHeaders(), signal },
+      { credentials: 'include', headers: tweetDetailHeaders(), signal, cache: 'no-store' },
     );
     let response = await request(queryId);
     if (!response.ok && (response.status === 400 || response.status === 404)) {
@@ -4118,6 +4408,41 @@
     body.appendChild(error);
   }
 
+  function loadComments(body, tweetId, href, scrollTop = 0) {
+    if (commentsAbort) commentsAbort.abort();
+    const controller = new AbortController();
+    commentsAbort = controller;
+    body.textContent = '';
+    body.appendChild(commentsEl('div', 'xmp-comments-status', '正在加载评论…'));
+    requestTweetDetail(tweetId, controller.signal)
+      .then(tweets => {
+        if (!commentsModal || commentsAbort !== controller) return;
+        renderComments(body, tweets, tweetId);
+        body.scrollTop = scrollTop;
+      })
+      .catch(error => {
+        if (!commentsModal || commentsAbort !== controller || error.name === 'AbortError') return;
+        warnOnce('comments', `评论加载失败：${error}`);
+        renderCommentsError(body, tweetId, href);
+      });
+  }
+
+  function refreshComments(message) {
+    if (!commentsModal || !commentsTweetId) return;
+    const body = commentsModal.querySelector('.xmp-comments-body');
+    const panel = commentsModal.querySelector('.xmp-comments-panel');
+    if (!body) return;
+    const scrollTop = body.scrollTop;
+    loadComments(body, commentsTweetId, commentsHref, scrollTop);
+    if (message && panel) {
+      panel.querySelector('.xmp-comments-notice')?.remove();
+      const notice = commentsEl('div', 'xmp-comments-notice', message);
+      panel.insertBefore(notice, body);
+      window.setTimeout(() => notice.remove(), 3000);
+    }
+    panel?.focus({ preventScroll: true });
+  }
+
   function closeComments() {
     if (commentsAbort) {
       commentsAbort.abort();
@@ -4127,6 +4452,9 @@
       document.removeEventListener('keydown', commentsKeyHandler, true);
       commentsKeyHandler = null;
     }
+    commentsComposer = null;
+    commentsTweetId = null;
+    commentsHref = null;
     if (commentsModal) {
       commentsModal.remove();
       commentsModal = null;
@@ -4167,18 +4495,20 @@
 
     commentsModal = overlay;
     commentsReturnFocus = returnFocus;
-    commentsAbort = new AbortController();
-    const token = commentsAbort;
+    commentsTweetId = tweetId;
+    commentsHref = href;
 
     const onKeyDown = event => {
       if (event.key === 'Escape') {
         event.preventDefault();
-        closeComments();
+        if (commentsComposer) closeCommentsComposer();
+        else closeComments();
         return;
       }
       if (!['PageDown', 'PageUp', 'Home', 'End', ' ', 'ArrowDown', 'ArrowUp'].includes(event.key)) return;
       const target = event.target;
       if (target instanceof Element && target.closest('input, textarea, [contenteditable="true"]')) return;
+      if (event.key === ' ' && target instanceof Element && target.closest('button, a[href], [role="button"]')) return;
       event.preventDefault();
     };
     commentsKeyHandler = onKeyDown;
@@ -4195,16 +4525,7 @@
     overlay.addEventListener('touchmove', blockBackgroundScroll, { passive: false });
     panel.focus({ preventScroll: true });
 
-    requestTweetDetail(tweetId, token.signal)
-      .then(tweets => {
-        if (!commentsModal || commentsAbort !== token) return;
-        renderComments(body, tweets, tweetId);
-      })
-      .catch(error => {
-        if (!commentsModal || commentsAbort !== token || error.name === 'AbortError') return;
-        warnOnce('comments', `评论加载失败：${error}`);
-        renderCommentsError(body, tweetId, href);
-      });
+    loadComments(body, tweetId, href);
   }
 
   function watchComments() {

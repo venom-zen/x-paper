@@ -300,16 +300,27 @@
   - 用 `legacy.in_reply_to_status_id_str` 建树；只保留能连到原帖的回复。
     每个顶层回复包在 `.xmp-comments-thread` 中：`.xmp-comments-replies > .xmp-comments-thread`
     才有底部分割线（最后一个除外），父子回复之间**没有**分割线；嵌套线程
-    `.xmp-comments-children` 做 20px 缩进 + 14px padding + 2px 竖线，子行 `::before` 画 14px
-    短横线接到头像，形成 `|_` 效果；有子回复的行加 `.has-children`，`::after` 从头像下方画线
-    接上子树；每条非原帖评论显示「回复 @parent」。
+    `.xmp-comments-children` 做 20px 缩进 + 16px padding，不再用整组 `border-left`。
+    每个子线程 `::before` 沿父头像中心画竖线、`::after` 画 14px 短横线接到子头像，形成 `|_`；
+    有子回复的行加 `.has-children`，`::after` 从头像下方画线接上子树。最后一个子线程用
+    `:last-child::before` 的 16×35 border-left + border-bottom +
+    `border-bottom-left-radius: 8px` 在头像中心圆角转弯并停止，不能延伸到最后一个头像下方；
+    每条非原帖评论显示「回复 @parent」。
 - 互动：
   - 喜欢/取消：`FavoriteTweet`（`lI07N6Otwv1PhnEgXILM7A`）/
     `UnfavoriteTweet`（`ZYKSe-w7KEslx3JhSIk5LA`），POST body
     `{variables:{tweet_id},queryId}`，头部同 TweetDetail；实测不需要 transaction id。
-    乐观更新 `aria-pressed`/计数，失败回滚。
-  - 回复：独立窗口打开 `/compose/post?in_reply_to=<rest_id>`，由 X 原生 composer 处理；
-    不要在弹窗里调用 CreateTweet，也不要在同一页用隐藏 anchor 打开（关闭后首页会回顶）。
+    未点赞用空心 `COMMENT_HEART_OUTLINE_PATH`，点赞后用实心 `COMMENT_HEART_PATH` 和
+    `--xmp-accent` 暖橙色；乐观更新 `path.d`/`aria-pressed`/计数，失败回滚。
+  - 回复：在弹窗内展开 `.xmp-comments-composer`，提交时 POST
+    `/i/api/graphql/<queryId>/CreateTweet`，当前 queryId `l4hk8uVGvR-a8kzQ4nOhPA`。body：
+    `{variables:{tweet_text, reply:{in_reply_to_tweet_id,exclude_reply_user_ids:[]},
+    media:{media_entities:[],possibly_sensitive:false},semantic_annotation_ids:[],
+    disallowed_reply_options:null}, features, fieldToggles, queryId}`；`batch_compose` 传
+    `'off'` 会触发 GraphQL 校验错误，省略。HTTP 400/404 时从 `main.*.js` 正则
+    `queryId:"...",operationName:"CreateTweet"` 重新发现 queryId。成功后重新请求 TweetDetail
+    并保留 `.xmp-comments-body` 的滚动位置；失败把接口错误显示在输入框下方。只支持纯文字、
+    280 字；不打开 X 原生 composer 独立窗口，也不在同一页用隐藏 anchor。
   - 资料：与主页 HoverCard 一致的悬停卡片。头像/用户名 `pointerenter` 250ms 后展示，
     离开 180ms 后收起；鼠标进入卡片取消收起。卡片挂到 `body`、`position: fixed`、
     `z-index: 2100`，不会被弹窗的 overflow 裁切；滚动（窗口或 `.xmp-comments-body`）、
@@ -319,12 +330,15 @@
   媒体 t.co URL 从正文删除，渲染 `media_url_https` 缩略图（视频/GIF 加角标）。
   不使用 innerHTML 拼接用户内容。
 - 弹窗结构：`.xmp-comments`（fixed overlay）+ `.xmp-comments-panel` + `.xmp-comments-body`
-  （溢出滚动）。关闭：`×`、`Esc`、点击 backdrop、切路由、关闭脚本；请求用 AbortController，
-  关闭后忽略迟到响应。失败时显示「重试」和「在新标签页打开帖子」。
+  （溢出滚动）。输入框 `.xmp-comments-composer` 挂在被回复评论的 `.xmp-comments-main` 内；
+  `Esc` 在输入框打开时只收起输入框，不关闭弹窗；提交期间不允许收起。关闭：`×`、`Esc`、
+  点击 backdrop、切路由、关闭脚本；请求用 AbortController，关闭后忽略迟到响应。失败时显示
+  「重试」和「在新标签页打开帖子」。
 - **不要**在打开时给 `html`/`body` 加 `overflow: hidden`：Chrome 会把首页滚动位置清到 0。
   改为在 overlay 上阻止 `wheel`/`touchmove`（`.xmp-comments-body` 内放行），键盘滚动键
   同样阻止；关闭后首页滚动位置不变。
-- 只渲染接口返回的第一页评论，不加载更多；回复在独立窗口的 X 原生 composer 完成。
+- 只渲染接口返回的第一页评论，不加载更多；回复在弹窗内完成，只支持纯文字（280 字），
+  不支持图片、视频或投票。
 
 ## 返回首页的位置恢复
 
