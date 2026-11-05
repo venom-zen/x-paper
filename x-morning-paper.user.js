@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.6.6
+// @version      0.7.1
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -746,6 +746,123 @@
       fill: var(--xmp-accent) !important;
     }
 
+    /* 探索/搜索顶栏标签：选中下划线是 X 内联蓝色，统一成暖橙；未选中用次要墨色 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [role="tab"] *:not([role="dialog"] *) {
+      color: var(--xmp-ink-secondary) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [role="tab"][aria-selected="true"] *:not([role="dialog"] *) {
+      color: var(--xmp-accent) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [role="tab"] [style*="background-color: rgb(29, 155, 240)"],
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] [role="tab"] [style*="background-color:rgb(29,155,240)"] {
+      background-color: var(--xmp-accent) !important;
+    }
+
+    /* 搜索框：探索页的外壳是纯黑胶囊、搜索页是深色描边，都换成纸面浮起 + 细线；
+       外壳由 markExploreSurfaces() 标记，输入框本身改为透明 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] form[role="search"] [data-testid="SearchBox_Search_Input"] {
+      background-color: transparent !important;
+    }
+
+    /* 首帧：搜索框外壳和它的容器都是 X 深色 class，不能等 JS 标记，先按结构选择器上纸色 */
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] div:has(form[role="search"]):not([role="dialog"] *) {
+      background-color: var(--xmp-paper) !important;
+      background-image: none !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] form[role="search"] > div > div {
+      background-color: var(--xmp-paper-raised) !important;
+      border: 1px solid var(--xmp-hairline) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="primaryColumn"] form[role="search"] svg {
+      color: var(--xmp-ink-secondary) !important;
+      fill: var(--xmp-ink-secondary) !important;
+    }
+
+    /* 探索/搜索空状态和错误态的主行动按钮（「搜索」「重试」）由 X 内联蓝色填充，
+       按主题强调色绘制；普通文字链接不受影响 */
+    html[data-xmp-enabled="1"]:is([data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="primaryColumn"] :is(a, button, [role="button"])[style*="background-color: rgb(29, 155, 240)"] {
+      background-color: var(--xmp-accent) !important;
+      border-color: var(--xmp-accent) !important;
+    }
+
+    /* 探索/搜索的深色表面（模块卡、侧栏卡、搜索框外壳、"显示更多"条）按计算样式标记一次：
+       已有 1px 边框的只换边框色，无边框的小胶囊用内阴影补细线，避免撑大布局 */
+    html[data-xmp-enabled="1"] :is([data-xmp-paper-surface], [data-xmp-paper-chip]) {
+      background-color: var(--xmp-paper-raised) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-paper-surface] {
+      border-color: var(--xmp-hairline) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-paper-chip] {
+      box-shadow: inset 0 0 0 1px var(--xmp-hairline) !important;
+    }
+
+    /* 深底上为浅色文字写的颜色在纸面上要翻回来：浅色→墨色，X 蓝→暖橙；
+       品牌色（党派色、比分绿勾等）不在标记范围内 */
+    html[data-xmp-enabled="1"] [data-xmp-paper-text]:not([role="dialog"] *) {
+      color: var(--xmp-ink) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-paper-link]:not([role="dialog"] *) {
+      color: var(--xmp-accent) !important;
+    }
+
+    /* 模块卡内的按钮描边统一细线，图标跟随墨色 */
+    html[data-xmp-enabled="1"] [data-xmp-module] :is(button, [role="button"]) {
+      border-color: var(--xmp-hairline) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-module] :is(button, [role="button"]):not([data-xmp-paper-surface]) {
+      box-shadow: inset 0 0 0 1px var(--xmp-hairline);
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-module] :is(button, [role="button"]) svg {
+      color: var(--xmp-ink) !important;
+      fill: var(--xmp-ink) !important;
+    }
+
+    /* 侧栏「推荐关注」的关注按钮沿用主按钮配色 */
+    html[data-xmp-enabled="1"] [data-testid="sidebarColumn"] [data-testid$="-follow"] {
+      background-color: var(--xmp-accent) !important;
+      border-color: var(--xmp-accent) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="sidebarColumn"] [data-testid$="-follow"] :is(span, div, svg) {
+      color: var(--xmp-paper) !important;
+      fill: var(--xmp-paper) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-testid="sidebarColumn"] [data-testid$="-follow"]:hover {
+      background-color: var(--xmp-accent-deep) !important;
+      border-color: var(--xmp-accent-deep) !important;
+    }
+
+    /* 搜索过滤单选按钮：选中用暖橙实心 + 纸色勾，未选中用纸面 + 细线 */
+    html[data-xmp-enabled="1"] [data-xmp-paper-surface] [role="radiogroup"] label > div > div:last-child > div {
+      border-color: var(--xmp-hairline) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-paper-surface] [role="radiogroup"] label > div > div:last-child > div > div {
+      background-color: var(--xmp-paper) !important;
+      border-color: var(--xmp-hairline) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-paper-surface] [role="radiogroup"] label:has(input:checked) > div > div:last-child > div > div {
+      background-color: var(--xmp-accent) !important;
+      border-color: var(--xmp-accent) !important;
+    }
+
+    html[data-xmp-enabled="1"] [data-xmp-paper-surface] [role="radiogroup"] svg {
+      color: var(--xmp-paper) !important;
+      fill: var(--xmp-paper) !important;
+    }
+
     html[data-xmp-enabled="1"] :is(main, header[role="banner"]) :is(a, button, [role="button"], [role="tab"], [role="link"]):focus-visible {
       outline: 2px solid var(--xmp-accent) !important;
       outline-offset: 2px;
@@ -767,14 +884,14 @@
     }
 
     @media (min-width: 1000px) {
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header[role="banner"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] {
         width: 88px !important;
         min-width: 88px !important;
         flex: 0 0 88px !important;
         background: var(--xmp-paper) !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav {
         position: fixed !important;
         left: 0 !important;
         top: var(--xmp-nav-top, 0px) !important;
@@ -789,53 +906,53 @@
         transition: width 160ms ease, box-shadow 160ms ease;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button span {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a span,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button span {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button > div:first-child > div[dir="ltr"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a > div:first-child > div[dir="ltr"],
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button > div:first-child > div[dir="ltr"] {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button {
         justify-content: center !important;
         align-items: center !important;
         flex: 0 0 auto !important;
         height: auto !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button > div:first-child {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button > div:first-child {
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a:hover > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button:hover > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a:focus-visible > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button:focus-visible > div:first-child {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a:hover > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button:hover > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a:focus-visible > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button:focus-visible > div:first-child {
         background-color: var(--xmp-accent-soft) !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav {
         width: 240px !important;
         box-shadow: 4px 0 16px rgba(27, 27, 27, 0.12);
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a span,
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button span {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a span,
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button span {
         display: inline !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button > div:first-child > div[dir="ltr"] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a > div:first-child > div[dir="ltr"],
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button > div:first-child > div[dir="ltr"] {
         display: block !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav a,
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) header nav button {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a,
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button {
         justify-content: flex-start !important;
         align-items: flex-start !important;
       }
@@ -844,40 +961,78 @@
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="sidebarColumn"] {
+      /* 探索/搜索没有首页的内联发帖框：保留左轨发帖入口，把 X 的宽版文字按钮收成 52px 圆形 FAB，
+         否则它会停在 275px 宽版位置、露在收起轨道和正文之间 */
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"] {
+        position: fixed !important;
+        left: 18px !important;
+        bottom: 96px !important;
+        top: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 52px !important;
+        height: 52px !important;
+        min-width: 52px !important;
+        padding: 0 !important;
+        border-radius: 9999px !important;
+        border-color: transparent !important;
+        background-color: var(--xmp-accent) !important;
+        box-shadow: 0 6px 18px rgba(27, 27, 27, 0.18);
+        z-index: 1001 !important;
+      }
+
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"] > div {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) main {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"]::before {
+        content: "";
+        width: 24px;
+        height: 24px;
+        background-color: var(--xmp-paper);
+        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M23 3c-6.62-.1-10.38 2.421-13.05 6.03C7.29 12.61 6 17.331 6 22h2c0-1.007.07-2.012.19-3H12c4.1 0 7.48-3.082 7.94-7.054C22.79 10.147 23.17 6.359 23 3zm-7 8h-1.5v2H14v1.5h-.5V16H12v-1.5h-.5V13H10v-1.5h1.5V10H13v1.5h1.5V13H16v-1.5h-1.5V10H16z'/%3E%3C/svg%3E") center / contain no-repeat;
+        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M23 3c-6.62-.1-10.38 2.421-13.05 6.03C7.29 12.61 6 17.331 6 22h2c0-1.007.07-2.012.19-3H12c4.1 0 7.48-3.082 7.94-7.054C22.79 10.147 23.17 6.359 23 3zm-7 8h-1.5v2H14v1.5h-.5V16H12v-1.5h-.5V13H10v-1.5h1.5V10H13v1.5h1.5V13H16v-1.5h-1.5V10H16z'/%3E%3C/svg%3E") center / contain no-repeat;
+      }
+
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"]:hover {
+        background-color: var(--xmp-accent-deep) !important;
+      }
+
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="sidebarColumn"] {
+        display: none !important;
+      }
+
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) main {
         align-items: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) main > div {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) main > div {
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) main > div > div > div {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) main > div > div > div {
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="primaryColumn"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="primaryColumn"] {
         width: 760px !important;
         max-width: 760px !important;
         flex: 0 0 760px !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-xmp-inner-timeline] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-xmp-inner-timeline] {
         width: 100% !important;
         max-width: 100% !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="cellInnerDiv"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="tweetText"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="cellInnerDiv"],
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="tweetText"] {
         max-width: 100% !important;
       }
 
       @media (max-width: 1599px) and (min-width: 1280px) {
-        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="primaryColumn"] {
+        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="primaryColumn"] {
           width: 720px !important;
           max-width: 720px !important;
           flex: 0 0 720px !important;
@@ -885,14 +1040,14 @@
       }
 
       @media (max-width: 1279px) and (min-width: 1000px) {
-        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="primaryColumn"] {
+        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="primaryColumn"] {
           width: 680px !important;
           max-width: 680px !important;
           flex: 0 0 680px !important;
         }
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-xmp-rail-panel] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-xmp-rail-panel] {
         left: 0 !important;
         right: auto !important;
         width: 88px !important;
@@ -901,30 +1056,30 @@
         z-index: 1000 !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-xmp-rail-panel] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-xmp-rail-panel] {
         width: 240px !important;
         min-width: 240px !important;
         max-width: 240px !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="SideNav_AccountSwitcher_Button"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="SideNav_AccountSwitcher_Button"] {
         width: 72px !important;
         min-width: 0 !important;
         padding: 6px !important;
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="SideNav_AccountSwitcher_Button"] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="SideNav_AccountSwitcher_Button"] {
         width: 224px !important;
         padding: 12px !important;
         justify-content: flex-start !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:last-child {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:last-child {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):not([data-xmp-nav-expanded="1"]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:not(:first-child) {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):not([data-xmp-nav-expanded="1"]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:not(:first-child) {
         display: none !important;
       }
 
@@ -965,7 +1120,7 @@
         white-space: nowrap;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"]) .xmp-nav-toggle {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) .xmp-nav-toggle {
         display: inline-flex;
       }
 
@@ -1162,6 +1317,9 @@
   let railTimer = null;
   let homeReturn = null;
   let homeRestoreToken = 0;
+  let surfaceObserver = null;
+  let surfaceScanTimer = null;
+  let surfacePrimary = null;
   const warned = new Set();
   const mediaWarmups = new WeakMap();
   const mediaReveals = new WeakMap();
@@ -1290,6 +1448,8 @@
   function disableInPage() {
     enabled = false;
     stopObserver();
+    stopSurfaceObserver();
+    clearSurfaceMarkers();
     cleanupAllMedia();
     hidePhotoPreview();
     if (previewEl) {
@@ -1324,6 +1484,7 @@
     safe('darkSurface', markDarkSurfaces);
     safe('railPanel', markRailPanel);
     safe('railLayout', markRailLayout);
+    if (isSurfaceRoute(route)) safe('exploreSurfaces', markExploreSurfaces);
     ensureNavToggle();
     if (route === 'home' || route === 'profile') {
       if (!degraded) {
@@ -1331,6 +1492,7 @@
         scanTimeline();
       }
     }
+    syncSurfaceRoute(route);
   }
 
   // 保留给 X 自己的一级路径；其余 /<handle> 视为个人主页（含 /handle/media 等子页）。
@@ -1351,6 +1513,8 @@
     if (STANDALONE_PATH.test(pathname) || pathname === '/premium') return 'standalone';
     if (pathname === '/' || pathname === '/home') return 'home';
     if (pathname.includes('/status/')) return 'status';
+    if (pathname === '/explore' || pathname.startsWith('/explore/')) return 'explore';
+    if (pathname === '/search' || pathname.startsWith('/search/')) return 'search';
     const match = pathname.match(PROFILE_PATH);
     if (match && !RESERVED_HANDLES.has(match[1].toLowerCase())) return 'profile';
     if (pathname === '/i/connect_people') return 'people';
@@ -1358,7 +1522,13 @@
   }
 
   function isWideRoute(value) {
-    return value === 'home' || value === 'status' || value === 'profile' || value === 'people';
+    return value === 'home' || value === 'status' || value === 'profile' || value === 'people' ||
+      value === 'explore' || value === 'search';
+  }
+
+  // 探索/搜索保持 X 原生版面，只做主题换肤；这两页的深色表面靠运行时标记，需要跟随流式渲染。
+  function isSurfaceRoute(value) {
+    return value === 'explore' || value === 'search';
   }
 
   function setRoute() {
@@ -1535,6 +1705,8 @@
     hidePhotoPreview();
     if (route === 'standalone') {
       stopObserver();
+      stopSurfaceObserver();
+      clearSurfaceMarkers();
       setNavExpanded(false);
       return;
     }
@@ -1545,6 +1717,7 @@
     }
     const primary = document.querySelector(PRIMARY);
     if (!primary) {
+      syncSurfaceRoute(previousRoute);
       scheduleBootRetry();
       return;
     }
@@ -1557,6 +1730,7 @@
     safe('darkSurface', markDarkSurfaces);
     safe('railPanel', markRailPanel);
     safe('railLayout', markRailLayout);
+    if (isSurfaceRoute(route)) safe('exploreSurfaces', markExploreSurfaces);
     ensureNavToggle();
     if (!isWideRoute(route)) setNavExpanded(false);
     if (route === 'home' || route === 'profile') {
@@ -1567,6 +1741,7 @@
     } else {
       stopObserver();
     }
+    syncSurfaceRoute(previousRoute);
   }
 
   function formatPostTime(value) {
@@ -1598,14 +1773,16 @@
     }
   }
 
-  // X 流式渲染：顶部条和回复框可能晚于正文出现，延迟再标一次。
+  // X 流式渲染：顶部条、标签栏和回复框可能晚于正文出现，延迟再标一次。
   function scheduleSurfaceRefresh() {
     if (timestampTimer) window.clearTimeout(timestampTimer);
     timestampTimer = window.setTimeout(() => {
       timestampTimer = null;
       safe('timestamps', formatTimestamps);
+      safe('tabbar', markTabbar);
       safe('composer', markComposer);
       safe('appbar', markAppBar);
+      if (isSurfaceRoute(route)) syncSurfaceRoute(route);
     }, 1200);
   }
 
@@ -1685,6 +1862,228 @@
         node.setAttribute(dark ? 'data-xmp-dark-surface' : 'data-xmp-light-surface', '');
       }
     }
+  }
+
+  // 探索/搜索页的深色表面（模块卡、侧栏卡、搜索框外壳、底部「显示更多」条）没有稳定 testid，
+  // 按计算样式识别一次并打运行时标记，主题规则把它们换成纸面浮起，卡内浅色文字翻成墨色。
+  const SURFACE_MARKERS = [
+    'data-xmp-paper-surface',
+    'data-xmp-paper-chip',
+    'data-xmp-paper-text',
+    'data-xmp-paper-link',
+    'data-xmp-module',
+    'data-xmp-surface-scan',
+  ];
+  const SURFACE_NATIVE_CELL = '[data-testid="tweet"], [data-testid="trend"], [data-testid="UserCell"], [data-testid="eventHero"], img';
+  const SURFACE_TEXT_SELECTOR = 'span, p, div[dir], h1, h2, h3, a';
+
+  function colorParts(value) {
+    const match = value && value.match(/rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)/);
+    if (!match) return null;
+    if (match[4] !== undefined && +match[4] < 0.4) return null;
+    return [+match[1], +match[2], +match[3]];
+  }
+
+  function colorLuma(value) {
+    const rgb = colorParts(value);
+    if (!rgb) return null;
+    return 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+  }
+
+  function isDarkColor(value) {
+    const luma = colorLuma(value);
+    return luma !== null && luma < 90;
+  }
+
+  function isLightColor(value) {
+    const luma = colorLuma(value);
+    return luma !== null && luma >= 170;
+  }
+
+  function isXBlue(value) {
+    const rgb = colorParts(value);
+    return !!rgb && rgb[0] === 29 && rgb[1] === 155 && rgb[2] === 240;
+  }
+
+  // 已有 1px 边框的表面只换边框色；无边框的小胶囊用内阴影补细线，避免加 border 撑大布局。
+  function markPaperSurface(node, style) {
+    const bordered = (parseFloat(style.borderTopWidth) || 0) >= 1;
+    node.setAttribute(bordered ? 'data-xmp-paper-surface' : 'data-xmp-paper-chip', '');
+  }
+
+  function scanPaperSurfaces(root, minSize) {
+    for (const node of root.querySelectorAll('div, button, section, ul, form')) {
+      if (node.closest('[role="dialog"]')) continue;
+      if (node.hasAttribute('data-xmp-paper-surface') || node.hasAttribute('data-xmp-paper-chip')) continue;
+      const style = window.getComputedStyle(node);
+      if (style.backgroundImage !== 'none' || !isDarkColor(style.backgroundColor)) continue;
+      const box = node.getBoundingClientRect();
+      const control = node.tagName === 'BUTTON' || node.getAttribute('role') === 'button';
+      const min = control ? 20 : minSize;
+      if (box.width < min || box.height < min) continue;
+      markPaperSurface(node, style);
+    }
+  }
+
+  // 只处理带直接文字的元素：品牌色（党派色、比分绿勾）不在浅色阈值内，保持原样。
+  function markPaperText(root) {
+    for (const node of root.querySelectorAll(SURFACE_TEXT_SELECTOR)) {
+      if (node.closest('[role="dialog"]')) continue;
+      if (node.closest('img, [style*="background-image"], [data-testid="tweetPhoto"], [data-testid="previewInterstitial"]')) continue;
+      let hasOwnText = false;
+      for (const child of node.childNodes) {
+        if (child.nodeType === Node.TEXT_NODE && child.textContent.trim()) {
+          hasOwnText = true;
+          break;
+        }
+      }
+      if (!hasOwnText) continue;
+      const color = window.getComputedStyle(node).color;
+      if (isLightColor(color)) node.setAttribute('data-xmp-paper-text', '');
+      else if (isXBlue(color)) node.setAttribute('data-xmp-paper-link', '');
+    }
+  }
+
+  // 搜索框外壳：探索页是纯黑胶囊，搜索页是深色描边的圆角层，都从输入框向上找。
+  function markSearchChrome(primary) {
+    for (const input of primary.querySelectorAll('[data-testid="SearchBox_Search_Input"]')) {
+      if (input.closest('[role="dialog"]')) continue;
+      for (let node = input; node && node !== primary; node = node.parentElement) {
+        const style = window.getComputedStyle(node);
+        const radius = parseFloat(style.borderTopLeftRadius) || 0;
+        const bordered = (parseFloat(style.borderTopWidth) || 0) >= 1;
+        if (isDarkColor(style.backgroundColor) || (bordered && radius >= 8)) markPaperSurface(node, style);
+      }
+    }
+  }
+
+  function markSidebarSurfaces() {
+    const sidebar = document.querySelector('[data-testid="sidebarColumn"]');
+    if (!sidebar || sidebar.hasAttribute('data-xmp-surface-scan')) return;
+    sidebar.setAttribute('data-xmp-surface-scan', '');
+    const cards = [...sidebar.querySelectorAll('[data-xmp-paper-surface]')];
+    for (const node of sidebar.querySelectorAll('div')) {
+      if (node.closest('[role="dialog"]')) continue;
+      if (node.hasAttribute('data-xmp-paper-surface') || node.hasAttribute('data-xmp-paper-chip')) continue;
+      const style = window.getComputedStyle(node);
+      if (style.backgroundImage !== 'none' || !isDarkColor(style.backgroundColor)) continue;
+      const box = node.getBoundingClientRect();
+      if (box.width < 200 || box.height < 20) continue;
+      markPaperSurface(node, style);
+      cards.push(node);
+    }
+    for (const card of cards) markPaperText(card);
+  }
+
+  function markExploreSurfaces() {
+    const primary = document.querySelector(PRIMARY);
+    if (!primary) return;
+    for (const cell of primary.querySelectorAll(CELL)) {
+      if (cell.hasAttribute('data-xmp-surface-scan')) continue;
+      cell.setAttribute('data-xmp-surface-scan', '');
+      // 选举/体育这类聚合模块卡自带深色底和浅色文字，整格扫描
+      if (cell.querySelector('[class*="jf-element"]')) {
+        cell.setAttribute('data-xmp-module', '');
+        scanPaperSurfaces(cell, 48);
+        markPaperText(cell);
+        continue;
+      }
+      if (cell.querySelector(SURFACE_NATIVE_CELL)) continue;
+      scanPaperSurfaces(cell, 48);
+      markPaperText(cell);
+    }
+    markSearchChrome(primary);
+    markSidebarSurfaces();
+  }
+
+  function clearSurfaceMarkers() {
+    const selector = SURFACE_MARKERS.map(name => `[${name}]`).join(', ');
+    for (const node of document.querySelectorAll(selector)) {
+      for (const name of SURFACE_MARKERS) node.removeAttribute(name);
+    }
+  }
+
+  // 路由切换/延迟刷新时丢弃“已扫描”标记：新内容可能在观察器挂到新 main 之前就已渲染，
+  // 只靠 MutationObserver 会漏掉，必须强制下一轮重新扫描。
+  function clearSurfaceScanFlags() {
+    for (const node of document.querySelectorAll('[data-xmp-surface-scan]')) {
+      node.removeAttribute('data-xmp-surface-scan');
+    }
+  }
+
+  function scheduleSurfaceScan() {
+    if (surfaceScanTimer) return;
+    surfaceScanTimer = window.setTimeout(() => {
+      surfaceScanTimer = null;
+      ensureSurfaceObserver();
+      if (!enabled || !isSurfaceRoute(route)) return;
+      safe('exploreSurfaces', markExploreSurfaces);
+    }, 200);
+  }
+
+  // React 会整块替换模块/侧栏内容，标记随旧节点消失；按变更记录撤掉对应单元格（或侧栏）的
+  // 已扫描标记，下一轮防抖重新扫描。
+  function invalidateSurfaceScan(records) {
+    for (const record of records) {
+      const node = record.target.nodeType === 1 ? record.target : record.target.parentElement;
+      if (!node || !node.closest) continue;
+      const cell = node.closest(CELL);
+      if (cell) cell.removeAttribute('data-xmp-surface-scan');
+      const sidebar = node.closest('[data-testid="sidebarColumn"]');
+      if (sidebar) sidebar.removeAttribute('data-xmp-surface-scan');
+    }
+  }
+
+  // 观察 main（跨 SPA 路由稳定）而不是 primaryColumn：路由切换时 primary 可能整块替换，
+  // 只观察它会漏掉新内容。侧栏也在 main 内，随同一个观察器更新。
+  function surfaceRoot() {
+    return document.querySelector('main[role="main"]') || document.querySelector(PRIMARY);
+  }
+
+  function startSurfaceObserver() {
+    if (!enabled || !isSurfaceRoute(route)) return;
+    const root = surfaceRoot();
+    if (!root) return;
+    if (surfaceObserver && surfacePrimary === root) return;
+    stopSurfaceObserver();
+    surfacePrimary = root;
+    surfaceObserver = new MutationObserver(records => {
+      invalidateSurfaceScan(records);
+      scheduleSurfaceScan();
+    });
+    surfaceObserver.observe(root, { childList: true, subtree: true });
+    clearSurfaceScanFlags();
+  }
+
+  function ensureSurfaceObserver() {
+    if (!enabled || !isSurfaceRoute(route)) return;
+    const root = surfaceRoot();
+    if (!root || (surfaceObserver && surfacePrimary === root)) return;
+    startSurfaceObserver();
+  }
+
+  function stopSurfaceObserver() {
+    if (surfaceObserver) {
+      surfaceObserver.disconnect();
+      surfaceObserver = null;
+    }
+    surfacePrimary = null;
+    if (surfaceScanTimer) {
+      window.clearTimeout(surfaceScanTimer);
+      surfaceScanTimer = null;
+    }
+  }
+
+  // 探索/搜索只做换肤不做版面：进入这两页起表面观察器，离开时停掉并清标记（DOM 复用时不留纸面样式）。
+  function syncSurfaceRoute(previousRoute) {
+    if (isSurfaceRoute(route)) {
+      clearSurfaceScanFlags();
+      startSurfaceObserver();
+      scheduleSurfaceScan();
+      return;
+    }
+    stopSurfaceObserver();
+    if (isSurfaceRoute(previousRoute)) clearSurfaceMarkers();
   }
 
   // 详情页/文章页的顶部条没有稳定 testid，从返回按钮向上找带 blur/背景的那一层，
@@ -1785,6 +2184,7 @@
     safe('darkSurface', markDarkSurfaces);
     safe('railPanel', markRailPanel);
     safe('railLayout', markRailLayout);
+    if (isSurfaceRoute(route)) safe('exploreSurfaces', markExploreSurfaces);
     ensureNavToggle();
     if (route === 'home' || route === 'profile') {
       if (!degraded) {
@@ -1794,6 +2194,7 @@
     } else {
       stopObserver();
     }
+    syncSurfaceRoute(route);
   }
 
   function scheduleBootRetry() {

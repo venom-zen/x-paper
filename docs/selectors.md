@@ -8,7 +8,7 @@
 | Attribute | 值 | 作用 |
 |-----------|----|------|
 | `data-xmp-enabled` | `1` | `html` 上的主题作用域；关闭脚本时移除 |
-| `data-xmp-route` | `home` / `status` / `profile` / `people` / `standalone` / `other` | SPA 路由分类；版面 CSS 对 home/status/profile/people 生效，`standalone` 完全不套主题。`profile` 是 `/<handle>` 及 `/handle/media` 等子页（`RESERVED_HANDLES` 排除 X 自己的保留一级路径）；`people` 是 `/i/connect_people`（「推荐关注」整页） |
+| `data-xmp-route` | `home` / `status` / `profile` / `people` / `explore` / `search` / `standalone` / `other` | SPA 路由分类；版面 CSS 对 home/status/profile/people/explore/search 生效，`standalone` 完全不套主题。`profile` 是 `/<handle>` 及 `/handle/media` 等子页（`RESERVED_HANDLES` 排除 X 自己的保留一级路径）；`people` 是 `/i/connect_people`（「推荐关注」整页）；`explore` 是 `/explore` 及其子路径，`search` 是 `/search`，两页与首页共用宽版面 |
 | `data-xmp-degraded` | `1` | primary 或版面锚点缺失；只应用主题，关闭版面、噪音和媒体 CSS |
 | `data-xmp-inner-timeline` | 空 | 标记 primary 内的 600px 时间线容器，供版面 CSS 放宽到 100% |
 | `data-xmp-media-block` | 空 | 媒体块标记；折叠态 CSS 的隐藏目标 |
@@ -21,6 +21,12 @@
 | `data-xmp-rail-panel` | 空 | 账号入口所在的固定侧栏层；脚本把它的 left/width 从 275px 收回到 88px（展开 240px），避免账号入口和菜单跑出视口 |
 | `data-xmp-appbar` | 空 | 详情页/文章页顶部条；主题用结构选择器直接命中（节点出现即纸色），`markAppBar()` 从 `[data-testid="app-bar-back"]` 向上找带 `backdrop-filter: blur` 或非透明背景的祖先标记它，只作 X 改嵌套后的兜底 |
 | `data-xmp-preview-open` | `1` | `.xmp-photo-preview` 悬浮原图预览的显示开关；移出图片/按钮、滚轮或触摸滚动、点击、按 `Esc`、切路由或关闭脚本时移除 |
+| `data-xmp-paper-surface` | 空 | 探索/搜索页已有 1px 边框的深色表面（模块卡、侧栏卡、搜索框外壳）；背景换纸面浮起，边框换细线 |
+| `data-xmp-paper-chip` | 空 | 探索/搜索页无边框的深色胶囊（模块按钮、计数条）；背景换纸面浮起，用 inset 阴影补 1px 细线，避免加 border 撑大布局 |
+| `data-xmp-paper-text` | 空 | 深底上为浅色文字写的颜色；纸面下改墨色。只标记有直接文字的元素，品牌色不受影响 |
+| `data-xmp-paper-link` | 空 | 深底/模块内的 X 蓝文字链接；纸面下改暖橙 |
+| `data-xmp-module` | 空 | 含 `[class*="jf-element"]` 的探索聚合模块单元格；模块内按钮描边和图标配色的作用域 |
+| `data-xmp-surface-scan` | 空 | 已扫描过的单元格或侧栏；React 替换内容时由变更记录撤掉并重扫，避免每轮重复扫描 |
 
 `button.xmp-nav-toggle` 是脚本创建并挂到 `body` 的轨道展开按钮：≥1000px、home/status/profile 且未
 降级时显示在「更多」项下方（收起 72px、展开 224px），样式与普通导航项一致，`aria-expanded`
@@ -62,7 +68,7 @@
 | 主导航容器 | `header[role="banner"]` | 原宽 595px；内部 nav 原为 `position: fixed; left: 320px; width: 275px` |
 | 导航链接 | `[data-testid^="AppTabBar_"]` | 选择器健康检查的 nav 锚点 |
 | 发帖 / 账号 | `SideNav_NewTweet_Button` / `SideNav_AccountSwitcher_Button` | 左轨中隐藏文字标签 |
-| 正文列 / 右栏 | `[data-testid="primaryColumn"]` / `[data-testid="sidebarColumn"]` | 右栏在 home/status/profile 隐藏 |
+| 正文列 / 右栏 | `[data-testid="primaryColumn"]` / `[data-testid="sidebarColumn"]` | 右栏在 home/status/profile/people/explore/search 隐藏 |
 | 内层时间线 | primary 内计算样式 `max-width: 600px` 的容器 | 加 `data-xmp-inner-timeline` 后放宽 |
 | 时间线单元格 | `[data-testid="cellInnerDiv"]` | 时间线根 = 这些单元格的最近公共容器 |
 | 帖子 / 正文 | `[data-testid="tweet"]` / `[data-testid="tweetText"]` | 顶层帖子没有祖先 `tweet` |
@@ -71,7 +77,10 @@
 | 推广单元格 | `[data-testid="placementTracking"]` | 首页和详情/文章页 `cellInnerDiv:has(...)` 隐藏；详情页的推广回复用同一标记 |
 | 推荐关注 | `[data-testid="UserCell"]` | 首页隐藏；搜索/通知页保持可见 |
 | 操作组 | `[role="group"]` | 媒体块祖先不得包含它；图标 16px、计数 13px |
-| 搜索框 / 趋势 | `SearchBox_Search_Input` / `trend` | 其他页面主题表面 |
+| 搜索框 / 趋势 | `SearchBox_Search_Input` / `trend` | 其他页面主题表面；探索/搜索页的搜索框外壳由 `markSearchChrome()` 按圆角 + 边框标记 |
+| 探索聚合模块 | 单元格内 `[class*="jf-element"]` | 选举、体育赛程、比赛提供方等聚合卡；标 `data-xmp-module`，按计算样式扫深色表面 |
+| 探索/搜索侧栏卡 | `[data-testid="sidebarColumn"]` 内计算背景亮度 < 90 的块 | 宽度 ≥200、高度 ≥20 的深色容器视为卡片，标 `data-xmp-paper-surface` |
+| 搜索过滤单选 | `[data-testid="radioGroupPeople"]` / `radioGroupLocation` | 选中态与未选中态按 `input:checked` 和纸面细线重绘 |
 | 首页 tab 栏 | 首页主内容容器的第一个子元素；含 `[role="tablist"]` | 标 `data-xmp-tabbar`；容器和子 div/nav 都要纸色 |
 | 首页发帖框 | 主内容容器的发帖框包装层；含 `[data-testid="tweetTextarea_0"]` 和 `toolBar` | 标 `data-xmp-composer`；外层和子 div 都要纸色 |
 | 发帖按钮 | `[data-testid="tweetButtonInline"]` | 主按钮使用 `--xmp-accent` |
@@ -174,6 +183,53 @@
   只要求 header、nav 和 primaryColumn，找不到内层容器时不再降级。
 - 顶部条、标签页和关注按钮沿用同一套规则：顶部条走 `data-xmp-appbar` / 结构选择器，标签选中暖橙，
   关注按钮暖橙实心 + 纸色文字。
+
+## 探索与搜索
+
+- 路由：`/explore` 及子路径归为 `explore`，`/search` 归为 `search`。两页加入 `isWideRoute`，
+  与首页共用宽版面：≥1000px 时 88px 轨道、680/720/760px 居中正文列、隐藏右栏；<1000px 时回到
+  X 原生布局。`isSurfaceRoute()` 仍只用于主题表面的运行时标记。
+- 探索/搜索没有首页的内联发帖框。`SideNav_NewTweet_Button` 在首页/详情/个人主页/推荐关注页隐藏，
+  在这两页保留并收成 52px 圆形 FAB（left 18px、bottom 96px、暖橙底 + 纸色笔形 mask 图标），
+  避免 X 的 275px 宽版按钮停在收起轨道旁；文本子 div 隐藏，原生 `href="/compose/post"` 保持不变。
+- 搜索页的右栏是「搜索过滤」；宽版面隐藏右栏后这组过滤控件不再显示（与首页结构一致），
+  搜索词仍可通过输入框和 X 语法调整。`<1000px` 时右栏恢复，侧栏卡会按下面的规则换肤。
+- 搜索框：`form[role="search"]` 内 `[data-testid="SearchBox_Search_Input"]` 向上，
+  带 1px 边框且 `border-radius ≥ 8px` 的圆角层是可见胶囊，`markSearchChrome()` 标记它；
+  探索页这个胶囊是纯黑 `rgb(0,0,0)`，搜索页是 `rgb(51,54,57)` 描边、透明底。
+  输入框本身改透明，放大镜等 `svg` 改 `--xmp-ink-secondary`。
+- 首帧搜索框：外壳是 X 深色 class，不能等 JS 标记。结构规则
+  `[data-testid="primaryColumn"] div:has(form[role="search"])` 把容器提前上纸色，
+  `form[role="search"] > div > div`（可见圆角胶囊）提前设纸面浮起 + 细线。
+- 顶栏标签：选中标签的下划线是内联 `background-color: rgb(29, 155, 240)` 的 4px div，
+  主题按内联蓝精确命中改成 `--xmp-accent`；选中标签文字暖橙，未选中用 `--xmp-ink-secondary`。
+- 深色表面：模块卡、侧栏卡、搜索框外壳和底部「显示更多」条没有稳定 testid，`markExploreSurfaces()`
+  按**计算样式**识别（`backgroundColor` 亮度 < 90 且不透明度 ≥ 0.4、无 `background-image`、
+  尺寸达标），逐个打 `data-xmp-paper-surface` / `data-xmp-paper-chip`：
+  - 已有 1px 边框的表面标 `paper-surface`，只换边框色（侧栏卡、模块卡）；
+  - 无边框的按钮/胶囊标 `paper-chip`，用 `box-shadow: inset 0 0 0 1px` 补细线，避免 border 撑大布局。
+- 文字翻转：深底上的浅色文字（计算颜色亮度 ≥ 170）标 `data-xmp-paper-text`，纸面下改墨色；
+  X 蓝（`rgb(29, 155, 240)`）标 `data-xmp-paper-link` 改暖橙。只标记**有直接文字节点**的元素，
+  党派色、比分绿勾等品牌色（亮度低于阈值）保持原样。选举/体育模块的白字来自内联
+  `text-shadow: rgb(255, 255, 255)`，同样落在浅色阈值里。
+- 聚合模块：无 `tweet`/`trend`/`UserCell`、含 `[class*="jf-element"]` 的单元格标 `data-xmp-module`，
+  整格扫描表面和文字；模块卡内的按钮描边统一细线、图标改墨色。`jf-element` 是 X 聚合卡
+  （选举、体育赛程、比赛提供方）自己的类名前缀，不是生成的 `r-*` class。
+- 侧栏（<1000px 或降级时可见）：`[data-testid="sidebarColumn"]` 内宽度 ≥200、高度 ≥20 的深色块
+  视为卡片（`搜索过滤`、`有什么新鲜事`、`推荐关注`）；卡内浅色标题/标签翻墨色，X 蓝
+  「高级搜索」「显示更多」翻暖橙。侧栏关注按钮按 `[data-testid$="-follow"]` 用暖橙实心 +
+  纸色文字；搜索过滤的 radio 选中态用暖橙实心 + 纸色勾，未选中用纸面 + 细线。
+- 观察器：探索/搜索页由 `startSurfaceObserver()` 观察 **`main[role="main"]`**（不是
+  `primaryColumn`：X 在 SPA 切路由时可能整块替换 primary），200ms 防抖；侧栏也在 `main` 内。
+  React 替换内容时 `invalidateSurfaceScan()` 按变更记录撤掉对应单元格/侧栏的
+  `data-xmp-surface-scan`，下一轮重扫；已标记的单元格不会每轮重复扫描。
+  路由切换/1.2s 延迟刷新还会 `clearSurfaceScanFlags()` 强制重扫全部单元格：新内容可能在
+  观察器挂到新 `main` 之前就已渲染，只靠变更记录会漏掉（表现为模块卡在 SPA 切换后保持深色）。
+- 清理：离开这两页时 `stopSurfaceObserver()` + `clearSurfaceMarkers()`，DOM 复用时不会把
+  `data-xmp-paper-*` 样式带到首页/详情页；关闭脚本同样清理。
+- 主题只接管深色表面，媒体、文章预览卡和事件头图保持原生：`eventHero`、`tweet`、`trend`、
+  `UserCell` 以及包含 `img` 的单元格不参与表面扫描。
+- 媒体折叠仍只在首页和个人主页运行；探索/搜索的帖子媒体保持原生展开，不插入 `xmp-media-toggle`。
 
 ## 首帧与提前着色
 
