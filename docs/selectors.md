@@ -270,9 +270,10 @@
 
 ## 评论弹窗
 
-- 只拦截评论按钮 `[data-testid="reply"]`：在 document 捕获阶段 preventDefault + stopPropagation
+- 只拦截评论按钮 `[data-testid="reply"]`：在 **window 捕获阶段** preventDefault + stopPropagation
   + stopImmediatePropagation，阻止 X 跳到 `/compose/post`；帖子正文/时间链接不拦截。
-  只对 home/profile/explore/search 生效，`[role="dialog"]` 内不拦截。
+  只对 home/profile/explore/search 生效，`[role="dialog"]` 内不拦截。window 捕获确保先于 X
+  和可能仍在运行的旧版脚本。
 - 从 `reply.closest('[data-testid="tweet"]')` 找到顶层帖子，再用
   `cellStatusLink(cell)` 取带 `time[datetime]` 的 `/handle/status/id` 链接。
 - 数据接口：`/i/api/graphql/<queryId>/TweetDetail`，当前 queryId
@@ -289,9 +290,31 @@
   - `TimelineTimelineItem` 的 `content.itemContent`、`TimelineTimelineModule` 的
     `content.items[].item.itemContent` 都可能含推文。
   - `TweetWithVisibilityResults` 需要 `.tweet` 解包；按 `rest_id` 去重。
-  - 用户：`core.user_results.result.core.name/screen_name`、`avatar.image_url`。
+  - 用户：`core.user_results.result.core.name/screen_name`、`avatar.image_url`；
+    资料卡还用 `profile_bio.description`、`location.location`、`relationship_counts`。
   - 正文：`note_tweet.note_tweet_results.result.text` 优先，否则 `legacy.full_text`；
     媒体：`legacy.extended_entities.media`；查看数：`views.count`；时间：`legacy.created_at`。
+- 过滤与层级：
+  - 只保留 `focal` 之后、`legacy.conversation_id_str === focal.conversation_id_str` 的推文，
+    并跳过 `promotedMetadata`/`legacy.promoted`。X 会在对话模块里混入其他帖子，不能全当评论。
+  - 用 `legacy.in_reply_to_status_id_str` 建树；只保留能连到原帖的回复。
+    每个顶层回复包在 `.xmp-comments-thread` 中：`.xmp-comments-replies > .xmp-comments-thread`
+    才有底部分割线（最后一个除外），父子回复之间**没有**分割线；嵌套线程
+    `.xmp-comments-children` 做 20px 缩进 + 14px padding + 2px 竖线，子行 `::before` 画 14px
+    短横线接到头像，形成 `|_` 效果；有子回复的行加 `.has-children`，`::after` 从头像下方画线
+    接上子树；每条非原帖评论显示「回复 @parent」。
+- 互动：
+  - 喜欢/取消：`FavoriteTweet`（`lI07N6Otwv1PhnEgXILM7A`）/
+    `UnfavoriteTweet`（`ZYKSe-w7KEslx3JhSIk5LA`），POST body
+    `{variables:{tweet_id},queryId}`，头部同 TweetDetail；实测不需要 transaction id。
+    乐观更新 `aria-pressed`/计数，失败回滚。
+  - 回复：独立窗口打开 `/compose/post?in_reply_to=<rest_id>`，由 X 原生 composer 处理；
+    不要在弹窗里调用 CreateTweet，也不要在同一页用隐藏 anchor 打开（关闭后首页会回顶）。
+  - 资料：与主页 HoverCard 一致的悬停卡片。头像/用户名 `pointerenter` 250ms 后展示，
+    离开 180ms 后收起；鼠标进入卡片取消收起。卡片挂到 `body`、`position: fixed`、
+    `z-index: 2100`，不会被弹窗的 overflow 裁切；滚动（窗口或 `.xmp-comments-body`）、
+    resize、点击外部、关闭弹窗都会移除。`.xmp-comments-action` 的「资料」按钮可点击钉住/取消，
+    只保留一张卡。资料卡数据来自同一条 TweetDetail 响应，不额外请求。
 - 渲染：所有文字用 `textContent`；先解码 HTML 实体，再把 t.co 链接替换为 `display_url`；
   媒体 t.co URL 从正文删除，渲染 `media_url_https` 缩略图（视频/GIF 加角标）。
   不使用 innerHTML 拼接用户内容。
@@ -301,7 +324,7 @@
 - **不要**在打开时给 `html`/`body` 加 `overflow: hidden`：Chrome 会把首页滚动位置清到 0。
   改为在 overlay 上阻止 `wheel`/`touchmove`（`.xmp-comments-body` 内放行），键盘滚动键
   同样阻止；关闭后首页滚动位置不变。
-- 只渲染接口返回的第一页评论，不加载更多；弹窗内不能回复/点赞。
+- 只渲染接口返回的第一页评论，不加载更多；回复在独立窗口的 X 原生 composer 完成。
 
 ## 返回首页的位置恢复
 

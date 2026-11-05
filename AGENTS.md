@@ -10,10 +10,10 @@
 - 作者 `venom`，MIT 许可（`LICENSE`）；userscript 头部保留 `@author` / `@license`。
 - 入口：`x-morning-paper.user.js`。文档：`README.md`、`docs/selectors.md`。测试：
   `test/fixture.html`。截图：`screenshots/`。
-- 只使用 `GM_getValue`、`GM_setValue`、`GM_registerMenuCommand`、`GM_addStyle`；除评论弹窗
-  的只读 `TweetDetail` 请求外，不发起网络请求，不读取账号数据用于展示以外的用途，不发布、点赞、
-  关注、私信或修改任何账号状态。评论请求使用当前浏览器会话（`ct0` cookie）和 X Web 的公开
-  bearer，只用于渲染帖子与评论；不发送、不转推、不点赞。
+- 只使用 `GM_getValue`、`GM_setValue`、`GM_registerMenuCommand`、`GM_addStyle`。网络请求只有：
+  评论弹窗的 `TweetDetail` 读取，以及用户主动点击评论弹窗「喜欢」时的 `FavoriteTweet` /
+  `UnfavoriteTweet`。请求使用当前浏览器会话（`ct0` cookie）和 X Web 的公开 bearer；不发布、
+  不关注、不私信、不修改其他账号状态。回复通过 X 原生 composer 在独立窗口由用户完成。
 - 当前行为以代码、README 和 `docs/selectors.md` 为准。不要按已删除的旧设计记录回退
   当前行为。
 - 已经落地的、与初版设计不同的行为：无日期刊头、无操作栏上分割线、无正文列左右框线、
@@ -49,7 +49,8 @@
    一次 DOM。SPA 进入探索/搜索后至少等 1.5s 再判定模块是否已换纸面。
 5. **状态矩阵**：真实 X 的 1920×953、1440×900；X 深色/浅色设置；首页、详情、探索/搜索（宽版面）、
    通知；单图、网格、轮播、视频、引用帖、引用卡片、混合媒体；hover、focus、媒体折叠/展开；
-   Grok 抽屉打开/关闭/输入卡；评论弹窗打开/关闭、首页滚动位置、正文跳转仍进入状态页。
+   Grok 抽屉打开/关闭/输入卡；评论弹窗打开/关闭、首页滚动位置、正文跳转仍进入状态页；
+   评论点赞/取消、资料卡、回复 popup、嵌套楼层和非评论内容过滤。
 6. **边界**：999/1000px 是版面分界；1000px 应用轨道/680 列/媒体按钮，999px 只应用主题。
 7. **fixture**：`node --check x-morning-paper.user.js`；`python -m http.server 8765` 后打开
    `http://127.0.0.1:8765/test/fixture.html`，检查媒体、路由、降级、存储回退和 1920/1000/999。
@@ -252,13 +253,13 @@
 
 ### 评论弹窗
 
-- 只拦截 `[data-testid="reply"]`（评论按钮）的点击；在 document 捕获阶段
-  `preventDefault + stopPropagation + stopImmediatePropagation`，阻止 X 跳到 `/compose/post`。
-  帖子正文/时间链接不拦截，仍然进入状态页。只对 home/profile/explore/search 生效；弹窗内和
-  `[role="dialog"]` 内不拦截。
+- 只拦截 `[data-testid="reply"]`（评论按钮）的点击；在 **window 捕获阶段**（不是 document，
+  确保先于 X 和可能仍在运行的旧版脚本）`preventDefault + stopPropagation +
+  stopImmediatePropagation`，阻止 X 跳到 `/compose/post`。帖子正文/时间链接不拦截，仍然进入
+  状态页。只对 home/profile/explore/search 生效；弹窗内和 `[role="dialog"]` 内不拦截。
 - 节点定位：`reply.closest('[data-testid="tweet"]')` 取顶层帖子，再用 `cellStatusLink(cell)`
   找带 `time[datetime]` 的 `/handle/status/id` 链接；不要取引用帖链接。
-- 数据：只读请求 `/i/api/graphql/<queryId>/TweetDetail`。当前 queryId 为
+- 数据：`/i/api/graphql/<queryId>/TweetDetail`。当前 queryId 为
   `qpemjmVMoTWDvcRT43JIVQ`；请求头用公开 bearer + `ct0` cookie（`x-csrf-token`）、
   `x-twitter-auth-type: OAuth2Session`、`x-twitter-active-user: yes`、`content-type: application/json`；
   实测不需要 `x-client-transaction-id`。`features`/`fieldToggles` 对象在脚本顶部；X 改版后
@@ -269,6 +270,28 @@
   用 `.tweet` 解包；按 `rest_id` 去重。用户字段在 `core.user_results.result.core/avatar`，
   长文在 `note_tweet.note_tweet_results.result.text`，媒体在
   `legacy.extended_entities.media`，查看数在 `views.count`。
+- **过滤非评论内容**：只保留 focal 之后、`legacy.conversation_id_str === focal` 的推文，
+  并跳过 `promotedMetadata`/`legacy.promoted`。X 会在对话模块里混入其他帖子（推荐、广告、
+  不相关的主页帖），不能把所有 entry 都当评论；实测同一响应 42 条里只有 36 条属于对话。
+- **层级**：用 `legacy.in_reply_to_status_id_str` 建树；只保留能连到 focal 的回复。
+  `renderReplyGroup` 为每个顶层回复创建 `.xmp-comments-thread`，只给
+  `.xmp-comments-replies > .xmp-comments-thread` 加底部分割线（最后一个除外），父子回复之间
+  不能有分割线；嵌套 `.xmp-comments-children` 左缩进 20px + 14px padding + 2px 竖线，子行
+  `::before` 画 14px 短横线接到头像（`|_`），有子回复的行加 `.has-children`，`::after` 从头像
+  下方画竖线接上子树；每条非原帖评论显示「回复 @parentHandle」。不要退回扁平列表。
+- 互动：
+  - 点赞/取消点赞：`FavoriteTweet`（`lI07N6Otwv1PhnEgXILM7A`）/
+    `UnfavoriteTweet`（`ZYKSe-w7KEslx3JhSIk5LA`），POST body
+    `{variables:{tweet_id},queryId}`，头部与 TweetDetail 相同；实测不需要
+    `x-client-transaction-id`。乐观更新计数/`aria-pressed`，失败回滚并用 `warnOnce` 记录。
+  - 回复：**在独立窗口**打开 `/compose/post?in_reply_to=<rest_id>`，使用 X 原生 composer；
+    不要在同一页用隐藏 anchor 打开（composer 关闭后首页会回到顶部/重新渲染），也不要在弹窗里
+    自行调用 CreateTweet。弹窗保持打开，popup 关闭后首页和评论上下文都不变。
+  - 资料：与主页 HoverCard 一致的悬浮卡。头像/用户名 `pointerenter` 250ms 后展示，离开
+    180ms 收起，进入卡片取消收起；「资料」按钮可点击钉住/取消。卡片挂到 `body`、fixed、
+    z-index 2100，不被弹窗 overflow 裁切；滚动/缩放/外部点击/关闭弹窗都移除。数据来自同一条
+    响应（`profile_bio.description`、`location.location`、`relationship_counts`），不额外请求；
+    「在 X 打开主页」新标签页打开。只保留一张卡。
 - 渲染：`textContent` 渲染正文（先解码 HTML 实体），t.co 链接换成 `display_url`；媒体里的
   t.co URL 从正文删除，仅渲染缩略图/封面。所有用户内容不拼 `innerHTML`。
 - 弹窗打开时**不要**把 `html/body` 设 `overflow: hidden`（Chrome 会把滚动位置清到 0，关掉后
@@ -309,7 +332,10 @@
   轮播只预览当前可见的 slide，不能在浮层里翻页。
 - 评论弹窗依赖 X 的私有 `TweetDetail` 接口和当前 `features`/`queryId`；X 改版后可能返回
   400/404，脚本会尝试从 `main.*.js` 重新发现 queryId 并重试一次，仍失败则显示兜底按钮。
-  只展示第一页评论，不能继续加载更多，也不能在弹窗里回复/点赞。
+  只展示第一页评论，不继续加载更多。点赞/取消点赞依赖 `FavoriteTweet`/`UnfavoriteTweet`
+  的 queryId；回复在独立窗口打开 X 原生 composer，不在弹窗内嵌输入框。
+- 评论层级按 `in_reply_to_status_id_str` 建树；父评论不在首屏时挂到原帖下。对话里混入的
+  推荐/广告帖按 conversation id 过滤；X 若改变 conversation 字段，需要补过滤规则。
 - Grok 抽屉的对话气泡按最近底色翻色；如果 X 给消息加新的彩色表面，白字/白图标会按“彩色气泡”
   保持原样，需要时再在 `nearestPaperBackground` 的白名单里补规则。
 - X 的 A/B 布局、实验性卡片和生成 class 会继续变化；`docs/selectors.md` 是维护入口。

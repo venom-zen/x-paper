@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.7.2
+// @version      0.7.3
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -31,6 +31,8 @@
   const NAV_TOGGLE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 4.6 4.9 6l5.65 5.65L4.9 17.3l1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L6.3 4.6Zm8 0L12.9 6l5.65 5.65-5.65 5.65 1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L14.3 4.6Z"/></svg>';
 
   const TWEET_DETAIL_QUERY_ID = 'qpemjmVMoTWDvcRT43JIVQ';
+  const FAVORITE_TWEET_QUERY_ID = 'lI07N6Otwv1PhnEgXILM7A';
+  const UNFAVORITE_TWEET_QUERY_ID = 'ZYKSe-w7KEslx3JhSIk5LA';
   // X Web 的公开 bearer token，不是账号凭据；评论请求只读，并使用浏览器当前会话 cookie。
   const TWEET_DETAIL_BEARER = "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
   const TWEET_DETAIL_FEATURES = {
@@ -1377,6 +1379,13 @@
   `;
 
   const COMMENTS_CSS = `
+    .xmp-comments,
+    .xmp-comments *,
+    .xmp-comments-profile,
+    .xmp-comments-profile * {
+      box-sizing: border-box;
+    }
+
     .xmp-comments {
       position: fixed;
       inset: 0;
@@ -1517,20 +1526,35 @@
     }
 
     .xmp-comments-reply {
+      position: relative;
       display: grid;
       grid-template-columns: 40px minmax(0, 1fr);
       gap: 10px;
       padding: 14px 0;
+    }
+
+    .xmp-comments-replies > .xmp-comments-thread {
       border-bottom: 1px solid var(--xmp-rule);
+    }
+
+    .xmp-comments-replies > .xmp-comments-thread:last-child {
+      border-bottom: 0;
     }
 
     .xmp-comments-original .xmp-comments-reply {
       padding: 0;
-      border-bottom: 0;
     }
 
-    .xmp-comments-reply:last-child {
-      border-bottom: 0;
+    /* 嵌套回复的短横线：从子树竖线接到子头像，形成 |_ 的连接感 */
+    .xmp-comments-children > .xmp-comments-thread > .xmp-comments-reply::before {
+      content: "";
+      position: absolute;
+      left: -14px;
+      top: 33px;
+      width: 14px;
+      height: 2px;
+      background-color: var(--xmp-rule);
+      pointer-events: none;
     }
 
     .xmp-comments-avatar {
@@ -1641,6 +1665,179 @@
       line-height: 1.4;
     }
 
+    .xmp-comments-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 8px;
+    }
+
+    .xmp-comments-action {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 0;
+      color: var(--xmp-ink-secondary);
+      background: transparent;
+      border: 0;
+      font: inherit;
+      font-size: 12px;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    .xmp-comments-action:hover {
+      color: var(--xmp-accent);
+    }
+
+    .xmp-comments-action svg {
+      width: 16px;
+      height: 16px;
+      fill: currentColor;
+    }
+
+    .xmp-comments-action.is-active,
+    .xmp-comments-action.is-active svg {
+      color: var(--xmp-like);
+      fill: var(--xmp-like);
+    }
+
+    .xmp-comments-action:focus-visible {
+      outline: 2px solid var(--xmp-accent);
+      outline-offset: 2px;
+    }
+
+    .xmp-comments-reply-to {
+      margin-top: 3px;
+      color: var(--xmp-ink-secondary);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-reply-to span {
+      color: var(--xmp-accent);
+    }
+
+    .xmp-comments-children {
+      margin-left: 20px;
+      padding-left: 14px;
+      border-left: 2px solid var(--xmp-rule);
+    }
+
+    .xmp-comments-reply.has-children {
+      position: relative;
+    }
+
+    .xmp-comments-reply.has-children::after {
+      content: "";
+      position: absolute;
+      left: 20px;
+      top: 54px;
+      bottom: 0;
+      width: 2px;
+      background-color: var(--xmp-rule);
+      pointer-events: none;
+    }
+
+    .xmp-comments-avatar-button {
+      width: 40px;
+      height: 40px;
+      padding: 0;
+      background: transparent;
+      border: 0;
+      border-radius: 9999px;
+      cursor: pointer;
+    }
+
+    .xmp-comments-avatar-button:focus-visible {
+      outline: 2px solid var(--xmp-accent);
+      outline-offset: 2px;
+    }
+
+    .xmp-comments-avatar-button .xmp-comments-avatar {
+      width: 40px;
+      height: 40px;
+    }
+
+    .xmp-comments-profile {
+      position: fixed;
+      z-index: 2100;
+      width: 320px;
+      max-width: calc(100vw - 16px);
+      max-height: min(420px, 70vh);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      padding: 12px;
+      background-color: var(--xmp-paper-raised);
+      border: 1px solid var(--xmp-hairline);
+      border-radius: 12px;
+      box-shadow: 0 12px 32px rgba(27, 27, 27, 0.18);
+    }
+
+    .xmp-comments-profile-head {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .xmp-comments-profile-avatar {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 9999px;
+      background-color: var(--xmp-paper);
+    }
+
+    .xmp-comments-profile-name {
+      color: var(--xmp-ink);
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+
+    .xmp-comments-profile-verified {
+      margin-left: 4px;
+      color: #1D9BF0;
+      font-size: 13px;
+    }
+
+    .xmp-comments-profile-handle {
+      color: var(--xmp-ink-secondary);
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-profile-bio {
+      margin-top: 8px;
+      color: var(--xmp-ink);
+      font-size: 13px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .xmp-comments-profile-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 8px;
+      color: var(--xmp-ink-secondary);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-profile-link {
+      display: inline-block;
+      margin-top: 10px;
+      color: var(--xmp-accent);
+      font-size: 13px;
+      text-decoration: none;
+    }
+
+    .xmp-comments-profile-link:hover {
+      text-decoration: underline;
+    }
+
     @media (max-width: 640px) {
       .xmp-comments {
         padding: 0;
@@ -1683,6 +1880,9 @@
   let commentsAbort = null;
   let commentsReturnFocus = null;
   let commentsKeyHandler = null;
+  let commentsProfile = null;
+  let profileShowTimer = null;
+  let profileHideTimer = null;
   const warned = new Set();
   const mediaWarmups = new WeakMap();
   const mediaReveals = new WeakMap();
@@ -3395,6 +3595,11 @@
       name: user?.core?.name || user?.legacy?.name || '未知用户',
       handle: user?.core?.screen_name || user?.legacy?.screen_name || '',
       avatar: user?.avatar?.image_url || user?.legacy?.profile_image_url_https || '',
+      verified: !!user?.is_blue_verified,
+      bio: decodeCommentText(user?.profile_bio?.description || ''),
+      location: user?.location?.location || '',
+      followers: user?.relationship_counts?.followers,
+      following: user?.relationship_counts?.following,
     };
   }
 
@@ -3441,23 +3646,248 @@
     container.appendChild(grid);
   }
 
-  function renderComment(tweet) {
+  const COMMENT_HEART_PATH = 'M12 21.638h-.014C9.403 21.59 1.95 14.856 1.95 8.478 1.95 5.42 4.356 3 7.392 3c1.689 0 3.292.78 4.608 2.256C13.316 3.78 14.919 3 16.608 3c3.036 0 5.442 2.42 5.442 5.478 0 6.378-7.453 13.112-10.036 13.16H12z';
+  const COMMENT_REPLY_PATH = 'M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z';
+  const COMMENT_PROFILE_PATH = 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-7 2-7 5v2h14v-2c0-3-3-5-7-5z';
+
+  function commentsIcon(path) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    const shape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    shape.setAttribute('d', path);
+    svg.appendChild(shape);
+    return svg;
+  }
+
+  function buildCommentProfile(user) {
+    const card = commentsEl('div', 'xmp-comments-profile');
+    const head = commentsEl('div', 'xmp-comments-profile-head');
+    if (user.avatar) {
+      const avatar = document.createElement('img');
+      avatar.className = 'xmp-comments-profile-avatar';
+      avatar.loading = 'lazy';
+      avatar.alt = '';
+      avatar.src = user.avatar;
+      head.appendChild(avatar);
+    }
+    const who = commentsEl('div');
+    const name = commentsEl('div', 'xmp-comments-profile-name', user.name);
+    if (user.verified) name.appendChild(commentsEl('span', 'xmp-comments-profile-verified', '✓'));
+    who.appendChild(name);
+    who.appendChild(commentsEl('div', 'xmp-comments-profile-handle', `@${user.handle}`));
+    head.appendChild(who);
+    card.appendChild(head);
+    if (user.bio) card.appendChild(commentsEl('div', 'xmp-comments-profile-bio', user.bio));
+    const meta = commentsEl('div', 'xmp-comments-profile-meta');
+    if (user.location) meta.appendChild(commentsEl('span', null, user.location));
+    if (user.followers !== undefined) meta.appendChild(commentsEl('span', null, `${commentCount(user.followers)} 关注者`));
+    if (user.following !== undefined) meta.appendChild(commentsEl('span', null, `${commentCount(user.following)} 正在关注`));
+    if (meta.childNodes.length > 0) card.appendChild(meta);
+    const link = commentsEl('a', 'xmp-comments-profile-link', '在 X 打开主页');
+    link.href = `https://x.com/${user.handle}`;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    card.appendChild(link);
+    return card;
+  }
+
+  function positionCommentProfile(card, anchor) {
+    card.style.visibility = 'hidden';
+    card.style.left = '0px';
+    card.style.top = '0px';
+    const rect = anchor.getBoundingClientRect();
+    const width = card.offsetWidth || 320;
+    const height = card.offsetHeight || 0;
+    let left = rect.right + 10;
+    if (left + width > window.innerWidth - 8) left = rect.left - width - 10;
+    left = Math.max(8, Math.min(left, window.innerWidth - width - 8));
+    let top = rect.top;
+    if (top + height > window.innerHeight - 8) top = window.innerHeight - height - 8;
+    top = Math.max(8, top);
+    card.style.left = `${Math.round(left)}px`;
+    card.style.top = `${Math.round(top)}px`;
+    card.style.visibility = 'visible';
+  }
+
+  function removeCommentProfile() {
+    if (profileShowTimer) {
+      window.clearTimeout(profileShowTimer);
+      profileShowTimer = null;
+    }
+    if (profileHideTimer) {
+      window.clearTimeout(profileHideTimer);
+      profileHideTimer = null;
+    }
+    const profile = commentsProfile;
+    if (!profile) return;
+    profile.card.remove();
+    window.removeEventListener('scroll', profile.onScroll);
+    window.removeEventListener('resize', profile.onResize);
+    profile.body?.removeEventListener('scroll', profile.onScroll);
+    if (profile.pointerDown) document.removeEventListener('pointerdown', profile.pointerDown, true);
+    commentsProfile = null;
+  }
+
+  function showCommentProfile(anchor, user, pinned = false) {
+    if (!user?.handle) return;
+    removeCommentProfile();
+    const card = buildCommentProfile(user);
+    card.addEventListener('pointerenter', () => {
+      if (profileHideTimer) {
+        window.clearTimeout(profileHideTimer);
+        profileHideTimer = null;
+      }
+    });
+    card.addEventListener('pointerleave', () => scheduleProfileHide());
+    document.body.appendChild(card);
+    positionCommentProfile(card, anchor);
+    const onScroll = () => removeCommentProfile();
+    const onResize = () => removeCommentProfile();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onResize);
+    const body = document.querySelector('.xmp-comments-body');
+    if (body) body.addEventListener('scroll', onScroll, { passive: true });
+    const pointerDown = event => {
+      if (!(event.target instanceof Node)) return;
+      if (card.contains(event.target) || anchor.contains(event.target)) return;
+      if (event.target instanceof Element && event.target.closest('[aria-label="查看评论者资料"]')) return;
+      removeCommentProfile();
+    };
+    if (pinned) document.addEventListener('pointerdown', pointerDown, true);
+    commentsProfile = { card, anchor, user, pinned, onScroll, onResize, body, pointerDown };
+  }
+
+  function scheduleProfileShow(anchor, user) {
+    if (!user?.handle) return;
+    if (commentsProfile?.anchor === anchor) {
+      if (profileHideTimer) {
+        window.clearTimeout(profileHideTimer);
+        profileHideTimer = null;
+      }
+      return;
+    }
+    if (profileShowTimer) window.clearTimeout(profileShowTimer);
+    profileShowTimer = window.setTimeout(() => {
+      profileShowTimer = null;
+      showCommentProfile(anchor, user, false);
+    }, 250);
+  }
+
+  function scheduleProfileHide(delay = 180) {
+    if (commentsProfile?.pinned) return;
+    if (profileShowTimer) {
+      window.clearTimeout(profileShowTimer);
+      profileShowTimer = null;
+    }
+    if (profileHideTimer) window.clearTimeout(profileHideTimer);
+    profileHideTimer = window.setTimeout(() => {
+      profileHideTimer = null;
+      removeCommentProfile();
+    }, delay);
+  }
+
+  function togglePinnedCommentProfile(anchor, user) {
+    if (commentsProfile?.anchor === anchor && commentsProfile.pinned) {
+      removeCommentProfile();
+      return;
+    }
+    showCommentProfile(anchor, user, true);
+  }
+
+  function applyLikeState(button, countElement, liked, count) {
+    button.classList.toggle('is-active', liked);
+    button.setAttribute('aria-pressed', liked ? 'true' : 'false');
+    button.setAttribute('aria-label', liked ? '取消喜欢' : '喜欢');
+    button.dataset.count = String(count);
+    countElement.textContent = commentCount(count);
+  }
+
+  async function toggleCommentLike(tweet, button, countElement) {
+    if (button.dataset.busy) return;
+    const liked = button.getAttribute('aria-pressed') === 'true';
+    const previous = Number(button.dataset.count || 0);
+    const next = !liked;
+    const nextCount = Math.max(0, previous + (next ? 1 : -1));
+    applyLikeState(button, countElement, next, nextCount);
+    button.dataset.busy = '1';
+    try {
+      const queryId = next ? FAVORITE_TWEET_QUERY_ID : UNFAVORITE_TWEET_QUERY_ID;
+      const name = next ? 'FavoriteTweet' : 'UnfavoriteTweet';
+      const response = await fetch(`/i/api/graphql/${queryId}/${name}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: tweetDetailHeaders(),
+        body: JSON.stringify({ variables: { tweet_id: tweet.rest_id }, queryId }),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const payload = await response.json();
+      if (payload.errors?.length) throw new Error(payload.errors[0].message || '点赞接口返回错误');
+      tweet.legacy.favorited = next;
+      tweet.legacy.favorite_count = nextCount;
+    } catch (error) {
+      applyLikeState(button, countElement, liked, previous);
+      button.title = '操作失败';
+      warnOnce('comments-like', `点赞失败：${error}`);
+    } finally {
+      delete button.dataset.busy;
+    }
+  }
+
+  // 回复交给 X 原生 composer：在独立窗口打开带 in_reply_to 的 composer，首页和评论弹窗
+  // 都不会被卸载或重新渲染；不要在弹窗里自行调用 CreateTweet。
+  function openNativeReply(tweet) {
+    if (!tweet?.rest_id) return;
+    const href = `/compose/post?in_reply_to=${tweet.rest_id}`;
+    const width = 620;
+    const height = 760;
+    const left = Math.max(0, Math.round(window.screenX + (window.outerWidth - width) / 2));
+    const top = Math.max(0, Math.round(window.screenY + (window.outerHeight - height) / 2));
+    const popup = window.open(href, 'xmp-reply', `popup=1,width=${width},height=${height},left=${left},top=${top}`);
+    if (!popup) window.open(href, '_blank', 'noopener,noreferrer');
+  }
+
+  function renderComment(tweet, options = {}) {
     const row = commentsEl('div', 'xmp-comments-reply');
+    if (options.hasChildren) row.classList.add('has-children');
     const user = commentUser(tweet);
+    const main = commentsEl('div', 'xmp-comments-main');
+
+    const avatarButton = commentsEl('button', 'xmp-comments-avatar-button');
+    avatarButton.type = 'button';
+    avatarButton.setAttribute('aria-label', `查看 @${user.handle || user.name} 的资料`);
     const avatar = document.createElement('img');
     avatar.className = 'xmp-comments-avatar';
     avatar.loading = 'lazy';
     avatar.alt = '';
     avatar.src = user.avatar;
-    row.appendChild(avatar);
+    avatarButton.appendChild(avatar);
+    avatarButton.addEventListener('pointerenter', () => scheduleProfileShow(avatarButton, user));
+    avatarButton.addEventListener('pointerleave', () => scheduleProfileHide());
+    avatarButton.addEventListener('focus', () => scheduleProfileShow(avatarButton, user));
+    avatarButton.addEventListener('blur', () => scheduleProfileHide());
+    avatarButton.addEventListener('click', () => togglePinnedCommentProfile(avatarButton, user));
+    row.appendChild(avatarButton);
 
-    const main = commentsEl('div', 'xmp-comments-main');
     const meta = commentsEl('div', 'xmp-comments-meta');
-    meta.appendChild(commentsEl('span', 'xmp-comments-name', user.name));
+    const nameElement = commentsEl('span', 'xmp-comments-name', user.name);
+    nameElement.addEventListener('pointerenter', () => scheduleProfileShow(avatarButton, user));
+    nameElement.addEventListener('pointerleave', () => scheduleProfileHide());
+    meta.appendChild(nameElement);
     if (user.handle) meta.appendChild(commentsEl('span', 'xmp-comments-handle', `@${user.handle}`));
     const time = formatPostTime(tweet.legacy?.created_at || '');
     if (time) meta.appendChild(commentsEl('span', 'xmp-comments-time', time));
     main.appendChild(meta);
+
+    if (options.parent) {
+      const parentUser = commentUser(options.parent);
+      if (parentUser.handle) {
+        const replyTo = commentsEl('div', 'xmp-comments-reply-to');
+        replyTo.appendChild(document.createTextNode('回复 '));
+        replyTo.appendChild(commentsEl('span', null, `@${parentUser.handle}`));
+        main.appendChild(replyTo);
+      }
+    }
 
     const text = commentsEl('div', 'xmp-comments-text');
     appendCommentText(text, tweet);
@@ -3467,13 +3897,40 @@
     const stats = [];
     if (tweet.legacy?.reply_count) stats.push(`回复 ${commentCount(tweet.legacy.reply_count)}`);
     if (tweet.legacy?.retweet_count) stats.push(`转发 ${commentCount(tweet.legacy.retweet_count)}`);
-    if (tweet.legacy?.favorite_count) stats.push(`喜欢 ${commentCount(tweet.legacy.favorite_count)}`);
     if (tweet.views?.count) stats.push(`${commentCount(tweet.views.count)} 查看`);
     if (stats.length > 0) {
       const statsRow = commentsEl('div', 'xmp-comments-stats');
       for (const stat of stats) statsRow.appendChild(commentsEl('span', null, stat));
       main.appendChild(statsRow);
     }
+
+    const actions = commentsEl('div', 'xmp-comments-actions');
+    const likeCount = Number(tweet.legacy?.favorite_count) || 0;
+    const likeButton = commentsEl('button', 'xmp-comments-action');
+    likeButton.type = 'button';
+    likeButton.appendChild(commentsIcon(COMMENT_HEART_PATH));
+    const likeCountElement = commentsEl('span', 'xmp-comments-action-count', commentCount(likeCount));
+    likeButton.appendChild(likeCountElement);
+    applyLikeState(likeButton, likeCountElement, !!tweet.legacy?.favorited, likeCount);
+    likeButton.addEventListener('click', () => toggleCommentLike(tweet, likeButton, likeCountElement));
+    actions.appendChild(likeButton);
+
+    const replyButton = commentsEl('button', 'xmp-comments-action');
+    replyButton.type = 'button';
+    replyButton.setAttribute('aria-label', '回复这条评论');
+    replyButton.appendChild(commentsIcon(COMMENT_REPLY_PATH));
+    replyButton.appendChild(commentsEl('span', null, '回复'));
+    replyButton.addEventListener('click', () => openNativeReply(tweet));
+    actions.appendChild(replyButton);
+
+    const profileButton = commentsEl('button', 'xmp-comments-action');
+    profileButton.type = 'button';
+    profileButton.setAttribute('aria-label', '查看评论者资料');
+    profileButton.appendChild(commentsIcon(COMMENT_PROFILE_PATH));
+    profileButton.appendChild(commentsEl('span', null, '资料'));
+    profileButton.addEventListener('click', () => togglePinnedCommentProfile(avatarButton, user));
+    actions.appendChild(profileButton);
+    main.appendChild(actions);
 
     row.appendChild(main);
     return row;
@@ -3568,25 +4025,77 @@
     return collectThreadTweets(payload);
   }
 
+  function buildCommentTree(tweets, tweetId) {
+    const focalIndex = tweets.findIndex(tweet => tweet.rest_id === tweetId);
+    const rootIndex = focalIndex >= 0 ? focalIndex : 0;
+    const original = tweets[rootIndex] || null;
+    if (!original) return { original: null, candidates: [], byId: new Map(), childrenByParent: new Map(), count: 0 };
+    const rootId = original.rest_id;
+    const conversationId = original.legacy?.conversation_id_str;
+    const candidates = tweets.slice(rootIndex + 1).filter(tweet => {
+      if (!tweet?.rest_id || tweet.rest_id === rootId) return false;
+      if (conversationId && tweet.legacy?.conversation_id_str !== conversationId) return false;
+      if (tweet.promotedMetadata || tweet.legacy?.promoted) return false;
+      return true;
+    });
+    const byId = new Map(candidates.map(tweet => [tweet.rest_id, tweet]));
+    const childrenByParent = new Map();
+    for (const tweet of candidates) {
+      const parentId = tweet.legacy?.in_reply_to_status_id_str;
+      // 只保留能连到原帖的回复；父节点不在首屏的旁支（推荐/其它对话）直接丢弃。
+      if (parentId !== rootId && !byId.has(parentId)) continue;
+      if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+      childrenByParent.get(parentId).push(tweet);
+    }
+    const reachable = new Set([rootId]);
+    const queue = [rootId];
+    while (queue.length > 0) {
+      const parentId = queue.shift();
+      for (const child of childrenByParent.get(parentId) || []) {
+        if (reachable.has(child.rest_id)) continue;
+        reachable.add(child.rest_id);
+        queue.push(child.rest_id);
+      }
+    }
+    return { original, candidates, byId, childrenByParent, count: reachable.size - 1 };
+  }
+
+  function renderReplyGroup(tree, parentId, depth) {
+    const children = tree.childrenByParent.get(parentId) || [];
+    if (children.length === 0) return null;
+    const group = commentsEl('div', depth === 0 ? 'xmp-comments-replies' : 'xmp-comments-children');
+    for (const child of children) {
+      const grandchildren = tree.childrenByParent.get(child.rest_id) || [];
+      const parent = parentId === tree.original.rest_id ? tree.original : tree.byId.get(parentId);
+      const thread = commentsEl('div', 'xmp-comments-thread');
+      thread.appendChild(renderComment(child, { parent, hasChildren: grandchildren.length > 0 }));
+      const nested = renderReplyGroup(tree, child.rest_id, depth + 1);
+      if (nested) thread.appendChild(nested);
+      group.appendChild(thread);
+    }
+    return group;
+  }
+
   function renderComments(body, tweets, tweetId) {
     body.textContent = '';
-    const original = tweets.find(tweet => tweet.rest_id === tweetId) || tweets[0];
-    const replies = tweets.filter(tweet => tweet !== original);
+    const tree = buildCommentTree(tweets, tweetId);
+    const { original, count } = tree;
     const title = commentsModal?.querySelector('.xmp-comments-header h2');
-    if (title) title.textContent = replies.length > 0 ? `评论 · ${replies.length}` : '评论';
+    if (title) title.textContent = count > 0 ? `评论 · ${count}` : '评论';
     if (original) {
       const block = commentsEl('div', 'xmp-comments-original');
       block.appendChild(commentsEl('div', 'xmp-comments-original-label', '原帖'));
       block.appendChild(renderComment(original));
       body.appendChild(block);
     }
-    if (replies.length === 0) {
+    const group = original ? renderReplyGroup(tree, original.rest_id, 0) : null;
+    if (!group) {
       body.appendChild(commentsEl('div', 'xmp-comments-empty', '暂无评论'));
       return;
     }
-    for (const reply of replies) body.appendChild(renderComment(reply));
+    body.appendChild(group);
     const total = Number(original?.legacy?.reply_count || 0);
-    if (total > replies.length) body.appendChild(commentsEl('div', 'xmp-comments-note', '仅显示首屏评论'));
+    if (total > count) body.appendChild(commentsEl('div', 'xmp-comments-note', '仅显示首屏评论'));
   }
 
   function renderCommentsError(body, tweetId, href) {
@@ -3622,6 +4131,7 @@
       commentsModal.remove();
       commentsModal = null;
     }
+    removeCommentProfile();
     if (commentsReturnFocus?.isConnected) {
       commentsReturnFocus.focus({ preventScroll: true });
     }
@@ -3698,7 +4208,8 @@
   }
 
   function watchComments() {
-    document.addEventListener('click', event => {
+    // 挂在 window 捕获阶段：确保先于 X 和可能仍在运行的旧版脚本拿到评论按钮点击。
+    window.addEventListener('click', event => {
       if (!enabled || commentsModal) return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
