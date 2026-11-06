@@ -362,13 +362,15 @@
 - 算法移植自 [Lqm1/x-client-transaction-id](https://github.com/Lqm1/x-client-transaction-id)
   （MIT），版权与许可见 `THIRD_PARTY_NOTICES.md`。
 
-## 帖子/用户主页打开方式
+## 帖子/用户主页在新标签页打开
 
-- 设置键 `xmp-open-post-new-tab`，默认关闭；Tampermonkey 菜单「帖子/用户主页：在新标签页打开」/
-  「帖子/用户主页：在当前标签页打开」写入设置。
-- 开启时在 window 捕获阶段拦截 home/profile/explore/search 的点击：
-  - 目标在主帖 `[data-testid="tweet"]` 内；嵌套引用帖不接管。
-  - 先处理 tweet 头部资料链接：anchor 位于 `[data-testid="User-Name"]` 或
+- 不再有菜单或存储开关；脚本安装后默认启用。
+- window 捕获阶段拦截点击：
+  - 先处理 X 原生资料卡 `[data-testid="HoverCard"]`（它在 tweet 外，任意路由都可用）：
+    anchor pathname 匹配 `PROFILE_PATH`（含 following/followers/verified_followers/
+    followers_you_follow）且不是 `RESERVED_HANDLES` 时，`openInNewTab(anchor.href)`；
+    其他资料卡点击直接 return，不落到帖子逻辑。
+  - 再处理 tweet 头部资料链接：anchor 位于 `[data-testid="User-Name"]` 或
     `[data-testid="Tweet-User-Avatar"]`、且不在 `[data-testid="tweetText"]` 内时，直接打开
     `anchor.href`；正文里的 @ 提及不接管。
   - 再处理主帖正文/时间戳：点击的 anchor pathname 必须与 `cellStatusLink(cell)` 相同。
@@ -377,8 +379,8 @@
   - 有文本选区时不拦截。命中后用 `openInNewTab()` 的临时
     `<a target="_blank" rel="noopener noreferrer">` 打开，preventDefault +
     stopImmediatePropagation，当前标签保持 home。
-- 只覆盖这四类路由的主帖和 tweet 头部资料链接；引用帖、通知、列表、外部链接等仍可能同标签
-  打开，继续依赖 `restoreHomeReturn` 兜底。
+- 主帖/头部资料链接只覆盖 home/profile/explore/search；原生资料卡覆盖所有路由。引用帖、
+  通知、列表、外部链接等仍可能同标签打开，继续依赖 `restoreHomeReturn` 兜底。
 
 ## 返回首页的位置恢复
 

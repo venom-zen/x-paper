@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.7.7
+// @version      0.7.8
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -11,9 +11,6 @@
 // @supportURL   https://github.com/venom-zen/x-paper/issues
 // @match        https://x.com/*
 // @run-at       document-start
-// @grant        GM_getValue
-// @grant        GM_setValue
-// @grant        GM_registerMenuCommand
 // @grant        GM_addStyle
 // @noframes
 // ==/UserScript==
@@ -21,14 +18,11 @@
 (() => {
   'use strict';
 
-  const ENABLED_KEY = 'xmp-enabled';
-  const OPEN_POST_NEW_TAB_KEY = 'xmp-open-post-new-tab';
   const MIN_LAYOUT_WIDTH = 1000;
   const PRIMARY = '[data-testid="primaryColumn"]';
   const CELL = '[data-testid="cellInnerDiv"]';
   const TWEET = '[data-testid="tweet"]';
   const MEDIA_SELECTOR = '[data-testid="tweetPhoto"], [data-testid="previewInterstitial"]';
-  const STYLE_IDS = ['xmp-preflight', 'xmp-theme', 'xmp-layout', 'xmp-noise', 'xmp-media', 'xmp-preview', 'xmp-comments'];
   const NAV_TOGGLE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 4.6 4.9 6l5.65 5.65L4.9 17.3l1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L6.3 4.6Zm8 0L12.9 6l5.65 5.65-5.65 5.65 1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L14.3 4.6Z"/></svg>';
 
   const TWEET_DETAIL_QUERY_ID = 'qpemjmVMoTWDvcRT43JIVQ';
@@ -2004,7 +1998,6 @@
   `;
 
   let enabled = true;
-  let openPostNewTab = false;
   let degraded = false;
   let route = 'other';
   let historyPatched = false;
@@ -2058,55 +2051,6 @@
     }
   }
 
-  function readEnabled() {
-    try {
-      if (typeof GM_getValue === 'function') return GM_getValue(ENABLED_KEY, true) !== false;
-      const stored = window.localStorage.getItem(ENABLED_KEY);
-      return stored === null ? true : stored !== '0';
-    } catch (error) {
-      return true;
-    }
-  }
-
-  function writeEnabled(value) {
-    if (typeof GM_setValue === 'function') {
-      GM_setValue(ENABLED_KEY, value);
-      return;
-    }
-    window.localStorage.setItem(ENABLED_KEY, value ? '1' : '0');
-  }
-
-  function readOpenPostNewTab() {
-    try {
-      if (typeof GM_getValue === 'function') return GM_getValue(OPEN_POST_NEW_TAB_KEY, false) === true;
-      return window.localStorage.getItem(OPEN_POST_NEW_TAB_KEY) === '1';
-    } catch (error) {
-      return false;
-    }
-  }
-
-  function writeOpenPostNewTab(value) {
-    if (typeof GM_setValue === 'function') {
-      GM_setValue(OPEN_POST_NEW_TAB_KEY, value);
-      return;
-    }
-    window.localStorage.setItem(OPEN_POST_NEW_TAB_KEY, value ? '1' : '0');
-  }
-
-  function registerMenu() {
-    if (typeof GM_registerMenuCommand !== 'function') return;
-    GM_registerMenuCommand('关闭 x-paper', () => setEnabled(false));
-    GM_registerMenuCommand('开启 x-paper', () => setEnabled(true));
-    GM_registerMenuCommand('帖子/用户主页：在新标签页打开', () => {
-      openPostNewTab = true;
-      writeOpenPostNewTab(true);
-    });
-    GM_registerMenuCommand('帖子/用户主页：在当前标签页打开', () => {
-      openPostNewTab = false;
-      writeOpenPostNewTab(false);
-    });
-  }
-
   function injectStyle(id, css) {
     let element = document.getElementById(id);
     if (element) {
@@ -2133,10 +2077,6 @@
     injectStyle('xmp-media', MEDIA_CSS);
     injectStyle('xmp-preview', PREVIEW_CSS);
     injectStyle('xmp-comments', COMMENTS_CSS);
-  }
-
-  function removeStyles() {
-    STYLE_IDS.forEach(id => document.getElementById(id)?.remove());
   }
 
   function setNavExpanded(value) {
@@ -2168,79 +2108,6 @@
     setNavExpanded(navExpanded);
   }
 
-  function removeNavToggle() {
-    document.querySelectorAll('.xmp-nav-toggle').forEach(toggle => toggle.remove());
-    setNavExpanded(false);
-  }
-
-  function setEnabled(value) {
-    let stored = true;
-    try {
-      writeEnabled(value);
-    } catch (error) {
-      stored = false;
-    }
-    if (stored) {
-      window.location.reload();
-      return;
-    }
-    if (value) enableInPage();
-    else disableInPage();
-  }
-
-  function disableInPage() {
-    enabled = false;
-    stopObserver();
-    stopSurfaceObserver();
-    stopGrokObserver();
-    closeComments();
-    clearSurfaceMarkers();
-    cleanupAllMedia();
-    hidePhotoPreview();
-    if (previewEl) {
-      previewEl.remove();
-      previewEl = null;
-    }
-    removeNavToggle();
-    removeStyles();
-    const root = document.documentElement;
-    delete root.dataset.xmpEnabled;
-    delete root.dataset.xmpRoute;
-    delete root.dataset.xmpDegraded;
-    degraded = false;
-  }
-
-  function enableInPage() {
-    enabled = true;
-    document.documentElement.dataset.xmpEnabled = '1';
-    injectStyles();
-    setRoute();
-    const primary = document.querySelector(PRIMARY);
-    if (!primary) {
-      scheduleBootRetry();
-      return;
-    }
-    checkSelectorHealth();
-    formatTimestamps();
-    scheduleSurfaceRefresh();
-    safe('tabbar', markTabbar);
-    safe('composer', markComposer);
-    safe('appbar', markAppBar);
-    safe('darkSurface', markDarkSurfaces);
-    safe('railPanel', markRailPanel);
-    safe('railLayout', markRailLayout);
-    if (isSurfaceRoute(route)) safe('exploreSurfaces', markExploreSurfaces);
-    ensureNavToggle();
-    ensureGrokObserver();
-    if (route === 'home' || route === 'profile') {
-      if (!degraded) {
-        startObserver();
-        scanTimeline();
-      }
-    }
-    syncSurfaceRoute(route);
-  }
-
   // 保留给 X 自己的一级路径；其余 /<handle> 视为个人主页（含 /handle/media 等子页）。
   const RESERVED_HANDLES = new Set([
     'home', 'explore', 'notifications', 'messages', 'i', 'search', 'settings', 'compose',
@@ -2249,7 +2116,7 @@
     'topics', 'intent', 'share', 'hashtag', 'rules', 'help', 'ads', 'create', 'migrate',
     'oauth', 'welcome', 'flow', 'sms', 'accessibility', 'safety', 'following',
   ]);
-  const PROFILE_PATH = /^\/([A-Za-z0-9_]{1,15})(?:\/(?:with_replies|media|likes|highlights|articles|followers|following|affiliates|verified_followers))?\/?$/;
+  const PROFILE_PATH = /^\/([A-Za-z0-9_]{1,15})(?:\/(?:with_replies|media|likes|highlights|articles|followers|following|affiliates|verified_followers|followers_you_follow))?\/?$/;
 
   // X 的付费/认证营销页（Premium 订阅、认证申请）本身是深色设计，主题完全不介入，
   // 否则全局墨色会把它们深色模块里的文字压成黑底黑字。
@@ -2931,18 +2798,6 @@
     grokObserver = new MutationObserver(scheduleGrokScan);
     grokObserver.observe(drawer, { childList: true, subtree: true });
     scheduleGrokScan();
-  }
-
-  function stopGrokObserver() {
-    if (grokObserver) {
-      grokObserver.disconnect();
-      grokObserver = null;
-    }
-    grokRoot = null;
-    if (grokTimer) {
-      window.clearTimeout(grokTimer);
-      grokTimer = null;
-    }
   }
 
   // X 打开/关闭 Grok 抽屉时会整块替换 GrokDrawer 根节点，原来挂在根上的观察器会失效。
@@ -4892,6 +4747,15 @@
   // 设置开启时，主帖正文/时间戳、tweet 头部的头像/用户名在新标签页打开，home 不卸载；
   // 引用帖、正文内链接、媒体和按钮仍交给 X。只覆盖 home/profile/explore/search，
   // 其他入口继续走同标签和位置恢复兜底。
+  function isProfileHref(href) {
+    try {
+      const match = new URL(href, location.href).pathname.match(PROFILE_PATH);
+      return !!match && !RESERVED_HANDLES.has(match[1].toLowerCase());
+    } catch (error) {
+      return false;
+    }
+  }
+
   function openInNewTab(href) {
     const opener = document.createElement('a');
     opener.href = href;
@@ -4905,9 +4769,21 @@
 
   function watchOpenTargets() {
     window.addEventListener('click', event => {
-      if (!enabled || !openPostNewTab || commentsModal) return;
+      if (!enabled || commentsModal) return;
       const target = event.target instanceof Element ? event.target : null;
       if (!target) return;
+      // X 的原生资料卡在 tweet 外；头像/用户名等主页链接单独处理，避免落回当前标签。
+      const hoverCard = target.closest('[data-testid="HoverCard"]');
+      if (hoverCard) {
+        const anchor = target.closest('a[href]');
+        if (anchor && isProfileHref(anchor.getAttribute('href'))) {
+          event.preventDefault();
+          event.stopPropagation();
+          event.stopImmediatePropagation();
+          openInNewTab(anchor.href);
+        }
+        return;
+      }
       if (route !== 'home' && route !== 'profile' && route !== 'explore' && route !== 'search') return;
       if (target.closest('[role="dialog"], [data-testid="reply"]')) return;
       const tweet = target.closest(TWEET);
@@ -4948,13 +4824,9 @@
   }
 
   function init() {
-    registerMenu();
     watchPhotoPreview();
-    openPostNewTab = readOpenPostNewTab();
     watchOpenTargets();
     watchComments();
-    enabled = readEnabled();
-    if (!enabled) return;
     document.documentElement.dataset.xmpEnabled = '1';
     injectStyles();
     watchGrokDrawer();

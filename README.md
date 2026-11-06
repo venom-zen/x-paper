@@ -8,6 +8,8 @@
 
 ## 最近更新
 
+- **0.7.8**：移除「开启/关闭 x-paper」和「帖子/用户主页打开方式」两个菜单开关；脚本默认启用，
+  帖子/用户主页始终在新标签页打开，原生资料卡里的头像/用户名也走新标签页。
 - **0.7.7**：返回首页的恢复改为一次性对齐，只认 home 的 tab 栏，避免 profile/探索/搜索的
   tablist 被误判；新标签页设置同时覆盖 tweet 头部的头像/用户名链接。
 - **0.7.6**：评论回复增加 `x-client-transaction-id` 生成，修复 X 网页 GraphQL 写入返回的
@@ -41,9 +43,8 @@
   不打开独立 composer 窗口），提交后刷新首屏评论并保留滚动位置，`Esc` 只收起输入框；
   过滤掉对话里混入的推荐/广告帖。回复请求会先在本地生成 `x-client-transaction-id`
   （首次需要读取 X 的公开 app shell 和 `ondemand.s` 静态脚本），再提交 `CreateTweet`。
-- **帖子/用户主页打开方式**：Tampermonkey 菜单可在「帖子/用户主页：在当前标签页打开」和
-  「帖子/用户主页：在新标签页打开」之间切换，默认当前标签页。新标签页模式下，点首页/
-  个人主页/探索/搜索里的主帖正文、时间戳，或 tweet 头部的头像/用户名，会在新标签打开，
+- **帖子/用户主页在新标签页打开**：默认启用，无需设置。点首页/个人主页/探索/搜索里的主帖
+  正文、时间戳、tweet 头部头像/用户名，或悬停资料卡里的头像/用户名，都会在新标签打开，
   首页不卸载；引用帖、正文内的 @ 链接、媒体和操作按钮仍按 X 原行为处理。
 - **Grok**：右下角的 Grok 抽屉换成纸面面板、纸面输入卡和墨色图标；用户消息的彩色气泡
   保留原色，不与主题冲突。
@@ -109,16 +110,15 @@
 1. 安装 [Tampermonkey](https://www.tampermonkey.net/)。
 2. 从 [Greasy Fork](https://greasyfork.org/scripts/603745-x-paper) 安装；或新建用户脚本，
    粘贴 `x-morning-paper.user.js` 的内容并保存。
-3. 打开 <https://x.com/home>。Tampermonkey 菜单提供「关闭 x-paper」「开启 x-paper」，以及
-   「帖子/用户主页：在当前标签页打开」「帖子/用户主页：在新标签页打开」。
+3. 打开 <https://x.com/home>。脚本默认启用，没有额外开关；如需停用，在 Tampermonkey 里
+   禁用或删除该脚本。
 
-在 Chrome + Tampermonkey 下开发和验证。脚本只申请 `GM_getValue`、`GM_setValue`、
-`GM_registerMenuCommand`、`GM_addStyle`。网络请求只有评论弹窗的 `TweetDetail` 读取、用户
-主动点击「喜欢」时的 `FavoriteTweet`/`UnfavoriteTweet`、用户主动提交回复时的
-`CreateTweet`，以及首次回复时读取 X 的公开 `/i/jf/` app shell 和 `abs.twimg.com` 上的
-`ondemand.s` 静态脚本（用于生成 `x-client-transaction-id`；`/i/jf/` 请求不带账号 cookie）。
-CreateTweet 使用当前浏览器会话和 X Web 的公开 bearer，不发布其他内容，不关注、不私信或
-修改其他账号状态。开关状态保存在本机。
+在 Chrome + Tampermonkey 下开发和验证。脚本只申请 `GM_addStyle`。网络请求只有评论弹窗的
+`TweetDetail` 读取、用户主动点击「喜欢」时的 `FavoriteTweet`/`UnfavoriteTweet`、用户主动
+提交回复时的 `CreateTweet`，以及首次回复时读取 X 的公开 `/i/jf/` app shell 和
+`abs.twimg.com` 上的 `ondemand.s` 静态脚本（用于生成 `x-client-transaction-id`；`/i/jf/`
+请求不带账号 cookie）。CreateTweet 使用当前浏览器会话和 X Web 的公开 bearer，不发布其他
+内容，不关注、不私信或修改其他账号状态。
 
 ## 开发
 
@@ -161,10 +161,11 @@ python -m http.server 8765             # 然后打开 http://127.0.0.1:8765/test
 - 探索/搜索在宽版面下隐藏右栏，搜索页的「搜索过滤」卡随之不可见；媒体折叠仍只在首页和个人主页
   生效，搜索结果中的图片/视频保持原生展开。
 - 从详情页返回首页时 X 会重建并重新排序虚拟列表；脚本只做一次性对齐，X 的 AbsolutePower
-  loader 仍可能自行调用 `scrollBy` 调整位置。要完全避免，使用新标签页打开帖子/用户主页，
-  或使用评论弹窗。
-- 新标签页模式覆盖首页/个人主页/探索/搜索里的主帖正文、时间戳和 tweet 头部头像/用户名；
-  引用帖、通知、列表、外部链接等入口仍按 X 原行为处理，位置恢复逻辑继续作为兜底。
+  loader 仍可能自行调用 `scrollBy` 调整位置。要完全避免，点帖子/用户主页时使用新标签页
+  （默认行为），或使用评论弹窗。
+- 新标签页行为覆盖首页/个人主页/探索/搜索里的主帖正文、时间戳、tweet 头部头像/用户名，以及
+  原生资料卡里的头像/用户名；引用帖、通知、列表、外部链接等入口仍按 X 原行为处理，位置恢复
+  逻辑继续作为兜底。
 - 评论弹窗依赖 X 的私有 `TweetDetail`、`FavoriteTweet`/`UnfavoriteTweet` 和 `CreateTweet`
   接口；接口或 `features`/`queryId` 改版后可能失效。评论读取失败时弹窗提供「重试」和
   「在新标签页打开帖子」，回复失败时在输入框下方显示错误。只显示首屏评论；回复只支持

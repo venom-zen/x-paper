@@ -5,12 +5,12 @@
 
 ## 项目事实
 
-- 插件名是 `x-paper`（userscript 头部的 `@name` / `@namespace`、Tampermonkey 菜单、
-  控制台前缀）。文件名保留历史命名 `x-morning-paper.user.js`。
+- 插件名是 `x-paper`（userscript 头部的 `@name` / `@namespace`、控制台前缀）。文件名保留
+  历史命名 `x-morning-paper.user.js`。
 - 作者 `venom`，MIT 许可（`LICENSE`）；userscript 头部保留 `@author` / `@license`。
 - 入口：`x-morning-paper.user.js`。文档：`README.md`、`docs/selectors.md`。测试：
   `test/fixture.html`。截图：`screenshots/`。
-- 只使用 `GM_getValue`、`GM_setValue`、`GM_registerMenuCommand`、`GM_addStyle`。网络请求只有：
+- 只使用 `GM_addStyle`，不保存任何开关或设置；脚本安装即启用。网络请求只有：
   评论弹窗的 `TweetDetail` 读取，用户主动点击评论弹窗「喜欢」时的 `FavoriteTweet` /
   `UnfavoriteTweet`，用户主动提交回复时的 `CreateTweet`，以及首次回复时读取 X 的公开
   `/i/jf/` app shell 和 `abs.twimg.com` 上的 `ondemand.s`（生成 `x-client-transaction-id`；
@@ -332,27 +332,29 @@
   接口失败时弹窗内提供「重试」和「在新标签页打开帖子」兜底。只展示接口返回的第一页评论，
   不加载更多。
 
-### 帖子/用户主页打开方式
+### 帖子/用户主页在新标签页打开
 
-- 设置键 `xmp-open-post-new-tab`，默认 `false`；Tampermonkey 菜单注册
-  「帖子/用户主页：在新标签页打开」和「帖子/用户主页：在当前标签页打开」两个命令，点击后立即
-  生效并写入 `GM_setValue`/localStorage。
-- 开启后，在 home/profile/explore/search 的 window 捕获阶段拦截点击：目标必须在主帖
-  `[data-testid="tweet"]` 内，且不是嵌套引用帖（`tweet.parentElement.closest(TWEET)` 为空）。
-- 先处理 tweet 头部资料链接：点击的 anchor 位于 `[data-testid="User-Name"]` 或
-  `[data-testid="Tweet-User-Avatar"]`、且不在 `[data-testid="tweetText"]` 内时，直接
-  `openInNewTab(anchor.href)`；正文里的 @ 提及不接管。
-- 再处理主帖正文/时间戳：点击的 anchor pathname 必须与 `cellStatusLink(cell)` 相同；话题/
-  外链/analytics 交给 X。
+- 不再提供「开启/关闭」或「新标签页打开」菜单开关；脚本安装后默认启用。`init()` 不再读
+  `GM_getValue`/localStorage，也没有 `registerMenu`/`setEnabled`。
+- window 捕获阶段拦截点击：
+  - 先处理 X 原生资料卡 `[data-testid="HoverCard"]`（它在 tweet 外，不能要求 `closest(TWEET)`）：
+    点击的 anchor pathname 匹配 `PROFILE_PATH`（含 following/followers/verified_followers/
+    followers_you_follow）且不是 `RESERVED_HANDLES` 时，直接 `openInNewTab(anchor.href)`；
+    其他资料卡点击直接 return，不再落到下面的帖子逻辑。资料卡在任意路由都可用，因此这段在
+    route 检查之前。
+  - 再处理 tweet 头部资料链接：点击的 anchor 位于 `[data-testid="User-Name"]` 或
+    `[data-testid="Tweet-User-Avatar"]`、且不在 `[data-testid="tweetText"]` 内时，直接
+    `openInNewTab(anchor.href)`；正文里的 @ 提及不接管。
+  - 再处理主帖正文/时间戳：点击的 anchor pathname 必须与 `cellStatusLink(cell)` 相同；话题/
+    外链/analytics 交给 X。
 - 不拦截：`[role="dialog"]`、评论按钮 `[data-testid="reply"]`、`button`/`[role="button"]`/
   `input`/`textarea`/`select`/`label`/`contenteditable`、`video`/`audio`/`tweetPhoto`/
   `previewInterstitial`/`card.wrapper`；有文本选区时也不拦截。
 - 打开方式：`openInNewTab()` 新建临时 `<a target="_blank" rel="noopener noreferrer">` 并 click，
   避免 `window.open(..., 'noopener')` 返回 null 无法判断是否成功；打开后移除。
-- 只覆盖上述四类路由里的主帖和 tweet 头部资料链接；引用帖、通知、列表、外部链接等仍走 X
-  原行为。`restoreHomeReturn` 继续保留给这些同标签入口兜底，不要因为开了新标签就删除恢复逻辑。
-- 监听器在 `init()` 里、`enabled` 检查之前挂载，点击时再判断 `enabled`，这样先关闭脚本再开启
-  也能生效；评论按钮仍由后注册的 `watchComments` 处理（`watchOpenTargets` 先 return）。
+- 主帖/头部资料链接只覆盖 home/profile/explore/search；资料卡覆盖所有路由。引用帖、通知、
+  列表、外部链接等仍走 X 原行为。`restoreHomeReturn` 继续保留给这些同标签入口兜底。
+- 评论按钮仍由后注册的 `watchComments` 处理（`watchOpenTargets` 先 return）。
 
 ### 时间
 
