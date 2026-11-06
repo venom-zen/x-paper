@@ -152,14 +152,17 @@
   需要 primary 范围内的内联浅色文字规则改回墨色。文章页还有几个深色表面：`simpleTweet` 内嵌引用帖
   （纯黑）、`markdown-code-block`（`pre` 深底 + 28px 头部条，`code` 带内联浅色，换纸面时必须同时
   强制文字色）、文末 `[role="status"]` 升级横幅（深蓝）、`progressBar-bar`（X 蓝）。
-- X 从详情页返回首页（app-bar 的 `←` 触发 `popstate`）时会重建时间线，滚动位置会回到顶部，
+- X 从详情页返回首页（app-bar 的 `←` 触发 `popstate`）时会重建/重新排序时间线，滚动位置会回到顶部，
   而且重建后往往只有少量单元格。脚本在离开 home 时记录滚动量、第一条可见帖子（取带 `time` 的
   时间戳链接，不能用引用帖链接）和已展开媒体的帖子；返回后把该帖子钉回原来的视口位置，并恢复
-  那些媒体块的展开态，否则重建后媒体集体折叠会让页面高度突变、定位漂移。帖子还没渲染时先等 2s
-  再按像素回填，锚点未出现时至少校正到 6s。重建期间用 rAF 每帧对齐锚点（250ms 轮询会让用户看到
-  明显跳动），布局静止 1.5s 后停止，最多 10s。A/B 验证（同一流程，关闭恢复）：恢复关闭时返回后
-  停在 `scrollY≈649`（目标帖 `top≈1512`，在视口外），开启时回到 `scrollY≈2002`（目标帖在视口内）。
-  用户 wheel/touchmove 或 PageUp/PageDown/Home/End/方向键/空格即放弃校正，别长时间抢滚动。
+  那些媒体块的展开态，否则重建后媒体集体折叠会让页面高度突变、定位漂移。
+  `restoreHomeReturn` 先在当前帧对齐一次；等首页 `[role="tablist"]` 出现后才搜索锚点，避免把
+  详情页里的同名帖子当成目标。锚点搜索按 120ms 节流，锚点未出现时 800ms 后按像素位置回填；
+  校正窗口最多 4s，布局静止 800ms 后停止，差 2px 以内不动。滚动条拖动会在 `html` 上派发
+  `pointerdown`/`mousedown`，所以除 wheel/touchmove/滚动键外还必须监听这两个事件；用户一旦
+  操作立即放弃校正，不再抢滚动。已展开媒体集合保留到下一次 capture，`toggleMedia` 同步更新，
+  避免后续重渲染再次折叠。前台标签页实测：返回后首个采样已接近目标位置；拖动滚动条后校正停止，
+  不会被拉回旧锚点。
 - 引用帖媒体块在卡片内是整卡宽，展开后会压住引用卡左右和底部边框；给引用帖内的媒体块和
   按钮左右各 12px 内缩，媒体块底部再留 12px，并对媒体元素设 12px 圆角。引用卡作者行保持透明。
 - X 文章预览卡是 `div:has(> [data-testid="article-cover-image"])`：外框在它的 border，标题/
@@ -316,6 +319,24 @@
   输入框，不关闭弹窗；提交中不允许关闭输入框。请求用 AbortController，关闭后忽略迟到的响应；
   接口失败时弹窗内提供「重试」和「在新标签页打开帖子」兜底。只展示接口返回的第一页评论，
   不加载更多。
+
+### 帖子打开方式
+
+- 设置键 `xmp-open-post-new-tab`，默认 `false`；Tampermonkey 菜单注册「帖子：在新标签页打开」
+  和「帖子：在当前标签页打开」两个命令，点击后立即生效并写入 `GM_setValue`/localStorage。
+- 开启后，在 home/profile/explore/search 的 window 捕获阶段拦截点击：目标必须在主帖
+  `[data-testid="tweet"]` 内，且不是嵌套引用帖（`tweet.parentElement.closest(TWEET)` 为空）；
+  只接管主帖正文和指向本帖的时间戳链接。
+- 不拦截：`[role="dialog"]`、评论按钮 `[data-testid="reply"]`、`button`/`[role="button"]`/
+  `input`/`textarea`/`select`/`label`/`contenteditable`、`video`/`audio`/`tweetPhoto`/
+  `previewInterstitial`/`card.wrapper`；有文本选区时也不拦截。点击的 anchor 必须与
+  `cellStatusLink(cell)` 的 pathname 相同，话题/@/外链/analytics 交给 X。
+- 打开方式：新建临时 `<a target="_blank" rel="noopener noreferrer">` 并 click，避免
+  `window.open(..., 'noopener')` 返回 null 无法判断是否成功；打开后移除。
+- 只覆盖上述四类路由里的主帖；引用帖、通知、列表、外部链接等仍走 X 原行为。`restoreHomeReturn`
+  继续保留给这些同标签入口兜底，不要因为开了新标签就删除恢复逻辑。
+- 监听器在 `init()` 里、`enabled` 检查之前挂载，点击时再判断 `enabled`，这样先关闭脚本再开启
+  也能生效；评论按钮仍由后注册的 `watchComments` 处理（新监听器先 return）。
 
 ### 时间
 

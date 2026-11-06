@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.7.4
+// @version      0.7.5
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -22,6 +22,7 @@
   'use strict';
 
   const ENABLED_KEY = 'xmp-enabled';
+  const OPEN_POST_NEW_TAB_KEY = 'xmp-open-post-new-tab';
   const MIN_LAYOUT_WIDTH = 1000;
   const PRIMARY = '[data-testid="primaryColumn"]';
   const CELL = '[data-testid="cellInnerDiv"]';
@@ -2003,6 +2004,7 @@
   `;
 
   let enabled = true;
+  let openPostNewTab = false;
   let degraded = false;
   let route = 'other';
   let historyPatched = false;
@@ -2074,10 +2076,35 @@
     window.localStorage.setItem(ENABLED_KEY, value ? '1' : '0');
   }
 
+  function readOpenPostNewTab() {
+    try {
+      if (typeof GM_getValue === 'function') return GM_getValue(OPEN_POST_NEW_TAB_KEY, false) === true;
+      return window.localStorage.getItem(OPEN_POST_NEW_TAB_KEY) === '1';
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function writeOpenPostNewTab(value) {
+    if (typeof GM_setValue === 'function') {
+      GM_setValue(OPEN_POST_NEW_TAB_KEY, value);
+      return;
+    }
+    window.localStorage.setItem(OPEN_POST_NEW_TAB_KEY, value ? '1' : '0');
+  }
+
   function registerMenu() {
     if (typeof GM_registerMenuCommand !== 'function') return;
     GM_registerMenuCommand('关闭 x-paper', () => setEnabled(false));
     GM_registerMenuCommand('开启 x-paper', () => setEnabled(true));
+    GM_registerMenuCommand('帖子：在新标签页打开', () => {
+      openPostNewTab = true;
+      writeOpenPostNewTab(true);
+    });
+    GM_registerMenuCommand('帖子：在当前标签页打开', () => {
+      openPostNewTab = false;
+      writeOpenPostNewTab(false);
+    });
   }
 
   function injectStyle(id, css) {
@@ -2301,11 +2328,17 @@
     return !!link && homeReturn.expanded.has(link.getAttribute('href'));
   }
 
-  // X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。离开首页时记住滚动量、
-  // 当时第一条可见的帖子和已展开媒体的帖子；回来后把该帖子滚回原来的视口位置，
-  // 并恢复那些媒体块的展开态，避免重建后集体折叠、页面高度突变。
-  // 重建期间 X 会连续增删单元格和媒体，因此每帧把锚点钉在记录位置上，布局静止
-  // 1.5s 后停止；用户主动滚动（滚轮、触摸、滚动按键）即放弃校正。
+  // 用户在 home 上手动展开/收起后同步记录，后续 X 再次渲染同一帖时保持当前状态。
+  function rememberHomeMedia(tweet, expanded) {
+    if (route !== 'home' || !homeReturn?.expanded) return;
+    const link = cellStatusLink(tweet.closest(CELL));
+    if (!link) return;
+    const href = link.getAttribute('href');
+    if (expanded) homeReturn.expanded.add(href);
+    else homeReturn.expanded.delete(href);
+  }
+
+  // 离开 home 时记录滚动量、视口顶部帖子和已展开媒体；返回后按这份记录恢复。
   function captureHomeReturn() {
     const primary = document.querySelector(PRIMARY);
     const y = Math.round(window.scrollY);
@@ -2330,6 +2363,9 @@
     homeReturn = { y, anchor, expanded };
   }
 
+  // X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。回来后把锚点帖子滚回原来的
+  // 视口位置，并恢复媒体展开态，避免重建后集体折叠、页面高度突变。
+  // 只在校正窗口内跟随锚点；用户一旦滚动（含拖动滚动条）、点击或按键就把控制权交还。
   function restoreHomeReturn() {
     const state = homeReturn;
     if (!state) return;
@@ -2337,13 +2373,21 @@
     let cancelled = false;
     let frame = 0;
     let anchorCell = null;
+    let cachedTabs = null;
+    let lastLocate = 0;
     let lastSignature = '';
     let lastChange = performance.now();
     const started = performance.now();
+    const maxRestoreMs = 4000;
+    const stableMs = 800;
+    const fallbackMs = 800;
+
     const detach = () => {
       window.removeEventListener('wheel', onUserScroll);
       window.removeEventListener('touchmove', onUserScroll);
-      window.removeEventListener('keydown', onScrollKey, true);
+      document.removeEventListener('pointerdown', onUserScroll, true);
+      document.removeEventListener('mousedown', onUserScroll, true);
+      document.removeEventListener('keydown', onScrollKey, true);
     };
     const cancel = () => {
       cancelled = true;
@@ -2357,16 +2401,32 @@
       if (target instanceof Element && target.closest('input, textarea, [contenteditable="true"]')) return;
       if (['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', ' '].includes(event.key)) cancel();
     };
-    window.addEventListener('wheel', onUserScroll, { passive: true });
-    window.addEventListener('touchmove', onUserScroll, { passive: true });
-    window.addEventListener('keydown', onScrollKey, true);
+
+    // 首页 tab 栏出现后才算 home 内容已开始渲染；避免把详情页里的同名帖子当成锚点。
+    const homeTabs = () => {
+      if (cachedTabs && cachedTabs.isConnected && cachedTabs.getBoundingClientRect().height > 0) {
+        return cachedTabs;
+      }
+      cachedTabs = null;
+      const primary = document.querySelector(PRIMARY);
+      if (!primary) return null;
+      cachedTabs = [...primary.querySelectorAll('[role="tablist"]')]
+        .find(element => !element.closest(TWEET) && element.getBoundingClientRect().height > 0) || null;
+      return cachedTabs;
+    };
     const locate = () => {
       if (anchorCell && anchorCell.isConnected) {
         const link = cellStatusLink(anchorCell);
         if (link && link.getAttribute('href') === state.anchor.href) return anchorCell;
       }
       anchorCell = null;
+      const now = performance.now();
+      if (now - lastLocate < 120) return null;
+      lastLocate = now;
+      const tabs = homeTabs();
+      if (!tabs) return null;
       for (const cell of document.querySelectorAll(CELL)) {
+        if (!(tabs.compareDocumentPosition(cell) & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
         const link = cellStatusLink(cell);
         if (link && link.getAttribute('href') === state.anchor.href) {
           anchorCell = cell;
@@ -2375,10 +2435,35 @@
       }
       return anchorCell;
     };
+    const apply = target => {
+      const max = Math.max(0, document.scrollingElement.scrollHeight - window.innerHeight);
+      const next = Math.max(0, Math.min(Math.round(target), max));
+      if (Math.abs(window.scrollY - next) > 2) window.scrollTo(0, next);
+      return next;
+    };
+    const restoreAnchor = () => {
+      if (!state.anchor) return false;
+      const cell = locate();
+      if (!cell) return false;
+      const delta = Math.round(cell.getBoundingClientRect().top) - state.anchor.top;
+      if (Math.abs(delta) > 2) apply(window.scrollY + delta);
+      return true;
+    };
     const finish = () => {
       cancel();
-      if (homeReturn === state) homeReturn = null;
+      // 保留 homeReturn.expanded，后续再次渲染时继续沿用展开态；离开 home 时会重新 capture。
     };
+
+    // 滚动条拖动会在 html 上派发 pointerdown/mousedown，不能只监听 wheel/touch。
+    window.addEventListener('wheel', onUserScroll, { passive: true });
+    window.addEventListener('touchmove', onUserScroll, { passive: true });
+    document.addEventListener('pointerdown', onUserScroll, true);
+    document.addEventListener('mousedown', onUserScroll, true);
+    document.addEventListener('keydown', onScrollKey, true);
+
+    // 先尝试在当前帧对齐一次，减少“先停在顶部再跳”的观感。
+    if (state.anchor) restoreAnchor();
+
     const tick = () => {
       if (cancelled) return;
       if (token !== homeRestoreToken || route !== 'home') {
@@ -2388,17 +2473,11 @@
       const now = performance.now();
       const elapsed = now - started;
       let cell = null;
-      if (state.anchor) cell = locate();
-      if (cell) {
-        const delta = Math.round(cell.getBoundingClientRect().top) - state.anchor.top;
-        if (Math.abs(delta) > 1) window.scrollBy(0, delta);
-      } else if (elapsed >= 2000) {
-        // 锚点还没渲染出来时先等 X 补内容，否则按像素滚动会被短页面钳到底部。
-        const max = Math.max(0, document.scrollingElement.scrollHeight - window.innerHeight);
-        const target = Math.min(state.y, max);
-        if (Math.abs(window.scrollY - target) > 2) window.scrollTo(0, target);
+      if (state.anchor) cell = restoreAnchor() ? anchorCell : null;
+      if (!cell && elapsed >= fallbackMs) {
+        // home 已渲染但锚点还不在首屏时，先回到保存的像素位置，等帖子出现后再精调。
+        if (homeTabs()) apply(state.y);
       }
-      // 文档高度和锚点的文档位置变化都说明时间线还在重建，延长校正窗口。
       const signature = cell
         ? `${document.scrollingElement.scrollHeight}:${Math.round(cell.getBoundingClientRect().top + window.scrollY)}`
         : String(document.scrollingElement.scrollHeight);
@@ -2406,14 +2485,33 @@
         lastSignature = signature;
         lastChange = now;
       }
-      // 锚点迟迟没渲染出来时至少校正到 6s；锚点已在 DOM 中则布局静止 1.5s 后停止。
-      const settled = elapsed > 2500 && now - lastChange > 1500;
-      if (elapsed < 10000 && (!settled || (!cell && elapsed < 6000))) {
+      const settled = elapsed > 1200 && now - lastChange > stableMs;
+      if (elapsed < maxRestoreMs && (!settled || !cell)) {
         frame = requestAnimationFrame(tick);
       } else {
         finish();
       }
     };
+
+    if (!state.anchor) {
+      const fallback = () => {
+        if (cancelled) return;
+        if (token !== homeRestoreToken || route !== 'home') {
+          detach();
+          return;
+        }
+        if (homeTabs()) {
+          apply(state.y);
+          finish();
+        } else if (performance.now() - started < maxRestoreMs) {
+          frame = requestAnimationFrame(fallback);
+        } else {
+          finish();
+        }
+      };
+      frame = requestAnimationFrame(fallback);
+      return;
+    }
     frame = requestAnimationFrame(tick);
   }
 
@@ -3387,6 +3485,7 @@
     const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
     if (tweet.dataset.xmpMediaState === 'expanded') {
       tweet.dataset.xmpMediaState = 'collapsed';
+      rememberHomeMedia(tweet, false);
       hidePhotoPreview();
       if (block) {
         mediaReveals.set(block, (mediaReveals.get(block) || 0) + 1);
@@ -3397,6 +3496,7 @@
     }
     if (!block || !tweet.contains(block)) {
       tweet.dataset.xmpMediaState = 'expanded';
+      rememberHomeMedia(tweet, true);
       renderButton(toggle, currentInfo, 'expanded');
       return;
     }
@@ -3404,6 +3504,7 @@
     mediaReveals.set(block, reveal);
     block.setAttribute('data-xmp-media-loading', '');
     tweet.dataset.xmpMediaState = 'expanded';
+    rememberHomeMedia(tweet, true);
     renderButton(toggle, currentInfo, 'expanded');
     warmMedia(block);
     waitForMediaPaint(block).then(() => {
@@ -4550,15 +4651,61 @@
     }, true);
   }
 
+  // 设置开启时，主帖正文/时间戳在新标签页打开，home 不卸载；引用帖、正文内链接、媒体和按钮
+  // 仍交给 X。只覆盖 home/profile/explore/search 的主帖，其他入口继续走同标签和位置恢复兜底。
+  function watchPostOpenTarget() {
+    window.addEventListener('click', event => {
+      if (!enabled || !openPostNewTab || commentsModal) return;
+      const target = event.target instanceof Element ? event.target : null;
+      if (!target) return;
+      if (route !== 'home' && route !== 'profile' && route !== 'explore' && route !== 'search') return;
+      if (target.closest('[role="dialog"], [data-testid="reply"]')) return;
+      const tweet = target.closest(TWEET);
+      if (!tweet) return;
+      // 引用帖内部仍由 X 处理，避免把外层帖的 status 当成引用帖目标。
+      if (tweet.parentElement?.closest(TWEET)) return;
+      if (target.closest('button, [role="button"], input, textarea, select, label, [contenteditable="true"]')) return;
+      if (target.closest('video, audio, [data-testid="tweetPhoto"], [data-testid="previewInterstitial"], [data-testid="card.wrapper"]')) return;
+      const selection = window.getSelection();
+      if (selection && selection.toString().trim()) return;
+      const link = cellStatusLink(tweet.closest(CELL));
+      if (!link) return;
+      const anchor = target.closest('a[href]');
+      if (anchor) {
+        let sameStatus = false;
+        try {
+          sameStatus = new URL(anchor.href, location.href).pathname === new URL(link.href, location.href).pathname;
+        } catch (error) {
+          sameStatus = false;
+        }
+        // 只接管指向本帖的时间戳；话题、@、外链、analytics 仍按 X 原行为处理。
+        if (!sameStatus) return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      const opener = document.createElement('a');
+      opener.href = link.href;
+      opener.target = '_blank';
+      opener.rel = 'noopener noreferrer';
+      opener.style.cssText = 'position:fixed;left:-9999px;top:0;';
+      document.body.appendChild(opener);
+      opener.click();
+      opener.remove();
+    }, true);
+  }
+
   function init() {
     registerMenu();
     watchPhotoPreview();
+    openPostNewTab = readOpenPostNewTab();
+    watchPostOpenTarget();
+    watchComments();
     enabled = readEnabled();
     if (!enabled) return;
     document.documentElement.dataset.xmpEnabled = '1';
     injectStyles();
     watchGrokDrawer();
-    watchComments();
     if (typeof widthQuery.addEventListener === 'function') {
       widthQuery.addEventListener('change', handleWidthChange);
     }

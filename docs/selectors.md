@@ -340,21 +340,37 @@
 - 只渲染接口返回的第一页评论，不加载更多；回复在弹窗内完成，只支持纯文字（280 字），
   不支持图片、视频或投票。
 
+## 帖子打开方式
+
+- 设置键 `xmp-open-post-new-tab`，默认关闭；Tampermonkey 菜单「帖子：在新标签页打开」/
+  「帖子：在当前标签页打开」写入设置。
+- 开启时在 window 捕获阶段拦截 home/profile/explore/search 的点击：
+  - 目标在主帖 `[data-testid="tweet"]` 内；嵌套引用帖不接管。
+  - 排除 `[role="dialog"]`、`[data-testid="reply"]`、button/role=button/input/textarea/select/
+    label/contenteditable、video/audio/tweetPhoto/previewInterstitial/card.wrapper。
+  - 有文本选区、或点击的 anchor pathname 与 `cellStatusLink(cell)` 不一致时不拦截。
+  - 命中后用临时 `<a target="_blank" rel="noopener noreferrer">` 打开 `link.href`，
+    preventDefault + stopImmediatePropagation，当前标签保持 home。
+- 只覆盖这四类路由的主帖；引用帖、通知、列表、外部链接等仍可能同标签打开，继续依赖
+  `restoreHomeReturn` 兜底。
+
 ## 返回首页的位置恢复
 
-X 从详情页返回首页时会重建时间线，滚动位置会回到顶部。脚本在**离开 home** 时记录
+X 从详情页返回首页时会重建/重新排序时间线，滚动位置会回到顶部。脚本在**离开 home** 时记录
 `window.scrollY`、视口内第一条完整可见帖子的时间戳链接和已展开媒体的帖子（`captureHomeReturn`），
 **回到 home** 时（`previousRoute !== 'home' && route === 'home'`）用 `restoreHomeReturn` 复位：
 
 - 锚点取单元格里带 `time[datetime]` 的链接，不能取引用帖链接；返回后按该链接定位单元格，
-  把它钉回离开时的 `cell.top`（差 1px 以上才动）。
-- 重建期间 X 会连续增删单元格、折叠媒体，因此每帧（rAF）校正一次，而不是 250ms 轮询；
-  布局静止 1.5s 后停止，最多 10s。
-- 已展开的媒体按单元格时间戳链接记录；重建后的帖子标注时恢复为 `expanded`，避免返回后集体
-  折叠导致页面高度突变和定位漂移。
-- 锚点还没渲染出来时先等 2 秒，之后按像素位置回填（用当前文档高度钳制），至少校正到 6 秒。
-- 用户 `wheel`/`touchmove`/`PageUp`/`PageDown`/`Home`/`End`/方向键/空格主动滚动即放弃；
-  离开 home 路由时自动停止。
+  把它钉回离开时的 `cell.top`（超过 2px 才动）。
+- 先等首页 `[role="tablist"]` 出现，再用 `compareDocumentPosition` 过滤 tab 栏之后的单元格，
+  避免把详情页旧 DOM 里的同名帖子当成锚点。
+- 首次进入时先对齐一次；锚点搜索按 120ms 节流；锚点未出现 800ms 后按像素位置回填（用当前
+  文档高度钳制）；布局静止 800ms 后停止，最多 4s。
+- 已展开媒体按单元格时间戳链接记录，保留到下一次 `captureHomeReturn`；`toggleMedia` 同步更新
+  集合，重建后的帖子标注时恢复为 `expanded`，避免返回后集体折叠导致页面高度突变和定位漂移。
+- 用户 `wheel`/`touchmove`/`pointerdown`/`mousedown`/`PageUp`/`PageDown`/`Home`/`End`/方向键/
+  空格主动滚动或点击即放弃；滚动条拖动会在 `html` 上派发 `pointerdown`/`mousedown`，不能只监听
+  `wheel`/`touch`。离开 home 路由时自动停止。
 - 日志和调试时注意：X 自己也会在 `popstate` 后调用 `scrollTo`/`scrollBy`；锚点已对齐时脚本不会再发
   滚动调用。
 - 只在 SPA 内导航生效；整页刷新交给浏览器自己的滚动恢复。
