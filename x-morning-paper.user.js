@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.7.5
+// @version      0.7.6
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -4091,6 +4091,257 @@
     }
   }
 
+  // x-client-transaction-id 生成：X 的网页 GraphQL 写入（CreateTweet）要求这个头，
+  // 缺少时会返回误导性的 344。算法移植自 Lqm1/x-client-transaction-id（MIT），
+  // 与 X responsive-web 客户端的 ondemand.s + loading-x-anim 逻辑一致。
+  // 许可与版权声明见 THIRD_PARTY_NOTICES.md；X 改版后可能失效，失败时中止请求并记录日志。
+  const TXID_KEYWORD = 'obfiowerehiring';
+  const TXID_ADDITIONAL_RANDOM_NUMBER = 3;
+  const TXID_EPOCH_SECONDS = 1682924400;
+  const TXID_TOTAL_TIME = 4096;
+  let clientTransactionKeys = null;
+  let clientTransactionInit = null;
+
+  class TxidCubic {
+    constructor(curves) {
+      const [x1, y1, x2, y2] = curves;
+      this.cx = 3.0 * x1;
+      this.bx = 3.0 * (x2 - x1) - this.cx;
+      this.ax = 1.0 - this.cx - this.bx;
+      this.cy = 3.0 * y1;
+      this.by = 3.0 * (y2 - y1) - this.cy;
+      this.ay = 1.0 - this.cy - this.by;
+      if (x1 > 0) this.startGradient = y1 / x1;
+      else if (y1 === 0 && x2 > 0) this.startGradient = y2 / x2;
+      else if (y1 === 0 && y2 === 0) this.startGradient = 1;
+      else this.startGradient = 0;
+      if (x2 < 1) this.endGradient = (y2 - 1) / (x2 - 1);
+      else if (y2 === 1 && x1 < 1) this.endGradient = (y1 - 1) / (x1 - 1);
+      else if (y2 === 1 && y1 === 1) this.endGradient = 1;
+      else this.endGradient = 0;
+      this.splineSamples = Array.from({ length: 11 }, (_, index) => this.sampleX(index / 10));
+    }
+
+    sampleX(t) {
+      return ((this.ax * t + this.bx) * t + this.cx) * t;
+    }
+
+    sampleY(t) {
+      return ((this.ay * t + this.by) * t + this.cy) * t;
+    }
+
+    sampleDerivativeX(t) {
+      return (3.0 * this.ax * t + 2.0 * this.bx) * t + this.cx;
+    }
+
+    solveCurveX(x) {
+      let t0 = 0.0;
+      let t1 = 1.0;
+      let t2 = x;
+      for (let index = 1; index < 11; index += 1) {
+        if (x <= this.splineSamples[index]) {
+          t1 = 0.1 * index;
+          t0 = t1 - 0.1;
+          t2 = t0 + ((t1 - t0) * (x - this.splineSamples[index - 1])) /
+            (this.splineSamples[index] - this.splineSamples[index - 1]);
+          break;
+        }
+      }
+      let residual = 0;
+      for (let index = 0; index < 4; index += 1) {
+        residual = this.sampleX(t2) - x;
+        if (Math.abs(residual) < 1e-7) return t2;
+        const derivative = this.sampleDerivativeX(t2);
+        if (Math.abs(derivative) < 1e-7) break;
+        t2 -= residual / derivative;
+      }
+      if (Math.abs(residual) < 1e-7) return t2;
+      while (t0 < t1) {
+        residual = this.sampleX(t2);
+        if (Math.abs(residual - x) < 1e-7) return t2;
+        if (x > residual) t0 = t2;
+        else t1 = t2;
+        t2 = (t1 + t0) * 0.5;
+      }
+      return t2;
+    }
+
+    getValue(time) {
+      if (time < 0) return this.startGradient * time;
+      if (time > 1) return 1.0 + this.endGradient * (time - 1.0);
+      return this.sampleY(this.solveCurveX(time));
+    }
+  }
+
+  function txidInterpolateNum(from, to, factor) {
+    return from * (1 - factor) + to * factor;
+  }
+
+  function txidInterpolate(fromList, toList, factor) {
+    return fromList.map((from, index) => txidInterpolateNum(from, toList[index], factor));
+  }
+
+  function txidConvertRotationToMatrix(rotation) {
+    const radians = (rotation * Math.PI) / 180;
+    return [Math.cos(radians), -Math.sin(radians), Math.sin(radians), Math.cos(radians)];
+  }
+
+  function txidFloatToHex(value) {
+    const integer = Math.floor(value);
+    let fraction = value - integer;
+    let result = integer > 0 ? integer.toString(16).toUpperCase() : '';
+    if (fraction === 0) return result;
+    result += '.';
+    while (fraction > 0) {
+      fraction *= 16;
+      const digit = Math.floor(fraction);
+      fraction -= digit;
+      result += digit.toString(16).toUpperCase();
+    }
+    return result;
+  }
+
+  function txidFormatMatrixValue(value) {
+    if (value === 0) return '0';
+    const sign = value < 0 ? '-' : '';
+    const [mantissa, exponentText] = Math.abs(value).toExponential(5).split('e');
+    const exponent = parseInt(exponentText, 10);
+    const digits = mantissa.replace('.', '').replace(/0+$/, '') || '0';
+    if (exponent < -4 || exponent >= 6) {
+      const head = digits.length > 1 ? `${digits[0]}.${digits.slice(1)}` : digits;
+      const expSign = exponent < 0 ? '-' : '+';
+      const expDigits = String(Math.abs(exponent)).padStart(2, '0');
+      return `${sign}${head}e${expSign}${expDigits}`;
+    }
+    if (exponent >= 0) {
+      const intPart = digits.slice(0, exponent + 1).padEnd(exponent + 1, '0');
+      const fracPart = digits.slice(exponent + 1);
+      return fracPart ? `${sign}${intPart}.${fracPart}` : `${sign}${intPart}`;
+    }
+    return `${sign}0.${'0'.repeat(-exponent - 1)}${digits}`;
+  }
+
+  function txidMatrixNumbers(value) {
+    return (txidFormatMatrixValue(value).match(/[\d.-]+/g) ?? []).map(Number);
+  }
+
+  function txidSolve(value, min, max, rounding) {
+    const result = (value * (max - min)) / 255 + min;
+    return rounding ? Math.floor(result) : Math.round(result * 100) / 100;
+  }
+
+  function txidAnimate(frameRow, targetTime) {
+    const fromColor = frameRow.slice(0, 3);
+    const toColor = frameRow.slice(3, 6);
+    const toRotation = txidSolve(frameRow[6], 60, 360, true);
+    const curves = frameRow.slice(7)
+      .map((value, index) => txidSolve(value, index % 2 ? -1.0 : 0.0, 1, false));
+    const progress = new TxidCubic(curves).getValue(targetTime);
+    const color = txidInterpolate(fromColor, toColor, progress)
+      .map(channel => Math.round(Math.max(0, Math.min(255, channel))).toString(16));
+    const rotation = txidInterpolateNum(0, toRotation, progress);
+    const matrix = txidConvertRotationToMatrix(rotation)
+      .flatMap(value => txidMatrixNumbers(value))
+      .map(number => {
+        const hex = txidFloatToHex(Math.abs(Number(number.toFixed(2)))).toLowerCase();
+        return hex.startsWith('.') ? `0${hex}` : hex || '0';
+      });
+    return [...color, ...matrix, '0', '0'].join('').replace(/[.-]/g, '');
+  }
+
+  function txidGetAnimationKey(keyBytes, indices, frameRows) {
+    const rowIndex = keyBytes[indices.rowIndex] % 16;
+    const frameRow = frameRows[rowIndex];
+    if (!frameRow) throw new Error('animation frame row missing');
+    const frameTime = indices.keyBytesIndices
+      .reduce((time, index) => time * (keyBytes[index] % 16), 1);
+    return txidAnimate(frameRow, (Math.round(frameTime / 10) * 10) / TXID_TOTAL_TIME);
+  }
+
+  function txidGetVerificationKey(doc) {
+    const key = doc.querySelector("[name='twitter-site-verification']")?.getAttribute('content');
+    if (!key) throw new Error('verification key missing');
+    return key;
+  }
+
+  function txidGetOnDemandFileUrl(doc) {
+    const pattern = /(\d+):\s*["']ondemand\.s["'][\s\S]*?\}\)\[e\]\s*\|\|\s*e\)\s*\+\s*["']\.["']\s*\+\s*\(\{[\s\S]*?\b\1:\s*["']([a-zA-Z0-9_-]+)["']/;
+    const sources = [...doc.querySelectorAll('script')]
+      .map(script => script.textContent || '')
+      .filter(source => source.includes('ondemand.s'));
+    sources.push(doc.documentElement.outerHTML);
+    for (const source of sources) {
+      const hash = pattern.exec(source)?.[2];
+      if (hash) return `https://abs.twimg.com/responsive-web/client-web/ondemand.s.${hash}a.js`;
+    }
+    throw new Error('ondemand url missing');
+  }
+
+  async function txidFetchKeyByteIndices(doc) {
+    const url = txidGetOnDemandFileUrl(doc);
+    const response = await fetch(url);
+    if (!response.ok) throw new Error(`ondemand HTTP ${response.status}`);
+    const source = await response.text();
+    const values = [...source.matchAll(/\(\w\[(\d{1,2})\],\s*16\)/g)].map(match => Number(match[1]));
+    if (values.length === 0) throw new Error('key byte indices missing');
+    return { rowIndex: values[0], keyBytesIndices: values.slice(1) };
+  }
+
+  function txidGetAnimationFrameRows(doc, keyBytes) {
+    const frames = doc.querySelectorAll("[id^='loading-x-anim']");
+    const path = frames[keyBytes[5] % 4]?.children[0]?.children[1]?.getAttribute('d');
+    if (!path) return [];
+    return path.substring(9).split('C')
+      .map(segment => (segment.match(/\d+/g) || []).map(Number));
+  }
+
+  function txidEncodeBase64(bytes) {
+    return btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''));
+  }
+
+  function txidDecodeBase64(value) {
+    return Uint8Array.from(atob(value), char => char.charCodeAt(0));
+  }
+
+  async function initClientTransaction() {
+    if (clientTransactionKeys) return clientTransactionKeys;
+    if (clientTransactionInit) return clientTransactionInit;
+    clientTransactionInit = (async () => {
+      const response = await fetch('/i/jf/', { credentials: 'omit', cache: 'no-store' });
+      if (!response.ok) throw new Error(`transaction 页面 HTTP ${response.status}`);
+      const html = await response.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const key = txidGetVerificationKey(doc);
+      const keyBytes = [...txidDecodeBase64(key)];
+      const indices = await txidFetchKeyByteIndices(doc);
+      const frameRows = txidGetAnimationFrameRows(doc, keyBytes);
+      const animationKey = txidGetAnimationKey(keyBytes, indices, frameRows);
+      return { keyBytes, animationKey };
+    })();
+    try {
+      clientTransactionKeys = await clientTransactionInit;
+      return clientTransactionKeys;
+    } finally {
+      clientTransactionInit = null;
+    }
+  }
+
+  async function generateClientTransactionId(method, path) {
+    const keys = await initClientTransaction();
+    const time = Math.floor((Date.now() - TXID_EPOCH_SECONDS * 1000) / 1000);
+    const data = `${method}!${path}!${time}${TXID_KEYWORD}${keys.animationKey}`;
+    const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data)));
+    const randomByte = Math.floor(Math.random() * 256);
+    const bytes = [
+      ...keys.keyBytes,
+      ...[0, 8, 16, 24].map(shift => (time >> shift) & 0xff),
+      ...hash.slice(0, 16),
+      TXID_ADDITIONAL_RANDOM_NUMBER,
+    ];
+    const out = new Uint8Array([randomByte, ...bytes.map(byte => byte ^ randomByte)]);
+    return txidEncodeBase64(out).replace(/=/g, '');
+  }
+
   async function requestCreateTweet(text, replyToId, signal) {
     const variables = {
       tweet_text: text,
@@ -4100,18 +4351,28 @@
       disallowed_reply_options: null,
     };
     let queryId = CREATE_TWEET_QUERY_ID;
-    const send = async id => fetch(`/i/api/graphql/${id}/CreateTweet`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: tweetDetailHeaders(),
-      body: JSON.stringify({
-        variables,
-        features: TWEET_DETAIL_FEATURES,
-        fieldToggles: TWEET_DETAIL_FIELD_TOGGLES,
-        queryId: id,
-      }),
-      signal,
-    });
+    const send = async id => {
+      const path = `/i/api/graphql/${id}/CreateTweet`;
+      const headers = tweetDetailHeaders();
+      try {
+        headers['x-client-transaction-id'] = await generateClientTransactionId('POST', path);
+      } catch (error) {
+        warnOnce('client-transaction', `transaction id 生成失败：${error}`);
+        throw new Error(`生成 X 写入校验头失败：${error.message || error}`);
+      }
+      return fetch(path, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({
+          variables,
+          features: TWEET_DETAIL_FEATURES,
+          fieldToggles: TWEET_DETAIL_FIELD_TOGGLES,
+          queryId: id,
+        }),
+        signal,
+      });
+    };
     let response = await send(queryId);
     if (!response.ok && (response.status === 400 || response.status === 404)) {
       const fresh = await discoverCreateTweetQueryId(signal);

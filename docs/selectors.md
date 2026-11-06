@@ -318,9 +318,10 @@
     media:{media_entities:[],possibly_sensitive:false},semantic_annotation_ids:[],
     disallowed_reply_options:null}, features, fieldToggles, queryId}`；`batch_compose` 传
     `'off'` 会触发 GraphQL 校验错误，省略。HTTP 400/404 时从 `main.*.js` 正则
-    `queryId:"...",operationName:"CreateTweet"` 重新发现 queryId。成功后重新请求 TweetDetail
-    并保留 `.xmp-comments-body` 的滚动位置；失败把接口错误显示在输入框下方。只支持纯文字、
-    280 字；不打开 X 原生 composer 独立窗口，也不在同一页用隐藏 anchor。
+    `queryId:"...",operationName:"CreateTweet"` 重新发现 queryId。每次 POST 前生成
+    `x-client-transaction-id`（见下节）；缺少这个头时 X 会返回误导性的 344。成功后重新请求
+    TweetDetail 并保留 `.xmp-comments-body` 的滚动位置；失败把接口错误显示在输入框下方。
+    只支持纯文字、280 字；不打开 X 原生 composer 独立窗口，也不在同一页用隐藏 anchor。
   - 资料：与主页 HoverCard 一致的悬停卡片。头像/用户名 `pointerenter` 250ms 后展示，
     离开 180ms 后收起；鼠标进入卡片取消收起。卡片挂到 `body`、`position: fixed`、
     `z-index: 2100`，不会被弹窗的 overflow 裁切；滚动（窗口或 `.xmp-comments-body`）、
@@ -339,6 +340,27 @@
   同样阻止；关闭后首页滚动位置不变。
 - 只渲染接口返回的第一页评论，不加载更多；回复在弹窗内完成，只支持纯文字（280 字），
   不支持图片、视频或投票。
+
+## x-client-transaction-id
+
+只用于 `CreateTweet`；读取和点赞不需要。
+
+- 初始化：`fetch('/i/jf/', { credentials: 'omit' })` → `DOMParser`：
+  - `[name='twitter-site-verification']` 的 `content` 是 base64 key；
+  - 4 个 `[id^='loading-x-anim']` SVG，`keyBytes[5] % 4` 选中一个，取 `path` 的 `d`；
+  - 内联脚本里匹配 `ondemand.s` 的 webpack chunk hash，拉取
+    `https://abs.twimg.com/responsive-web/client-web/ondemand.s.<hash>a.js`；
+  - 从 ondemand 里用 `/\(\w\[(\d{1,2})\],\s*16\)/g` 提取 rowIndex + keyByteIndices。
+- animationKey：用 keyByteIndices 算 frameTime，选 SVG 的对应行，按 Chromium 的
+  CubicBezier 求值，输出颜色 + 旋转矩阵的 hex。
+- 生成：`time = floor((Date.now() - 1682924400e3) / 1000)`；
+  对 `method + "!" + path + "!" + time + "obfiowerehiring" + animationKey` 做 SHA-256；
+  随机字节 XOR 后 base64，去掉 `=`，得到 94 字符头。每次请求重新取 time/random；`path`
+  必须与本次 queryId 的 `/i/api/graphql/<queryId>/CreateTweet` 一致。
+- 缓存 keyBytes/animationKey；X 改版会破坏 key/indices/动画结构，生成失败时中止请求并在
+  输入框显示「生成 X 写入校验头失败」；如果生成的头仍被 X 拒绝，可能收到 344（不是真实日限额）。
+- 算法移植自 [Lqm1/x-client-transaction-id](https://github.com/Lqm1/x-client-transaction-id)
+  （MIT），版权与许可见 `THIRD_PARTY_NOTICES.md`。
 
 ## 帖子打开方式
 

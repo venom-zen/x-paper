@@ -8,6 +8,8 @@
 
 ## 最近更新
 
+- **0.7.6**：评论回复增加 `x-client-transaction-id` 生成，修复 X 网页 GraphQL 写入返回的
+  误导性 344；首次回复会读取 X 的 `/i/jf/` app shell 和 `ondemand.s` 静态脚本。
 - **0.7.5**：返回首页更顺滑：滚动条拖动/滚轮/触摸/按键会立即接管，锚点校正窗口缩短，
   并保留媒体展开态；Tampermonkey 菜单可切换帖子在新标签页打开（默认当前标签页）。
 - **0.7.4**：评论弹窗内直接回复（纸面输入框、280 字、`Ctrl/Cmd+Enter`）、连线只连接上下
@@ -35,7 +37,8 @@
   的资料卡；按回复关系缩进的楼层（头像竖线只连接上下两个头像，末端圆角转弯 + `|_` 短横线，
   楼层之间才画分割线）；在弹窗内直接回复（纸面输入框、280 字、`Ctrl/Cmd+Enter` 提交，
   不打开独立 composer 窗口），提交后刷新首屏评论并保留滚动位置，`Esc` 只收起输入框；
-  过滤掉对话里混入的推荐/广告帖。
+  过滤掉对话里混入的推荐/广告帖。回复请求会先在本地生成 `x-client-transaction-id`
+  （首次需要读取 X 的公开 app shell 和 `ondemand.s` 静态脚本），再提交 `CreateTweet`。
 - **帖子打开方式**：Tampermonkey 菜单可在「帖子：在当前标签页打开」和「帖子：在新标签页打开」
   之间切换，默认当前标签页。新标签页模式下，点首页/个人主页/探索/搜索里的主帖正文或时间戳
   会在新标签打开，首页不卸载；引用帖、正文内的链接、媒体和操作按钮仍按 X 原行为处理。
@@ -108,8 +111,10 @@
 
 在 Chrome + Tampermonkey 下开发和验证。脚本只申请 `GM_getValue`、`GM_setValue`、
 `GM_registerMenuCommand`、`GM_addStyle`。网络请求只有评论弹窗的 `TweetDetail` 读取、用户
-主动点击「喜欢」时的 `FavoriteTweet`/`UnfavoriteTweet`，以及用户主动提交回复时的
-`CreateTweet`；使用当前浏览器会话和 X Web 的公开 bearer，不发布其他内容，不关注、不私信或
+主动点击「喜欢」时的 `FavoriteTweet`/`UnfavoriteTweet`、用户主动提交回复时的
+`CreateTweet`，以及首次回复时读取 X 的公开 `/i/jf/` app shell 和 `abs.twimg.com` 上的
+`ondemand.s` 静态脚本（用于生成 `x-client-transaction-id`；`/i/jf/` 请求不带账号 cookie）。
+CreateTweet 使用当前浏览器会话和 X Web 的公开 bearer，不发布其他内容，不关注、不私信或
 修改其他账号状态。开关状态保存在本机。
 
 ## 开发
@@ -135,11 +140,12 @@ python -m http.server 8765             # 然后打开 http://127.0.0.1:8765/test
 | `docs/selectors.md` | 选择器、状态属性与降级参考 |
 | `test/fixture.html` | 本地 mock 页面和 `GM_*` mock |
 | `screenshots/` | fixture 与真实 X 的截图 |
+| `THIRD_PARTY_NOTICES.md` | 第三方代码许可与版权声明 |
 | `LICENSE` | MIT 许可证 |
 
 ## 许可
 
-[MIT](LICENSE) © venom
+[MIT](LICENSE) © venom. 第三方代码许可见 [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)。
 
 ## 已知限制
 
@@ -159,3 +165,6 @@ python -m http.server 8765             # 然后打开 http://127.0.0.1:8765/test
   接口；接口或 `features`/`queryId` 改版后可能失效。评论读取失败时弹窗提供「重试」和
   「在新标签页打开帖子」，回复失败时在输入框下方显示错误。只显示首屏评论；回复只支持
   纯文字（280 字），不支持图片、视频或投票。
+- 回复依赖 X 的 `x-client-transaction-id` 算法（从 `/i/jf/` 和 `ondemand.s` 推导）。X 改版
+  后生成器可能失效，弹窗会显示「生成 X 写入校验头失败」；如果生成的头被 X 拒绝，仍可能出现
+  344，需要更新生成器或改用 X 原生 composer。
