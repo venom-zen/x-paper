@@ -50,13 +50,20 @@
 
 已认证徽章（`[data-testid="icon-verified"]`）保留 X 原本的蓝色，主题不再染色。
 
+## 界面语言
+
+脚本生成的界面文案跟随 X 的 `html[lang]`（读不到时回退 `navigator.language`）：`zh*` 使用
+`TEXT.zh`，其他语言使用 `TEXT.en`；X 自身的界面仍由 X 本地化。脚本不保存语言设置。评论数使用
+对应 locale 的 `Intl.NumberFormat(..., { notation: 'compact' })`（中文 `1.2万`，英文 `12K`）。
+
 ## 时间格式
 
 脚本读取 primary 内每个 `time[datetime]` 的 `datetime`，把可见文本重写为本地时间：
 
 - 当天：`HH:mm`
-- 昨天：`昨天·HH:mm`
-- 更早：`M月D日·HH:mm`；跨年时为 `YYYY年M月D日·HH:mm`
+- 昨天：中文 `昨天·HH:mm`；英文 `Yesterday·HH:mm`
+- 更早：中文 `M月D日·HH:mm`（跨年 `YYYY年M月D日·HH:mm`）；英文 `Nov 2·HH:mm`
+  （跨年 `Nov 2, 2025·HH:mm`）
 
 `datetime` 无效时保持 X 原文本。X 重渲染后由首页扫描或路由回调重新格式化。
 
@@ -305,7 +312,7 @@
     有子回复的行加 `.has-children`，`::after` 从头像下方画线接上子树。最后一个子线程用
     `:last-child::before` 的 16×35 border-left + border-bottom +
     `border-bottom-left-radius: 8px` 在头像中心圆角转弯并停止，不能延伸到最后一个头像下方；
-    每条非原帖评论显示「回复 @parent」。
+    每条非原帖评论显示回复对象（中文「回复 @parent」，英文「Reply to @parent」）。
 - 互动：
   - 喜欢/取消：`FavoriteTweet`（`lI07N6Otwv1PhnEgXILM7A`）/
     `UnfavoriteTweet`（`ZYKSe-w7KEslx3JhSIk5LA`），POST body
@@ -325,8 +332,10 @@
   - 资料：与主页 HoverCard 一致的悬停卡片。头像/用户名 `pointerenter` 250ms 后展示，
     离开 180ms 后收起；鼠标进入卡片取消收起。卡片挂到 `body`、`position: fixed`、
     `z-index: 2100`，不会被弹窗的 overflow 裁切；滚动（窗口或 `.xmp-comments-body`）、
-    resize、点击外部、关闭弹窗都会移除。`.xmp-comments-action` 的「资料」按钮可点击钉住/取消，
-    只保留一张卡。资料卡数据来自同一条 TweetDetail 响应，不额外请求。
+    resize、点击外部、关闭弹窗都会移除。`.xmp-comments-action` 的「资料」/「Profile」按钮可点击
+    钉住/取消，只保留一张卡；该按钮带 `.xmp-comments-action-profile`，外部点击判定依赖这个
+    class，不按 `aria-label` 文案匹配（文案随界面语言变化）。资料卡数据来自同一条 TweetDetail
+    响应，不额外请求。
 - 渲染：所有文字用 `textContent`；先解码 HTML 实体，再把 t.co 链接替换为 `display_url`；
   媒体 t.co URL 从正文删除，渲染 `media_url_https` 缩略图（视频/GIF 加角标）。
   不使用 innerHTML 拼接用户内容。

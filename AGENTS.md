@@ -16,6 +16,10 @@
   `/i/jf/` app shell 和 `abs.twimg.com` 上的 `ondemand.s`（生成 `x-client-transaction-id`；
   `/i/jf/` 使用 `credentials: omit`）。CreateTweet 使用当前浏览器会话（`ct0` cookie）和
   X Web 的公开 bearer；不发布其他内容，不关注、不私信、不修改其他账号状态。
+- 注入的界面文案（轨道按钮、媒体按钮、原图预览、评论弹窗、资料卡、错误提示）和时间/计数格式
+  跟随 X 的界面语言（`html[lang]`，回退 `navigator.language`）：`zh*` 用 `TEXT.zh`，其余用
+  `TEXT.en`。X 自身的界面仍由 X 本地化；脚本不保存语言设置。新增可见文案必须同时补两个语言
+  对象，不要在调用点硬编码中文。
 - 当前行为以代码、README 和 `docs/selectors.md` 为准。不要按已删除的旧设计记录回退
   当前行为。
 - 已经落地的、与初版设计不同的行为：无日期刊头、无操作栏上分割线、无正文列左右框线、
@@ -49,14 +53,16 @@
 4. **等待异步**：X 是流式渲染；媒体扫描 150ms 防抖，探索/搜索表面扫描 200ms 防抖 + 1.2s 强制
    重扫，标签页不可见时浏览器会节流定时器。截图/检查前等待 3–5s，确认扫描完成，必要时再查询
    一次 DOM。SPA 进入探索/搜索后至少等 1.5s 再判定模块是否已换纸面。
-5. **状态矩阵**：真实 X 的 1920×953、1440×900；X 深色/浅色设置；首页、详情、探索/搜索（宽版面）、
-   通知；单图、网格、轮播、视频、引用帖、引用卡片、混合媒体；hover、focus、媒体折叠/展开；
+5. **状态矩阵**：真实 X 的 1920×953、1440×900；X 深色/浅色设置；中文/英文界面；首页、详情、
+   探索/搜索（宽版面）、通知；单图、网格、轮播、视频、引用帖、引用卡片、混合媒体；hover、focus、
+   媒体折叠/展开；
    Grok 抽屉打开/关闭/输入卡；评论弹窗打开/关闭、首页滚动位置、正文跳转仍进入状态页；
    评论点赞/取消（空心→暖橙实心）、资料卡、弹窗内回复输入框、嵌套楼层连接线/圆角终点、
    非评论内容过滤。
 6. **边界**：999/1000px 是版面分界；1000px 应用轨道/680 列/媒体按钮，999px 只应用主题。
 7. **fixture**：`node --check x-morning-paper.user.js`；`python -m http.server 8765` 后打开
    `http://127.0.0.1:8765/test/fixture.html`，检查媒体、路由、降级、存储回退和 1920/1000/999。
+   `?lang=en` 覆盖 fixture 的 `html[lang]`，用于验证英文界面；`?theme=light` 验证浅色。
    fixture 是 mock，不能替代真实 X。
 8. **机械检查**：`impeccable detect --json x-morning-paper.user.js`；修复后再提交。
 9. **截图与文档**：更新 `screenshots/` 的最终图、README 行为说明和 `docs/selectors.md`；
@@ -290,7 +296,8 @@
   短横线接到子头像（`|_`）；有子回复的行加 `.has-children`，`::after` 从头像下方画竖线接上
   子树。最后一个子线程用 `:last-child::before` 的 16×35 border-left + border-bottom +
   `border-bottom-left-radius: 8px` 在头像中心圆角转弯并停止，不能延伸到最后一个头像下方；
-  每条非原帖评论显示「回复 @parentHandle」。不要退回扁平列表。
+  每条非原帖评论显示回复对象（中文「回复 @parentHandle」，英文「Reply to @parentHandle」）。
+  不要退回扁平列表。
 - 互动：
   - 点赞/取消点赞：`FavoriteTweet`（`lI07N6Otwv1PhnEgXILM7A`）/
     `UnfavoriteTweet`（`ZYKSe-w7KEslx3JhSIk5LA`），POST body
@@ -321,7 +328,9 @@
     180ms 收起，进入卡片取消收起；「资料」按钮可点击钉住/取消。卡片挂到 `body`、fixed、
     z-index 2100，不被弹窗 overflow 裁切；滚动/缩放/外部点击/关闭弹窗都移除。数据来自同一条
     响应（`profile_bio.description`、`location.location`、`relationship_counts`），不额外请求；
-    「在 X 打开主页」新标签页打开。只保留一张卡。
+    「在 X 打开主页」/「Open profile on X」新标签页打开。只保留一张卡。资料按钮用
+    `.xmp-comments-action-profile` 标记，外部点击判定依赖这个 class；不要改回按
+    `aria-label` 文字匹配（文案会随界面语言变化）。
 - 渲染：`textContent` 渲染正文（先解码 HTML 实体），t.co 链接换成 `display_url`；媒体里的
   t.co URL 从正文删除，仅渲染缩略图/封面。所有用户内容不拼 `innerHTML`。
 - 弹窗打开时**不要**把 `html/body` 设 `overflow: hidden`（Chrome 会把滚动位置清到 0，关掉后
@@ -358,8 +367,11 @@
 
 ### 时间
 
-- 可见时间来自 `time[datetime]`；用本地时间格式化：当天 `HH:mm`，昨天 `昨天·HH:mm`，更早
-  `M月D日·HH:mm`（跨年带年份）。
+- 可见时间来自 `time[datetime]`；用本地时间格式化：当天 `HH:mm`；中文界面昨天 `昨天·HH:mm`，
+  更早 `M月D日·HH:mm`（跨年 `YYYY年M月D日·HH:mm`）；英文界面 `Yesterday·HH:mm`，
+  更早 `Nov 2·HH:mm`（跨年 `Nov 2, 2025·HH:mm`）。
+- 注入 UI 的计数用 `Intl.NumberFormat` 的 compact 格式：中文 `1.2万`，英文 `12K`；不要把
+  `zh-CN` 写死。
 - 详情页主时间可能在一个 `<time>` 中包含“下午2:58 · 2026年11月2日”整段；直接替换可见文本，
   不要额外拼接日期。同步更新父链接的 `aria-label`。
 - X 重渲染会恢复相对时间；首页扫描和路由回调在每次渲染后重新格式化。
@@ -383,6 +395,7 @@
 - 同一帖子同时有自有媒体和引用媒体时，当前只折叠自有媒体；引用媒体保持可见。若要分别折叠，
   需要把媒体状态从帖子级改为媒体块级（多按钮/多状态）。
 - 帖子外层的链接卡片媒体保持原生，不参与折叠。
+- 注入的界面文案只提供中文和英文；`html[lang]` 不是 `zh*` 时回退英文，没有手动语言开关。
 - 悬浮原图预览只覆盖图片：视频、GIF 和链接卡片缩略图不预览；预览按悬停的那一张显示，
   轮播只预览当前可见的 slide，不能在浮层里翻页。
 - 评论弹窗依赖 X 的私有 `TweetDetail`、`FavoriteTweet`/`UnfavoriteTweet` 和 `CreateTweet`
@@ -401,8 +414,8 @@
 ## 提交前检查
 
 - [ ] `node --check x-morning-paper.user.js`
-- [ ] fixture 的 1920 / 1000 / 999、媒体、路由、降级通过
-- [ ] 真实 X 的 1920/1440、深色/浅色、首页/详情、媒体/时间/通知检查
+- [ ] fixture 的 1920 / 1000 / 999、媒体、路由、降级、中英文通过
+- [ ] 真实 X 的 1920/1440、深色/浅色、中英文、首页/详情、媒体/时间/通知检查
 - [ ] `impeccable detect --json x-morning-paper.user.js` 无新增发现
 - [ ] README、`docs/selectors.md`、截图与当前行为一致
 - [ ] 无旧插件名、调试截图、临时文件、cookie 或会话数据进入 diff

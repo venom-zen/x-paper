@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.7.8
+// @version      0.7.9
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -85,6 +85,173 @@
     "withGrokAnalyze": false,
     "withDisallowedReplyControls": false,
   };
+
+  // 脚本生成的界面文案跟随 X 当前的界面语言（html[lang]），读不到时回退浏览器语言。
+  // X 自己的界面由 X 本地化；这里覆盖轨道按钮、媒体按钮、原图预览、评论弹窗和时间格式。
+  const DATE_EN = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
+  const DATE_EN_YEAR = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const TEXT = {
+    zh: {
+      navExpand: '展开导航',
+      navCollapse: '收起导航',
+      yesterday: clock => `昨天·${clock}`,
+      date: (date, now) => {
+        const month = date.getMonth() + 1;
+        return date.getFullYear() === now.getFullYear()
+          ? `${month}月${date.getDate()}日`
+          : `${date.getFullYear()}年${month}月${date.getDate()}日`;
+      },
+      mediaMixed: count => ({
+        visible: `🎬 媒体 · ${count} 项`,
+        accessible: `展开媒体，共 ${count} 项`,
+        expanded: '收起媒体',
+        suffix: `，共 ${count} 项`,
+      }),
+      mediaVideo: {
+        visible: '🎬 视频',
+        accessible: '展开视频',
+        expanded: '收起视频',
+        suffix: '',
+      },
+      mediaImage: {
+        visible: '🖼️ 图片',
+        accessible: '展开图片',
+        expanded: '收起图片',
+        suffix: '',
+      },
+      mediaImages: count => ({
+        visible: `🖼️ 图片 · ${count} 张`,
+        accessible: `展开图片，共 ${count} 张`,
+        expanded: '收起图片',
+        suffix: `，共 ${count} 张`,
+      }),
+      previewMixed: count => `${count} 项 · 原图/封面`,
+      previewVideoCovers: count => count > 1 ? `${count} 个视频封面` : '视频封面',
+      previewOriginals: count => count > 1 ? `${count} 张 · 原图` : '原图',
+      previewIndex: (index, count) => `第 ${index} / ${count} 张 · 原图`,
+      unknownUser: '未知用户',
+      videoBadge: '视频',
+      followers: (count, text) => `${text} 关注者`,
+      following: (count, text) => `${text} 正在关注`,
+      openProfile: '在 X 打开主页',
+      like: '喜欢',
+      unlike: '取消喜欢',
+      actionFailed: '操作失败',
+      likeRequestFailed: '点赞接口返回错误',
+      replyLabel: '回复 ',
+      replyPlaceholder: '发布你的回复…',
+      replyAria: target => `回复 @${target}`,
+      cancel: '取消',
+      reply: '回复',
+      posting: '发布中…',
+      replyPosted: '回复已发布',
+      replyFailed: error => `回复失败：${error}`,
+      headerFailed: error => `生成 X 写入校验头失败：${error}`,
+      txPageHttp: status => `transaction 页面 HTTP ${status}`,
+      missingToken: '缺少 CSRF token',
+      replyHttp: status => `回复接口 HTTP ${status}`,
+      replyRequestFailed: '回复接口返回错误',
+      viewProfileAria: target => `查看 @${target} 的资料`,
+      replyThis: '回复这条评论',
+      viewCommenter: '查看评论者资料',
+      profile: '资料',
+      replyCount: (count, text) => `回复 ${text}`,
+      repostCount: (count, text) => `转发 ${text}`,
+      viewCount: (count, text) => `${text} 查看`,
+      commentsTitle: count => count > 0 ? `评论 · ${count}` : '评论',
+      comments: '评论',
+      originalPost: '原帖',
+      noComments: '暂无评论',
+      firstPage: '仅显示首屏评论',
+      commentsLoadFailed: '评论加载失败，可能是 X 接口已更新。',
+      retry: '重试',
+      openPostNewTab: '在新标签页打开帖子',
+      loadingComments: '正在加载评论…',
+      dialogAria: '帖子评论',
+      closeComments: '关闭评论',
+    },
+    en: {
+      navExpand: 'Expand navigation',
+      navCollapse: 'Collapse navigation',
+      yesterday: clock => `Yesterday·${clock}`,
+      date: (date, now) => (date.getFullYear() === now.getFullYear() ? DATE_EN : DATE_EN_YEAR).format(date),
+      mediaMixed: count => ({
+        visible: `🎬 Media · ${count} items`,
+        accessible: `Expand media (${count} items)`,
+        expanded: 'Collapse media',
+        suffix: ` (${count} items)`,
+      }),
+      mediaVideo: {
+        visible: '🎬 Video',
+        accessible: 'Expand video',
+        expanded: 'Collapse video',
+        suffix: '',
+      },
+      mediaImage: {
+        visible: '🖼️ Image',
+        accessible: 'Expand image',
+        expanded: 'Collapse image',
+        suffix: '',
+      },
+      mediaImages: count => ({
+        visible: `🖼️ Images · ${count}`,
+        accessible: `Expand images (${count})`,
+        expanded: 'Collapse images',
+        suffix: ` (${count})`,
+      }),
+      previewMixed: count => `${count} items · originals/covers`,
+      previewVideoCovers: count => count > 1 ? `${count} video covers` : 'Video cover',
+      previewOriginals: count => count > 1 ? `${count} images · originals` : 'Original',
+      previewIndex: (index, count) => `${index} / ${count} · Original`,
+      unknownUser: 'Unknown user',
+      videoBadge: 'Video',
+      followers: (count, text) => `${text} ${Number(count) === 1 ? 'Follower' : 'Followers'}`,
+      following: (count, text) => `${text} Following`,
+      openProfile: 'Open profile on X',
+      like: 'Like',
+      unlike: 'Unlike',
+      actionFailed: 'Action failed',
+      likeRequestFailed: 'Like request failed',
+      replyLabel: 'Reply to ',
+      replyPlaceholder: 'Post your reply…',
+      replyAria: target => `Reply to @${target}`,
+      cancel: 'Cancel',
+      reply: 'Reply',
+      posting: 'Posting…',
+      replyPosted: 'Reply posted',
+      replyFailed: error => `Reply failed: ${error}`,
+      headerFailed: error => `Couldn't generate X's request header: ${error}`,
+      txPageHttp: status => `Transaction page HTTP ${status}`,
+      missingToken: 'Missing CSRF token',
+      replyHttp: status => `Reply request HTTP ${status}`,
+      replyRequestFailed: 'Reply request failed',
+      viewProfileAria: target => `View @${target}'s profile`,
+      replyThis: 'Reply to this comment',
+      viewCommenter: 'View commenter profile',
+      profile: 'Profile',
+      replyCount: (count, text) => `${text} ${Number(count) === 1 ? 'reply' : 'replies'}`,
+      repostCount: (count, text) => `${text} ${Number(count) === 1 ? 'repost' : 'reposts'}`,
+      viewCount: (count, text) => `${text} ${Number(count) === 1 ? 'view' : 'views'}`,
+      commentsTitle: count => count > 0 ? `Comments · ${count}` : 'Comments',
+      comments: 'Comments',
+      originalPost: 'Original post',
+      noComments: 'No comments yet',
+      firstPage: 'Showing the first page of comments',
+      commentsLoadFailed: "Couldn't load comments. X may have updated its API.",
+      retry: 'Retry',
+      openPostNewTab: 'Open post in a new tab',
+      loadingComments: 'Loading comments…',
+      dialogAria: 'Post comments',
+      closeComments: 'Close comments',
+    },
+  };
+  let UI_LANG = 'en';
+  let STR = TEXT.en;
+  function initLocale() {
+    const lang = (document.documentElement?.lang || navigator.language || '').toLowerCase();
+    UI_LANG = lang.startsWith('zh') ? 'zh' : 'en';
+    STR = TEXT[UI_LANG];
+  }
 
   const PREFLIGHT_CSS = `
     html {
@@ -2086,7 +2253,7 @@
     else delete root.dataset.xmpNavExpanded;
     const toggle = document.querySelector('.xmp-nav-toggle');
     if (!toggle) return;
-    const label = value ? '收起导航' : '展开导航';
+    const label = value ? STR.navCollapse : STR.navExpand;
     const text = toggle.querySelector('span');
     if (text) text.textContent = label;
     toggle.setAttribute('aria-expanded', value ? 'true' : 'false');
@@ -2413,12 +2580,8 @@
     const days = Math.round((midnight(now) - midnight(date)) / 86400000);
     const clock = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     if (days === 0) return clock;
-    if (days === 1) return `昨天·${clock}`;
-    const month = date.getMonth() + 1;
-    const dateText = date.getFullYear() === now.getFullYear()
-      ? `${month}月${date.getDate()}日`
-      : `${date.getFullYear()}年${month}月${date.getDate()}日`;
-    return `${dateText}·${clock}`;
+    if (days === 1) return STR.yesterday(clock);
+    return `${STR.date(date, now)}·${clock}`;
   }
 
   function formatTimestamps() {
@@ -2902,6 +3065,7 @@
 
   function boot() {
     if (!enabled) return;
+    initLocale();
     setRoute();
     if (route === 'standalone') {
       patchHistory();
@@ -3166,47 +3330,20 @@
     const images = media.filter(element => element.getAttribute('data-testid') === 'tweetPhoto');
     const videos = media.filter(element => element.getAttribute('data-testid') === 'previewInterstitial');
     if (images.length > 0 && videos.length > 0) {
-      const count = media.length;
-      return {
-        kind: 'mixed',
-        count,
-        visible: `🎬 媒体 · ${count} 项`,
-        accessible: `展开媒体，共 ${count} 项`,
-        expanded: '收起媒体',
-      };
+      return { kind: 'mixed', count: media.length, ...STR.mediaMixed(media.length) };
     }
     if (videos.length > 0) {
-      return {
-        kind: 'video',
-        count: videos.length,
-        visible: '🎬 视频',
-        accessible: '展开视频',
-        expanded: '收起视频',
-      };
+      return { kind: 'video', count: videos.length, ...STR.mediaVideo };
     }
     if (images.length === 1) {
-      return {
-        kind: 'image',
-        count: 1,
-        visible: '🖼️ 图片',
-        accessible: '展开图片',
-        expanded: '收起图片',
-      };
+      return { kind: 'image', count: 1, ...STR.mediaImage };
     }
-    return {
-      kind: 'images',
-      count: images.length,
-      visible: `🖼️ 图片 · ${images.length} 张`,
-      accessible: `展开图片，共 ${images.length} 张`,
-      expanded: '收起图片',
-    };
+    return { kind: 'images', count: images.length, ...STR.mediaImages(images.length) };
   }
 
   function renderButton(button, info, state) {
     const expanded = state === 'expanded';
-    const countSuffix = info.count > 1 && info.kind !== 'video'
-      ? `，共 ${info.count} ${info.kind === 'mixed' ? '项' : '张'}`
-      : '';
+    const countSuffix = info.count > 1 && info.kind !== 'video' ? info.suffix : '';
     button.textContent = expanded ? info.expanded : info.visible;
     button.setAttribute('aria-label', expanded ? `${info.expanded}${countSuffix}` : info.accessible);
     button.setAttribute('aria-expanded', expanded ? 'true' : 'false');
@@ -3471,9 +3608,9 @@
   function stillsLabel(stills) {
     const videos = stills.filter(isVideoPoster).length;
     const images = stills.length - videos;
-    if (videos > 0 && images > 0) return `${stills.length} 项 · 原图/封面`;
-    if (videos > 0) return videos > 1 ? `${videos} 个视频封面` : '视频封面';
-    return stills.length > 1 ? `${stills.length} 张 · 原图` : '原图';
+    if (videos > 0 && images > 0) return STR.previewMixed(stills.length);
+    if (videos > 0) return STR.previewVideoCovers(videos);
+    return STR.previewOriginals(stills.length);
   }
 
   function hidePhotoPreview() {
@@ -3593,7 +3730,9 @@
       const group = photo.closest('[data-xmp-media-block]') || photo.closest(TWEET) || photo.parentElement;
       const photos = group ? mediaPhotos(group) : [photo];
       const index = photos.indexOf(photo);
-      const label = photos.length > 1 && index >= 0 ? `第 ${index + 1} / ${photos.length} 张 · 原图` : '原图';
+      const label = photos.length > 1 && index >= 0
+        ? STR.previewIndex(index + 1, photos.length)
+        : STR.previewOriginals(1);
       schedulePreview(photo, () => openPreview(photo, [photo], label, false));
     });
     document.addEventListener('pointerout', event => {
@@ -3676,7 +3815,7 @@
   function commentUser(tweet) {
     const user = tweet.core?.user_results?.result;
     return {
-      name: user?.core?.name || user?.legacy?.name || '未知用户',
+      name: user?.core?.name || user?.legacy?.name || STR.unknownUser,
       handle: user?.core?.screen_name || user?.legacy?.screen_name || '',
       avatar: user?.avatar?.image_url || user?.legacy?.profile_image_url_https || '',
       verified: !!user?.is_blue_verified,
@@ -3707,7 +3846,8 @@
   }
 
   function commentCount(value) {
-    return new Intl.NumberFormat('zh-CN', { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0);
+    const locale = UI_LANG === 'zh' ? 'zh-CN' : 'en-US';
+    return new Intl.NumberFormat(locale, { notation: 'compact', maximumFractionDigits: 1 }).format(Number(value) || 0);
   }
 
   function appendCommentMedia(container, tweet) {
@@ -3723,7 +3863,7 @@
       image.alt = '';
       image.src = src;
       wrap.appendChild(image);
-      if (item.type === 'video') wrap.appendChild(commentsEl('span', 'xmp-comments-media-badge', '视频'));
+      if (item.type === 'video') wrap.appendChild(commentsEl('span', 'xmp-comments-media-badge', STR.videoBadge));
       else if (item.type === 'animated_gif') wrap.appendChild(commentsEl('span', 'xmp-comments-media-badge', 'GIF'));
       grid.appendChild(wrap);
     }
@@ -3766,10 +3906,14 @@
     if (user.bio) card.appendChild(commentsEl('div', 'xmp-comments-profile-bio', user.bio));
     const meta = commentsEl('div', 'xmp-comments-profile-meta');
     if (user.location) meta.appendChild(commentsEl('span', null, user.location));
-    if (user.followers !== undefined) meta.appendChild(commentsEl('span', null, `${commentCount(user.followers)} 关注者`));
-    if (user.following !== undefined) meta.appendChild(commentsEl('span', null, `${commentCount(user.following)} 正在关注`));
+    if (user.followers !== undefined) {
+      meta.appendChild(commentsEl('span', null, STR.followers(user.followers, commentCount(user.followers))));
+    }
+    if (user.following !== undefined) {
+      meta.appendChild(commentsEl('span', null, STR.following(user.following, commentCount(user.following))));
+    }
     if (meta.childNodes.length > 0) card.appendChild(meta);
-    const link = commentsEl('a', 'xmp-comments-profile-link', '在 X 打开主页');
+    const link = commentsEl('a', 'xmp-comments-profile-link', STR.openProfile);
     link.href = `https://x.com/${user.handle}`;
     link.target = '_blank';
     link.rel = 'noopener noreferrer';
@@ -3836,7 +3980,7 @@
     const pointerDown = event => {
       if (!(event.target instanceof Node)) return;
       if (card.contains(event.target) || anchor.contains(event.target)) return;
-      if (event.target instanceof Element && event.target.closest('[aria-label="查看评论者资料"]')) return;
+      if (event.target instanceof Element && event.target.closest('.xmp-comments-action-profile')) return;
       removeCommentProfile();
     };
     if (pinned) document.addEventListener('pointerdown', pointerDown, true);
@@ -3883,7 +4027,7 @@
   function applyLikeState(button, countElement, liked, count) {
     button.classList.toggle('is-active', liked);
     button.setAttribute('aria-pressed', liked ? 'true' : 'false');
-    button.setAttribute('aria-label', liked ? '取消喜欢' : '喜欢');
+    button.setAttribute('aria-label', liked ? STR.unlike : STR.like);
     button.dataset.count = String(count);
     countElement.textContent = commentCount(count);
     const path = button.querySelector('path');
@@ -3909,12 +4053,12 @@
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const payload = await response.json();
-      if (payload.errors?.length) throw new Error(payload.errors[0].message || '点赞接口返回错误');
+      if (payload.errors?.length) throw new Error(payload.errors[0].message || STR.likeRequestFailed);
       tweet.legacy.favorited = next;
       tweet.legacy.favorite_count = nextCount;
     } catch (error) {
       applyLikeState(button, countElement, liked, previous);
-      button.title = '操作失败';
+      button.title = STR.actionFailed;
       warnOnce('comments-like', `点赞失败：${error}`);
     } finally {
       delete button.dataset.busy;
@@ -4138,7 +4282,7 @@
     if (clientTransactionInit) return clientTransactionInit;
     clientTransactionInit = (async () => {
       const response = await fetch('/i/jf/', { credentials: 'omit', cache: 'no-store' });
-      if (!response.ok) throw new Error(`transaction 页面 HTTP ${response.status}`);
+      if (!response.ok) throw new Error(STR.txPageHttp(response.status));
       const html = await response.text();
       const doc = new DOMParser().parseFromString(html, 'text/html');
       const key = txidGetVerificationKey(doc);
@@ -4188,7 +4332,7 @@
         headers['x-client-transaction-id'] = await generateClientTransactionId('POST', path);
       } catch (error) {
         warnOnce('client-transaction', `transaction id 生成失败：${error}`);
-        throw new Error(`生成 X 写入校验头失败：${error.message || error}`);
+        throw new Error(STR.headerFailed(error.message || error));
       }
       return fetch(path, {
         method: 'POST',
@@ -4211,9 +4355,9 @@
         response = await send(queryId);
       }
     }
-    if (!response.ok) throw new Error(`回复接口 HTTP ${response.status}`);
+    if (!response.ok) throw new Error(STR.replyHttp(response.status));
     const payload = await response.json();
-    if (payload.errors?.length) throw new Error(payload.errors[0].message || '回复接口返回错误');
+    if (payload.errors?.length) throw new Error(payload.errors[0].message || STR.replyRequestFailed);
     return payload;
   }
 
@@ -4225,21 +4369,21 @@
     submit.disabled = true;
     cancel.disabled = true;
     const label = submit.textContent;
-    submit.textContent = '发布中…';
+    submit.textContent = STR.posting;
     error.hidden = true;
     try {
       await requestCreateTweet(text, tweet.rest_id);
       if (commentsComposer) commentsComposer.busy = false;
       closeCommentsComposer(false);
-      refreshComments('回复已发布');
+      refreshComments(STR.replyPosted);
     } catch (failure) {
       if (commentsComposer) commentsComposer.busy = false;
       submit.disabled = false;
       cancel.disabled = false;
       submit.textContent = label;
-      error.textContent = `回复失败：${failure.message || failure}`;
+      error.textContent = STR.replyFailed(failure.message || failure);
       error.hidden = false;
-      warnOnce('comments-reply', `回复失败：${failure}`);
+      warnOnce('comments-reply', STR.replyFailed(failure));
     } finally {
       delete submit.dataset.busy;
     }
@@ -4264,21 +4408,21 @@
     const user = commentUser(tweet);
     const form = commentsEl('div', 'xmp-comments-composer');
     const label = commentsEl('div', 'xmp-comments-composer-label');
-    label.appendChild(document.createTextNode('回复 '));
+    label.appendChild(document.createTextNode(STR.replyLabel));
     label.appendChild(commentsEl('span', null, `@${user.handle || user.name}`));
 
     const input = document.createElement('textarea');
     input.className = 'xmp-comments-composer-input';
-    input.placeholder = '发布你的回复…';
+    input.placeholder = STR.replyPlaceholder;
     input.rows = 3;
     input.maxLength = 280;
-    input.setAttribute('aria-label', `回复 @${user.handle || user.name}`);
+    input.setAttribute('aria-label', STR.replyAria(user.handle || user.name));
 
     const footer = commentsEl('div', 'xmp-comments-composer-footer');
     const count = commentsEl('span', 'xmp-comments-composer-count', '0/280');
-    const cancel = commentsEl('button', 'xmp-comments-composer-cancel', '取消');
+    const cancel = commentsEl('button', 'xmp-comments-composer-cancel', STR.cancel);
     cancel.type = 'button';
-    const submit = commentsEl('button', 'xmp-comments-composer-submit', '回复');
+    const submit = commentsEl('button', 'xmp-comments-composer-submit', STR.reply);
     submit.type = 'button';
     submit.disabled = true;
     footer.appendChild(count);
@@ -4328,7 +4472,7 @@
 
     const avatarButton = commentsEl('button', 'xmp-comments-avatar-button');
     avatarButton.type = 'button';
-    avatarButton.setAttribute('aria-label', `查看 @${user.handle || user.name} 的资料`);
+    avatarButton.setAttribute('aria-label', STR.viewProfileAria(user.handle || user.name));
     const avatar = document.createElement('img');
     avatar.className = 'xmp-comments-avatar';
     avatar.loading = 'lazy';
@@ -4356,7 +4500,7 @@
       const parentUser = commentUser(options.parent);
       if (parentUser.handle) {
         const replyTo = commentsEl('div', 'xmp-comments-reply-to');
-        replyTo.appendChild(document.createTextNode('回复 '));
+        replyTo.appendChild(document.createTextNode(STR.replyLabel));
         replyTo.appendChild(commentsEl('span', null, `@${parentUser.handle}`));
         main.appendChild(replyTo);
       }
@@ -4368,9 +4512,15 @@
     appendCommentMedia(main, tweet);
 
     const stats = [];
-    if (tweet.legacy?.reply_count) stats.push(`回复 ${commentCount(tweet.legacy.reply_count)}`);
-    if (tweet.legacy?.retweet_count) stats.push(`转发 ${commentCount(tweet.legacy.retweet_count)}`);
-    if (tweet.views?.count) stats.push(`${commentCount(tweet.views.count)} 查看`);
+    if (tweet.legacy?.reply_count) {
+      stats.push(STR.replyCount(tweet.legacy.reply_count, commentCount(tweet.legacy.reply_count)));
+    }
+    if (tweet.legacy?.retweet_count) {
+      stats.push(STR.repostCount(tweet.legacy.retweet_count, commentCount(tweet.legacy.retweet_count)));
+    }
+    if (tweet.views?.count) {
+      stats.push(STR.viewCount(tweet.views.count, commentCount(tweet.views.count)));
+    }
     if (stats.length > 0) {
       const statsRow = commentsEl('div', 'xmp-comments-stats');
       for (const stat of stats) statsRow.appendChild(commentsEl('span', null, stat));
@@ -4390,17 +4540,18 @@
 
     const replyButton = commentsEl('button', 'xmp-comments-action');
     replyButton.type = 'button';
-    replyButton.setAttribute('aria-label', '回复这条评论');
+    replyButton.setAttribute('aria-label', STR.replyThis);
     replyButton.appendChild(commentsIcon(COMMENT_REPLY_PATH));
-    replyButton.appendChild(commentsEl('span', null, '回复'));
+    replyButton.appendChild(commentsEl('span', null, STR.reply));
     replyButton.addEventListener('click', () => openCommentsComposer(tweet, replyButton, main));
     actions.appendChild(replyButton);
 
     const profileButton = commentsEl('button', 'xmp-comments-action');
     profileButton.type = 'button';
-    profileButton.setAttribute('aria-label', '查看评论者资料');
+    profileButton.classList.add('xmp-comments-action-profile');
+    profileButton.setAttribute('aria-label', STR.viewCommenter);
     profileButton.appendChild(commentsIcon(COMMENT_PROFILE_PATH));
-    profileButton.appendChild(commentsEl('span', null, '资料'));
+    profileButton.appendChild(commentsEl('span', null, STR.profile));
     profileButton.addEventListener('click', () => togglePinnedCommentProfile(avatarButton, user));
     actions.appendChild(profileButton);
     main.appendChild(actions);
@@ -4458,7 +4609,7 @@
 
   function tweetDetailHeaders() {
     const ct0 = document.cookie.split('; ').find(item => item.startsWith('ct0='))?.slice(4);
-    if (!ct0) throw new Error('缺少 CSRF token');
+    if (!ct0) throw new Error(STR.missingToken);
     return {
       authorization: TWEET_DETAIL_BEARER,
       'x-csrf-token': ct0,
@@ -4563,35 +4714,35 @@
     const tree = buildCommentTree(tweets, tweetId);
     const { original, count } = tree;
     const title = commentsModal?.querySelector('.xmp-comments-header h2');
-    if (title) title.textContent = count > 0 ? `评论 · ${count}` : '评论';
+    if (title) title.textContent = STR.commentsTitle(count);
     if (original) {
       const block = commentsEl('div', 'xmp-comments-original');
-      block.appendChild(commentsEl('div', 'xmp-comments-original-label', '原帖'));
+      block.appendChild(commentsEl('div', 'xmp-comments-original-label', STR.originalPost));
       block.appendChild(renderComment(original));
       body.appendChild(block);
     }
     const group = original ? renderReplyGroup(tree, original.rest_id, 0) : null;
     if (!group) {
-      body.appendChild(commentsEl('div', 'xmp-comments-empty', '暂无评论'));
+      body.appendChild(commentsEl('div', 'xmp-comments-empty', STR.noComments));
       return;
     }
     body.appendChild(group);
     const total = Number(original?.legacy?.reply_count || 0);
-    if (total > count) body.appendChild(commentsEl('div', 'xmp-comments-note', '仅显示首屏评论'));
+    if (total > count) body.appendChild(commentsEl('div', 'xmp-comments-note', STR.firstPage));
   }
 
   function renderCommentsError(body, tweetId, href) {
     body.textContent = '';
     const error = commentsEl('div', 'xmp-comments-error');
-    error.appendChild(document.createTextNode('评论加载失败，可能是 X 接口已更新。'));
+    error.appendChild(document.createTextNode(STR.commentsLoadFailed));
     error.appendChild(document.createElement('br'));
-    const retry = commentsEl('button', null, '重试');
+    const retry = commentsEl('button', null, STR.retry);
     retry.type = 'button';
     retry.addEventListener('click', () => {
       closeComments();
       openComments(tweetId, href);
     });
-    const open = commentsEl('button', null, '在新标签页打开帖子');
+    const open = commentsEl('button', null, STR.openPostNewTab);
     open.type = 'button';
     open.style.marginLeft = '8px';
     open.addEventListener('click', () => window.open(href, '_blank', 'noopener,noreferrer'));
@@ -4605,7 +4756,7 @@
     const controller = new AbortController();
     commentsAbort = controller;
     body.textContent = '';
-    body.appendChild(commentsEl('div', 'xmp-comments-status', '正在加载评论…'));
+    body.appendChild(commentsEl('div', 'xmp-comments-status', STR.loadingComments));
     requestTweetDetail(tweetId, controller.signal)
       .then(tweets => {
         if (!commentsModal || commentsAbort !== controller) return;
@@ -4665,20 +4816,20 @@
     const overlay = commentsEl('div', 'xmp-comments');
     overlay.setAttribute('role', 'dialog');
     overlay.setAttribute('aria-modal', 'true');
-    overlay.setAttribute('aria-label', '帖子评论');
+    overlay.setAttribute('aria-label', STR.dialogAria);
     const backdrop = commentsEl('div', 'xmp-comments-backdrop');
     const panel = commentsEl('section', 'xmp-comments-panel');
     panel.tabIndex = -1;
 
     const header = commentsEl('header', 'xmp-comments-header');
-    header.appendChild(commentsEl('h2', null, '评论'));
+    header.appendChild(commentsEl('h2', null, STR.comments));
     const close = commentsEl('button', 'xmp-comments-close', '×');
     close.type = 'button';
-    close.setAttribute('aria-label', '关闭评论');
+    close.setAttribute('aria-label', STR.closeComments);
     header.appendChild(close);
 
     const body = commentsEl('div', 'xmp-comments-body');
-    body.appendChild(commentsEl('div', 'xmp-comments-status', '正在加载评论…'));
+    body.appendChild(commentsEl('div', 'xmp-comments-status', STR.loadingComments));
     panel.appendChild(header);
     panel.appendChild(body);
     overlay.appendChild(backdrop);
@@ -4824,6 +4975,7 @@
   }
 
   function init() {
+    initLocale();
     watchPhotoPreview();
     watchOpenTargets();
     watchComments();
