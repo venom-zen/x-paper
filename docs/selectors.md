@@ -362,39 +362,46 @@
 - 算法移植自 [Lqm1/x-client-transaction-id](https://github.com/Lqm1/x-client-transaction-id)
   （MIT），版权与许可见 `THIRD_PARTY_NOTICES.md`。
 
-## 帖子打开方式
+## 帖子/用户主页打开方式
 
-- 设置键 `xmp-open-post-new-tab`，默认关闭；Tampermonkey 菜单「帖子：在新标签页打开」/
-  「帖子：在当前标签页打开」写入设置。
+- 设置键 `xmp-open-post-new-tab`，默认关闭；Tampermonkey 菜单「帖子/用户主页：在新标签页打开」/
+  「帖子/用户主页：在当前标签页打开」写入设置。
 - 开启时在 window 捕获阶段拦截 home/profile/explore/search 的点击：
   - 目标在主帖 `[data-testid="tweet"]` 内；嵌套引用帖不接管。
+  - 先处理 tweet 头部资料链接：anchor 位于 `[data-testid="User-Name"]` 或
+    `[data-testid="Tweet-User-Avatar"]`、且不在 `[data-testid="tweetText"]` 内时，直接打开
+    `anchor.href`；正文里的 @ 提及不接管。
+  - 再处理主帖正文/时间戳：点击的 anchor pathname 必须与 `cellStatusLink(cell)` 相同。
   - 排除 `[role="dialog"]`、`[data-testid="reply"]`、button/role=button/input/textarea/select/
     label/contenteditable、video/audio/tweetPhoto/previewInterstitial/card.wrapper。
-  - 有文本选区、或点击的 anchor pathname 与 `cellStatusLink(cell)` 不一致时不拦截。
-  - 命中后用临时 `<a target="_blank" rel="noopener noreferrer">` 打开 `link.href`，
-    preventDefault + stopImmediatePropagation，当前标签保持 home。
-- 只覆盖这四类路由的主帖；引用帖、通知、列表、外部链接等仍可能同标签打开，继续依赖
-  `restoreHomeReturn` 兜底。
+  - 有文本选区时不拦截。命中后用 `openInNewTab()` 的临时
+    `<a target="_blank" rel="noopener noreferrer">` 打开，preventDefault +
+    stopImmediatePropagation，当前标签保持 home。
+- 只覆盖这四类路由的主帖和 tweet 头部资料链接；引用帖、通知、列表、外部链接等仍可能同标签
+  打开，继续依赖 `restoreHomeReturn` 兜底。
 
 ## 返回首页的位置恢复
 
-X 从详情页返回首页时会重建/重新排序时间线，滚动位置会回到顶部。脚本在**离开 home** 时记录
+X 从详情页/个人主页返回首页时会重建/重新排序虚拟列表，滚动位置会回到顶部。X 的
+`loader.AbsolutePower` 会在返回过程中用 `window.scrollBy` 补偿估算高度与实测高度的差值
+（实测有 +1023、+440、-440、+471、-471 等调用），这是页面自动上下滚动的主因；
+`history.scrollRestoration` 已经是 `manual`，不是浏览器历史恢复。脚本在**离开 home** 时记录
 `window.scrollY`、视口内第一条完整可见帖子的时间戳链接和已展开媒体的帖子（`captureHomeReturn`），
 **回到 home** 时（`previousRoute !== 'home' && route === 'home'`）用 `restoreHomeReturn` 复位：
 
-- 锚点取单元格里带 `time[datetime]` 的链接，不能取引用帖链接；返回后按该链接定位单元格，
-  把它钉回离开时的 `cell.top`（超过 2px 才动）。
-- 先等首页 `[role="tablist"]` 出现，再用 `compareDocumentPosition` 过滤 tab 栏之后的单元格，
-  避免把详情页旧 DOM 里的同名帖子当成锚点。
-- 首次进入时先对齐一次；锚点搜索按 120ms 节流；锚点未出现 800ms 后按像素位置回填（用当前
-  文档高度钳制）；布局静止 800ms 后停止，最多 4s。
+- 锚点取单元格里带 `time[datetime]` 的链接，不能取引用帖链接；只对齐一次，超过 2px 才动。
+- 只等 home 专属 tab 栏（tablist 文本含「正在关注」/`following`）；个人主页、探索/搜索也有
+  tablist，不能使用任意 `[role="tablist"]`，否则会先滚动错误页面。
+- 找到 tab 栏后用 `compareDocumentPosition` 过滤 tab 栏之后的单元格，120ms 节流搜索锚点；
+  找到就对齐一次并结束；找不到则在 tab 栏出现 800ms 后按像素位置回填一次（用当前文档高度
+  钳制）；最多等 3s。不要再持续追着 X 的重排滚动。
 - 已展开媒体按单元格时间戳链接记录，保留到下一次 `captureHomeReturn`；`toggleMedia` 同步更新
   集合，重建后的帖子标注时恢复为 `expanded`，避免返回后集体折叠导致页面高度突变和定位漂移。
 - 用户 `wheel`/`touchmove`/`pointerdown`/`mousedown`/`PageUp`/`PageDown`/`Home`/`End`/方向键/
-  空格主动滚动或点击即放弃；滚动条拖动会在 `html` 上派发 `pointerdown`/`mousedown`，不能只监听
+  空格主动滚动或点击即取消；滚动条拖动会在 `html` 上派发 `pointerdown`/`mousedown`，不能只监听
   `wheel`/`touch`。离开 home 路由时自动停止。
-- 日志和调试时注意：X 自己也会在 `popstate` 后调用 `scrollTo`/`scrollBy`；锚点已对齐时脚本不会再发
-  滚动调用。
+- X 自己的 AbsolutePower loader 仍可能调用 `scrollBy`；不要屏蔽它（虚拟列表靠它保持 cell 对齐）。
+  要完全避免重建，使用新标签页打开帖子/用户主页，或使用评论弹窗。
 - 只在 SPA 内导航生效；整页刷新交给浏览器自己的滚动恢复。
 
 ## 弹窗与悬浮卡

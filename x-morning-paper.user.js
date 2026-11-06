@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.7.6
+// @version      0.7.7
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -2097,11 +2097,11 @@
     if (typeof GM_registerMenuCommand !== 'function') return;
     GM_registerMenuCommand('关闭 x-paper', () => setEnabled(false));
     GM_registerMenuCommand('开启 x-paper', () => setEnabled(true));
-    GM_registerMenuCommand('帖子：在新标签页打开', () => {
+    GM_registerMenuCommand('帖子/用户主页：在新标签页打开', () => {
       openPostNewTab = true;
       writeOpenPostNewTab(true);
     });
-    GM_registerMenuCommand('帖子：在当前标签页打开', () => {
+    GM_registerMenuCommand('帖子/用户主页：在当前标签页打开', () => {
       openPostNewTab = false;
       writeOpenPostNewTab(false);
     });
@@ -2375,12 +2375,10 @@
     let anchorCell = null;
     let cachedTabs = null;
     let lastLocate = 0;
-    let lastSignature = '';
-    let lastChange = performance.now();
+    let tabsSeenAt = 0;
     const started = performance.now();
-    const maxRestoreMs = 4000;
-    const stableMs = 800;
-    const fallbackMs = 800;
+    const maxWait = 3000;
+    const anchorWait = 800;
 
     const detach = () => {
       window.removeEventListener('wheel', onUserScroll);
@@ -2402,7 +2400,8 @@
       if (['PageUp', 'PageDown', 'Home', 'End', 'ArrowUp', 'ArrowDown', ' '].includes(event.key)) cancel();
     };
 
-    // 首页 tab 栏出现后才算 home 内容已开始渲染；避免把详情页里的同名帖子当成锚点。
+    // 只认 home 的 tab 栏（For you / Following）；个人主页、探索/搜索也有 tablist，
+    // 不能把它们的帖子当成 home 锚点，否则返回时会先滚动错误页面。
     const homeTabs = () => {
       if (cachedTabs && cachedTabs.isConnected && cachedTabs.getBoundingClientRect().height > 0) {
         return cachedTabs;
@@ -2411,7 +2410,11 @@
       const primary = document.querySelector(PRIMARY);
       if (!primary) return null;
       cachedTabs = [...primary.querySelectorAll('[role="tablist"]')]
-        .find(element => !element.closest(TWEET) && element.getBoundingClientRect().height > 0) || null;
+        .find(element => {
+          if (element.closest(TWEET) || element.getBoundingClientRect().height <= 0) return false;
+          const text = (element.innerText || '').toLowerCase();
+          return text.includes('正在关注') || text.includes('following');
+        }) || null;
       return cachedTabs;
     };
     const locate = () => {
@@ -2441,78 +2444,50 @@
       if (Math.abs(window.scrollY - next) > 2) window.scrollTo(0, next);
       return next;
     };
-    const restoreAnchor = () => {
-      if (!state.anchor) return false;
-      const cell = locate();
-      if (!cell) return false;
-      const delta = Math.round(cell.getBoundingClientRect().top) - state.anchor.top;
-      if (Math.abs(delta) > 2) apply(window.scrollY + delta);
-      return true;
-    };
     const finish = () => {
       cancel();
       // 保留 homeReturn.expanded，后续再次渲染时继续沿用展开态；离开 home 时会重新 capture。
     };
-
-    // 滚动条拖动会在 html 上派发 pointerdown/mousedown，不能只监听 wheel/touch。
-    window.addEventListener('wheel', onUserScroll, { passive: true });
-    window.addEventListener('touchmove', onUserScroll, { passive: true });
-    document.addEventListener('pointerdown', onUserScroll, true);
-    document.addEventListener('mousedown', onUserScroll, true);
-    document.addEventListener('keydown', onScrollKey, true);
-
-    // 先尝试在当前帧对齐一次，减少“先停在顶部再跳”的观感。
-    if (state.anchor) restoreAnchor();
-
-    const tick = () => {
+    const run = () => {
       if (cancelled) return;
       if (token !== homeRestoreToken || route !== 'home') {
         detach();
         return;
       }
       const now = performance.now();
-      const elapsed = now - started;
-      let cell = null;
-      if (state.anchor) cell = restoreAnchor() ? anchorCell : null;
-      if (!cell && elapsed >= fallbackMs) {
-        // home 已渲染但锚点还不在首屏时，先回到保存的像素位置，等帖子出现后再精调。
-        if (homeTabs()) apply(state.y);
-      }
-      const signature = cell
-        ? `${document.scrollingElement.scrollHeight}:${Math.round(cell.getBoundingClientRect().top + window.scrollY)}`
-        : String(document.scrollingElement.scrollHeight);
-      if (signature !== lastSignature) {
-        lastSignature = signature;
-        lastChange = now;
-      }
-      const settled = elapsed > 1200 && now - lastChange > stableMs;
-      if (elapsed < maxRestoreMs && (!settled || !cell)) {
-        frame = requestAnimationFrame(tick);
-      } else {
-        finish();
-      }
-    };
-
-    if (!state.anchor) {
-      const fallback = () => {
-        if (cancelled) return;
-        if (token !== homeRestoreToken || route !== 'home') {
-          detach();
-          return;
-        }
-        if (homeTabs()) {
-          apply(state.y);
-          finish();
-        } else if (performance.now() - started < maxRestoreMs) {
-          frame = requestAnimationFrame(fallback);
+      if (!homeTabs()) {
+        if (now - started < maxWait) {
+          frame = requestAnimationFrame(run);
         } else {
           finish();
         }
-      };
-      frame = requestAnimationFrame(fallback);
-      return;
-    }
-    frame = requestAnimationFrame(tick);
+        return;
+      }
+      if (!tabsSeenAt) tabsSeenAt = now;
+      const cell = state.anchor ? locate() : null;
+      if (cell) {
+        // 只对齐这一次；之后不再追着 X 的重排/虚拟化滚动，避免来回跳动。
+        const delta = Math.round(cell.getBoundingClientRect().top) - state.anchor.top;
+        if (Math.abs(delta) > 2) apply(window.scrollY + delta);
+        finish();
+        return;
+      }
+      if (now - tabsSeenAt >= anchorWait) {
+        // 锚点不在首屏时按离开时的像素位置回填一次，然后交还控制权。
+        apply(state.y);
+        finish();
+        return;
+      }
+      frame = requestAnimationFrame(run);
+    };
+
+    // 滚动条拖动会在 html 上派发 pointerdown/mousedown；任何主动操作都立即取消自动滚动。
+    window.addEventListener('wheel', onUserScroll, { passive: true });
+    window.addEventListener('touchmove', onUserScroll, { passive: true });
+    document.addEventListener('pointerdown', onUserScroll, true);
+    document.addEventListener('mousedown', onUserScroll, true);
+    document.addEventListener('keydown', onScrollKey, true);
+    run();
   }
 
   function onRouteChange() {
@@ -4914,7 +4889,21 @@
 
   // 设置开启时，主帖正文/时间戳在新标签页打开，home 不卸载；引用帖、正文内链接、媒体和按钮
   // 仍交给 X。只覆盖 home/profile/explore/search 的主帖，其他入口继续走同标签和位置恢复兜底。
-  function watchPostOpenTarget() {
+  // 设置开启时，主帖正文/时间戳、tweet 头部的头像/用户名在新标签页打开，home 不卸载；
+  // 引用帖、正文内链接、媒体和按钮仍交给 X。只覆盖 home/profile/explore/search，
+  // 其他入口继续走同标签和位置恢复兜底。
+  function openInNewTab(href) {
+    const opener = document.createElement('a');
+    opener.href = href;
+    opener.target = '_blank';
+    opener.rel = 'noopener noreferrer';
+    opener.style.cssText = 'position:fixed;left:-9999px;top:0;';
+    document.body.appendChild(opener);
+    opener.click();
+    opener.remove();
+  }
+
+  function watchOpenTargets() {
     window.addEventListener('click', event => {
       if (!enabled || !openPostNewTab || commentsModal) return;
       const target = event.target instanceof Element ? event.target : null;
@@ -4929,9 +4918,18 @@
       if (target.closest('video, audio, [data-testid="tweetPhoto"], [data-testid="previewInterstitial"], [data-testid="card.wrapper"]')) return;
       const selection = window.getSelection();
       if (selection && selection.toString().trim()) return;
+      const anchor = target.closest('a[href]');
+      // 头像/用户名链接：只接管 tweet 头部，不接管正文里的 @ 提及。
+      if (anchor && !target.closest('[data-testid="tweetText"]') &&
+          anchor.closest('[data-testid="User-Name"], [data-testid="Tweet-User-Avatar"]')) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        openInNewTab(anchor.href);
+        return;
+      }
       const link = cellStatusLink(tweet.closest(CELL));
       if (!link) return;
-      const anchor = target.closest('a[href]');
       if (anchor) {
         let sameStatus = false;
         try {
@@ -4945,14 +4943,7 @@
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      const opener = document.createElement('a');
-      opener.href = link.href;
-      opener.target = '_blank';
-      opener.rel = 'noopener noreferrer';
-      opener.style.cssText = 'position:fixed;left:-9999px;top:0;';
-      document.body.appendChild(opener);
-      opener.click();
-      opener.remove();
+      openInNewTab(link.href);
     }, true);
   }
 
@@ -4960,7 +4951,7 @@
     registerMenu();
     watchPhotoPreview();
     openPostNewTab = readOpenPostNewTab();
-    watchPostOpenTarget();
+    watchOpenTargets();
     watchComments();
     enabled = readEnabled();
     if (!enabled) return;
