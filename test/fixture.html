@@ -241,6 +241,28 @@
         <div data-testid="cellInnerDiv" id="cell-user">
           <div data-testid="UserCell">Recommended user</div>
         </div>
+        <div data-testid="cellInnerDiv" id="cell-notification">
+          <article role="article" tabindex="0" data-testid="notification">
+            <div style="display:flex; gap:12px; padding:12px 16px;">
+              <div>
+                <div data-testid="UserAvatar-Container-notify" style="width:32px;height:32px;border-radius:9999px;overflow:hidden;background:#c9c4b6;">
+                  <a href="/notify" role="link" aria-hidden="true" tabindex="-1"><img alt="" style="width:32px;height:32px" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32'%3E%3Crect width='32' height='32' fill='%232f5d50'/%3E%3C/svg%3E"></a>
+                </div>
+              </div>
+              <div style="flex:1 1 0%;">
+                <div><span>来自 Notify Reader 的最新帖子</span><span aria-label="3小时 前" style="color:#71767b;"> · <time datetime="2026-11-09T00:13:58.663Z">3小时</time></span></div>
+                <div data-testid="tweetText" style="color:#71767b;">Notification preview text.</div>
+              </div>
+              <div id="media-notification" style="width:68px; flex:0 0 68px;">
+                <div style="width:68px;height:68px;">
+                  <div style="width:68px;height:68px;background-image:url(data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20width=%2768%27%20height=%2768%27%3E%3Crect%20width=%2768%27%20height=%2768%27%20fill=%27%23888%27/%3E%3C/svg%3E)"></div>
+                  <img alt="" style="width:68px;height:68px" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='68' height='68'%3E%3Crect width='68' height='68' fill='%23888'/%3E%3C/svg%3E">
+                </div>
+              </div>
+              <div><button type="button" data-testid="caret" aria-label="更多">⋯</button></div>
+            </div>
+          </article>
+        </div>
         <div class="spacer"></div>
       </div>
     </div>
@@ -255,7 +277,15 @@
   const params = new URLSearchParams(location.search);
   if (params.get('theme') === 'light') document.body.classList.add('light');
   if (params.get('lang')) document.documentElement.lang = params.get('lang');
-  if (location.pathname !== '/home') history.replaceState(null, '', '/home' + location.search);
+  const fixtureRoute = params.get('route') || 'home';
+  if (location.pathname !== '/' + fixtureRoute) history.replaceState(null, '', '/' + fixtureRoute + location.search);
+  if (fixtureRoute === 'notifications') {
+    document.getElementById('tabs')?.remove();
+    document.getElementById('new-posts-pill')?.remove();
+    for (const cell of [...document.querySelectorAll('#inner > [data-testid="cellInnerDiv"]')]) {
+      if (!['cell-notification', 'cell-promoted', 'cell-user'].includes(cell.id)) cell.remove();
+    }
+  }
   window.GM_getValue = (key, fallback) => fallback;
   window.GM_setValue = (key, value) => {
     if (window.__failStorage) throw new Error('storage unavailable');

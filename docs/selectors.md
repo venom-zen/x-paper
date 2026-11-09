@@ -8,12 +8,13 @@
 | Attribute | 值 | 作用 |
 |-----------|----|------|
 | `data-xmp-enabled` | `1` | `html` 上的主题作用域；关闭脚本时移除 |
-| `data-xmp-route` | `home` / `status` / `profile` / `people` / `explore` / `search` / `standalone` / `other` | SPA 路由分类；版面 CSS 对 home/status/profile/people/explore/search 生效，`standalone` 完全不套主题。`profile` 是 `/<handle>` 及 `/handle/media` 等子页（`RESERVED_HANDLES` 排除 X 自己的保留一级路径）；`people` 是 `/i/connect_people`（「推荐关注」整页）；`explore` 是 `/explore` 及其子路径，`search` 是 `/search`，两页与首页共用宽版面 |
+| `data-xmp-route` | `home` / `status` / `profile` / `people` / `explore` / `search` / `notifications` / `standalone` / `other` | SPA 路由分类；版面 CSS 对 home/status/profile/people/explore/search/notifications 生效，`standalone` 完全不套主题。`profile` 是 `/<handle>` 及 `/handle/media` 等子页（`RESERVED_HANDLES` 排除 X 自己的保留一级路径）；`people` 是 `/i/connect_people`（「推荐关注」整页）；`explore` 是 `/explore` 及其子路径，`search` 是 `/search`，`notifications` 是 `/notifications` 及其子路径；这几页与首页共用宽版面 |
 | `data-xmp-degraded` | `1` | primary 或版面锚点缺失；只应用主题，关闭版面、噪音和媒体 CSS |
 | `data-xmp-inner-timeline` | 空 | 标记 primary 内的 600px 时间线容器，供版面 CSS 放宽到 100% |
 | `data-xmp-media-block` | 空 | 媒体块标记；折叠态 CSS 的隐藏目标 |
-| `data-xmp-media-state` | `collapsed` / `expanded` | 顶层帖子的媒体状态 |
+| `data-xmp-media-state` | `collapsed` / `expanded` | 媒体折叠状态；标在顶层帖子或通知行（`article[data-testid="notification"]`）上 |
 | `data-xmp-media-loading` | 空 | 展开后的短暂存态；媒体块移出文档流并隐藏，可见媒体图就绪后移除并一次性显示 |
+| `data-xmp-notification-thumb` | 空 | 通知行 64px 缩略图的运行时标记，标在包住绘制层（内联背景图）和命中层 `<img>` 的容器上；媒体收集、折叠、按钮标签和悬停预览都按它识别 |
 | `data-xmp-tabbar` | 空 | 首页主内容容器内的 tab 栏容器；主题背景标记 |
 | `data-xmp-composer` | 空 | 首页主内容容器内的发帖框包装层；主题背景标记。详情页/文章页的回复框不标这个属性，直接按 `inline_reply_offscreen` 写 CSS |
 | `data-xmp-divider` | 空 | 首页发帖框后的 1–2px 分隔条；背景透明，由发帖框下边框提供线条 |
@@ -29,12 +30,12 @@
 | `data-xmp-module` | 空 | 含 `[class*="jf-element"]` 的探索聚合模块单元格；模块内按钮描边和图标配色的作用域 |
 | `data-xmp-surface-scan` | 空 | 已扫描过的单元格或侧栏；React 替换内容时由变更记录撤掉并重扫，避免每轮重复扫描 |
 
-`button.xmp-nav-toggle` 是脚本创建并挂到 `body` 的轨道展开按钮：≥1000px、home/status/profile 且未
-降级时显示在「更多」项下方（收起 72px、展开 224px），样式与普通导航项一致，`aria-expanded`
-与文案同步；账号悬浮卡或账号菜单打开时隐藏，关闭脚本或降级时移除或隐藏。悬停和
-`:focus-within` 不再触发展开。两个位置由脚本写入 `html` 的 `--xmp-nav-top`（logo 下方的
-导航起点）和 `--xmp-toggle-top`（「更多」下方的按钮位置）两个 CSS 变量，导航和按钮通过
-它们对齐当前 X 的 logo/更多项布局。
+`button.xmp-nav-toggle` 是脚本创建并挂到 `body` 的轨道展开按钮：≥1000px、宽版面路由
+（home/status/profile/people/explore/search/notifications）且未降级时显示在「更多」项下方
+（收起 72px、展开 224px），样式与普通导航项一致，`aria-expanded` 与文案同步；账号悬浮卡或
+账号菜单打开时隐藏，关闭脚本或降级时移除或隐藏。悬停和 `:focus-within` 不再触发展开。两个位置
+由脚本写入 `html` 的 `--xmp-nav-top`（logo 下方的导航起点）和 `--xmp-toggle-top`（「更多」下方
+的按钮位置）两个 CSS 变量，导航和按钮通过它们对齐当前 X 的 logo/更多项布局。
 
 ## 配色
 
@@ -69,17 +70,19 @@
 
 ## 现场锚点
 
-现场结构记录于 2026-11-02 的探针（1920×953，X 深色主题）。
+现场结构记录于 2026-11-02 的探针（1920×953，X 深色主题）；通知页结构于 2026-11-09 补充核验。
 
 | 用途 | 选择器 | 备注 |
 |------|--------|------|
 | 主导航容器 | `header[role="banner"]` | 原宽 595px；内部 nav 原为 `position: fixed; left: 320px; width: 275px` |
 | 导航链接 | `[data-testid^="AppTabBar_"]` | 选择器健康检查的 nav 锚点 |
 | 发帖 / 账号 | `SideNav_NewTweet_Button` / `SideNav_AccountSwitcher_Button` | 左轨中隐藏文字标签 |
-| 正文列 / 右栏 | `[data-testid="primaryColumn"]` / `[data-testid="sidebarColumn"]` | 右栏在 home/status/profile/people/explore/search 隐藏 |
+| 正文列 / 右栏 | `[data-testid="primaryColumn"]` / `[data-testid="sidebarColumn"]` | 右栏在 home/status/profile/people/explore/search/notifications 隐藏 |
 | 内层时间线 | primary 内计算样式 `max-width: 600px` 的容器 | 加 `data-xmp-inner-timeline` 后放宽 |
-| 时间线单元格 | `[data-testid="cellInnerDiv"]` | 时间线根 = 这些单元格的最近公共容器 |
-| 帖子 / 正文 | `[data-testid="tweet"]` / `[data-testid="tweetText"]` | 顶层帖子没有祖先 `tweet` |
+| 时间线单元格 | `[data-testid="cellInnerDiv"]` | 时间线根 = 这些单元格的最近公共容器；通知页也使用 |
+| 帖子 / 正文 | `[data-testid="tweet"]` / `[data-testid="tweetText"]` | 顶层帖子没有祖先 `tweet`；通知行只有 `tweetText`，没有 `tweet` |
+| 通知行 | `article[data-testid="notification"]` | 行内没有 `tweet`、`User-Name`、操作栏或 status 链接；头像是 `UserAvatar-Container-<handle>` 下的 `/<handle>` 链接 |
+| 通知缩略图 | 通知行尾部 64px 内联 `background-image`（`pbs.twimg.com`，`name=120x120`） | 没有 `tweetPhoto` 标记；按尺寸和地址打 `data-xmp-notification-thumb` |
 | 图片 / 视频预览 | `[data-testid="tweetPhoto"]` / `[data-testid="previewInterstitial"]` | 媒体收集目标 |
 | 链接卡片 | `[data-testid="card.wrapper"]` | 卡片内媒体不折叠 |
 | 推广单元格 | `[data-testid="placementTracking"]` | 首页和详情/文章页 `cellInnerDiv:has(...)` 隐藏；详情页的推广回复用同一标记 |
@@ -90,7 +93,7 @@
 | 探索/搜索侧栏卡 | `[data-testid="sidebarColumn"]` 内计算背景亮度 < 90 的块 | 宽度 ≥200、高度 ≥20 的深色容器视为卡片，标 `data-xmp-paper-surface` |
 | 搜索过滤单选 | `[data-testid="radioGroupPeople"]` / `radioGroupLocation` | 选中态与未选中态按 `input:checked` 和纸面细线重绘 |
 | Grok 抽屉 | `[data-testid="GrokDrawer"]` / `GrokDrawerHeader` / `chat-drawer-main` | 抽屉根在 body 末尾；打开/关闭会替换根节点 |
-| 评论按钮 | `[data-testid="reply"]` | 捕获阶段拦截；只对 home/profile/explore/search 生效 |
+| 评论按钮 | `[data-testid="reply"]` | 捕获阶段拦截；只对 home/profile/explore/search/notifications 生效，且需要所在单元格有 status 链接 |
 | 首页 tab 栏 | 首页主内容容器的第一个子元素；含 `[role="tablist"]` | 标 `data-xmp-tabbar`；容器和子 div/nav 都要纸色 |
 | 首页发帖框 | 主内容容器的发帖框包装层；含 `[data-testid="tweetTextarea_0"]` 和 `toolBar` | 标 `data-xmp-composer`；外层和子 div 都要纸色 |
 | 发帖按钮 | `[data-testid="tweetButtonInline"]` | 主按钮使用 `--xmp-accent` |
@@ -105,7 +108,8 @@
 
 ## 媒体
 
-- 只处理 `!tweet.parentElement.closest('[data-testid="tweet"]')` 的顶层帖子。
+- 只处理 `!tweet.parentElement.closest('[data-testid="tweet"]')` 的顶层帖子；通知行按
+  `article[data-testid="notification"]` 作用域处理（见「通知页」）。
 - 视频的海报层也是 `tweetPhoto`，并且**包住** `previewInterstitial`；收集媒体时同时排除「在 interstitial 内部」
   和「内部含 interstitial」两种 `tweetPhoto`，否则一个视频会被算成「图片 1 + 视频 1 = 2 项」。
 - 先检查多图轮播：媒体元素最近的 `[data-testid="ScrollSnap-List"]` 若在帖子内、包含本次收集到的
@@ -200,8 +204,9 @@
   与首页共用宽版面：≥1000px 时 88px 轨道、680/720/760px 居中正文列、隐藏右栏；<1000px 时回到
   X 原生布局。`isSurfaceRoute()` 仍只用于主题表面的运行时标记。
 - 探索/搜索没有首页的内联发帖框。`SideNav_NewTweet_Button` 在首页/详情/个人主页/推荐关注页隐藏，
-  在这两页保留并收成 52px 圆形 FAB（left 18px、bottom 96px、暖橙底 + 纸色笔形 mask 图标），
-  避免 X 的 275px 宽版按钮停在收起轨道旁；文本子 div 隐藏，原生 `href="/compose/post"` 保持不变。
+  在探索/搜索/通知页保留并收成 52px 圆形 FAB（left 18px、bottom 96px、暖橙底 + 纸色笔形 mask
+  图标），避免 X 的 275px 宽版按钮停在收起轨道旁；文本子 div 隐藏，原生 `href="/compose/post"`
+  保持不变。
 - 搜索页的右栏是「搜索过滤」；宽版面隐藏右栏后这组过滤控件不再显示（与首页结构一致），
   搜索词仍可通过输入框和 X 语法调整。`<1000px` 时右栏恢复，侧栏卡会按下面的规则换肤。
 - 搜索框：`form[role="search"]` 内 `[data-testid="SearchBox_Search_Input"]` 向上，
@@ -239,7 +244,41 @@
   `data-xmp-paper-*` 样式带到首页/详情页；关闭脚本同样清理。
 - 主题只接管深色表面，媒体、文章预览卡和事件头图保持原生：`eventHero`、`tweet`、`trend`、
   `UserCell` 以及包含 `img` 的单元格不参与表面扫描。
-- 媒体折叠仍只在首页和个人主页运行；探索/搜索的帖子媒体保持原生展开，不插入 `xmp-media-toggle`。
+- 媒体折叠只在首页、个人主页和通知页运行；探索/搜索的帖子媒体保持原生展开，不插入
+  `xmp-media-toggle`。
+
+## 通知页
+
+- 路由：`/notifications` 及子路径（`/notifications/mentions` 等）归为 `notifications`，加入
+  `isWideRoute`：≥1000px 时 88px 轨道、680/720/760px 居中正文列、隐藏右栏；标签栏（`全部`/
+  `提及`，53–54px 高的 `ScrollSnap-List` + `nav`）由 `markTabbar()` 按“只含标签栏的小容器”
+  标记，纸色 + 暖橙选中下划线。通知页没有内联发帖框，`SideNav_NewTweet_Button` 收成 52px FAB。
+- 通知行是 `article[data-testid="notification"]`，结构与帖子不同，这些锚点**都不存在**：
+  `[data-testid="tweet"]`、`[data-testid="User-Name"]`、`[role="group"]`、`[data-testid="reply"]`、
+  指向 `/status/` 的链接。行内只有：左侧通知类型图标、`UserAvatar-Container-<handle>` 里的
+  `/<handle>` 头像链接、标题行（`来自 …` + `time[datetime]`，时间不在链接里）、`tweetText`
+  预览、右侧“更多”（`data-testid="caret"`）和 64px 缩略图。
+- 影响：时间格式化照常生效（`time[datetime]` 在 primary 内）；评论弹窗和“正文/时间戳新标签页”
+  无锚点可用，只有头像链接走新标签页（`UserAvatar-Container-*` → `isProfileHref`）；行本身的
+  点击继续交给 X 在当标签打开。
+- 媒体折叠：缩略图是 64px 的内联 `background-image`（`pbs.twimg.com`，`name=120x120`）+ 同名
+  `<img>`，没有 `tweetPhoto`。`markNotificationThumbs()` 把标记打在**包住绘制层和 `<img>` 的
+  容器**上（`data-xmp-notification-thumb`），通知作用域的 `collectMedia()` 把它算作图片；因为
+  标记就在媒体容器自身上，`findMediaBlock()` 从该元素开始（而不是父级），`MEDIA_BLOCK_STOP`
+  包含 `[data-testid="caret"]`，媒体块停在缩略图外壳、不会连「更多」按钮一起隐藏。折叠按钮插在
+  缩略图所在列中（列宽 76px，按钮 68×30）。
+- 悬停预览：`PHOTO_SELECTOR` 同时匹配 `tweetPhoto` 和 `data-xmp-notification-thumb`；
+  `mediaStills()`/`mediaPhotos()` 在作用域自身命中时把它计入。折叠按钮悬停预览缩略图里的
+  原图（`name=120x120` → `name=orig`）；展开后悬停缩略图也按单张原图预览。
+- 观察器：`isTimelineRoute()`（home/profile/notifications）决定 primary 观察器、时间刷新和媒体
+  标注；`<1000px` 不运行。
+- SPA 切换：X 会在 `pushState` 之后整块替换 `primaryColumn`，路由回调体检到的是旧节点，内层
+  600px 容器标记和 primary 观察器都会失效（通知页正文停在 600px、时间不再刷新）。`syncTimelineRoute()`
+  在 1.2s 刷新时按当前 primary 重新 `checkSelectorHealth()`、重挂观察器并扫描。
+- 降噪：`placementTracking` 单元格在 home/status/notifications 隐藏；`UserCell`（推荐关注）
+  只在首页隐藏，通知页保持可见。
+- 主题：通知行沿用全局墨色/纸面规则；通知类型图标保留 X 自己的颜色（紫、蓝等品牌色），
+  时间与预览文本使用 X 的内联次要色。
 
 ## 首帧与提前着色
 
@@ -279,8 +318,8 @@
 
 - 只拦截评论按钮 `[data-testid="reply"]`：在 **window 捕获阶段** preventDefault + stopPropagation
   + stopImmediatePropagation，阻止 X 跳到 `/compose/post`；帖子正文/时间链接不拦截。
-  只对 home/profile/explore/search 生效，`[role="dialog"]` 内不拦截。window 捕获确保先于 X
-  和可能仍在运行的旧版脚本。
+  只对 home/profile/explore/search/notifications 生效，`[role="dialog"]` 内不拦截。window 捕获
+  确保先于 X 和可能仍在运行的旧版脚本。
 - 从 `reply.closest('[data-testid="tweet"]')` 找到顶层帖子，再用
   `cellStatusLink(cell)` 取带 `time[datetime]` 的 `/handle/status/id` 链接。
 - 数据接口：`/i/api/graphql/<queryId>/TweetDetail`，当前 queryId
@@ -388,8 +427,8 @@
   - 有文本选区时不拦截。命中后用 `openInNewTab()` 的临时
     `<a target="_blank" rel="noopener noreferrer">` 打开，preventDefault +
     stopImmediatePropagation，当前标签保持 home。
-- 主帖/头部资料链接只覆盖 home/profile/explore/search；原生资料卡覆盖所有路由。引用帖、
-  通知、列表、外部链接等仍可能同标签打开，继续依赖 `restoreHomeReturn` 兜底。
+- 主帖/头部资料链接覆盖 home/profile/explore/search 和通知页（通知行内头像）；原生资料卡覆盖
+  所有路由。引用帖、列表、外部链接等仍可能同标签打开，继续依赖 `restoreHomeReturn` 兜底。
 
 ## 返回首页的位置恢复
 

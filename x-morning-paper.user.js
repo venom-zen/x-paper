@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.7.9
+// @version      0.8.0
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -22,6 +22,7 @@
   const PRIMARY = '[data-testid="primaryColumn"]';
   const CELL = '[data-testid="cellInnerDiv"]';
   const TWEET = '[data-testid="tweet"]';
+  const NOTIFICATION = '[data-testid="notification"]';
   const MEDIA_SELECTOR = '[data-testid="tweetPhoto"], [data-testid="previewInterstitial"]';
   const NAV_TOGGLE_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.3 4.6 4.9 6l5.65 5.65L4.9 17.3l1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L6.3 4.6Zm8 0L12.9 6l5.65 5.65-5.65 5.65 1.4 1.4 6.35-6.35a1 1 0 0 0 0-1.4L14.3 4.6Z"/></svg>';
 
@@ -1124,14 +1125,14 @@
     }
 
     @media (min-width: 1000px) {
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header[role="banner"] {
         width: 88px !important;
         min-width: 88px !important;
         flex: 0 0 88px !important;
         background: var(--xmp-paper) !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav {
         position: fixed !important;
         left: 0 !important;
         top: var(--xmp-nav-top, 0px) !important;
@@ -1146,53 +1147,53 @@
         transition: width 160ms ease, box-shadow 160ms ease;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a span,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button span {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav a span,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav button span {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button > div:first-child > div[dir="ltr"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav a > div:first-child > div[dir="ltr"],
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav button > div:first-child > div[dir="ltr"] {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav a,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav button {
         justify-content: center !important;
         align-items: center !important;
         flex: 0 0 auto !important;
         height: auto !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button > div:first-child {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav a > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav button > div:first-child {
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a:hover > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button:hover > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a:focus-visible > div:first-child,
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button:focus-visible > div:first-child {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav a:hover > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav button:hover > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav a:focus-visible > div:first-child,
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav button:focus-visible > div:first-child {
         background-color: var(--xmp-accent-soft) !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav {
         width: 240px !important;
         box-shadow: 4px 0 16px rgba(27, 27, 27, 0.12);
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a span,
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button span {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav a span,
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav button span {
         display: inline !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a > div:first-child > div[dir="ltr"],
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button > div:first-child > div[dir="ltr"] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav a > div:first-child > div[dir="ltr"],
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav button > div:first-child > div[dir="ltr"] {
         display: block !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav a,
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) header nav button {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav a,
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header nav button {
         justify-content: flex-start !important;
         align-items: flex-start !important;
       }
@@ -1201,9 +1202,9 @@
         display: none !important;
       }
 
-      /* 探索/搜索没有首页的内联发帖框：保留左轨发帖入口，把 X 的宽版文字按钮收成 52px 圆形 FAB，
+      /* 探索/搜索/通知页没有首页的内联发帖框：保留左轨发帖入口，把 X 的宽版文字按钮收成 52px 圆形 FAB，
          否则它会停在 275px 宽版位置、露在收起轨道和正文之间 */
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"] {
         position: fixed !important;
         left: 18px !important;
         bottom: 96px !important;
@@ -1222,11 +1223,11 @@
         z-index: 1001 !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"] > div {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"] > div {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"]::before {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"]::before {
         content: "";
         width: 24px;
         height: 24px;
@@ -1235,44 +1236,44 @@
         mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M23 3c-6.62-.1-10.38 2.421-13.05 6.03C7.29 12.61 6 17.331 6 22h2c0-1.007.07-2.012.19-3H12c4.1 0 7.48-3.082 7.94-7.054C22.79 10.147 23.17 6.359 23 3zm-7 8h-1.5v2H14v1.5h-.5V16H12v-1.5h-.5V13H10v-1.5h1.5V10H13v1.5h1.5V13H16v-1.5h-1.5V10H16z'/%3E%3C/svg%3E") center / contain no-repeat;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"]:hover {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) header[role="banner"] [data-testid="SideNav_NewTweet_Button"]:hover {
         background-color: var(--xmp-accent-deep) !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="sidebarColumn"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="sidebarColumn"] {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) main {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) main {
         align-items: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) main > div {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) main > div {
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) main > div > div > div {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) main > div > div > div {
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="primaryColumn"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="primaryColumn"] {
         width: 760px !important;
         max-width: 760px !important;
         flex: 0 0 760px !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-xmp-inner-timeline] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-xmp-inner-timeline] {
         width: 100% !important;
         max-width: 100% !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="cellInnerDiv"],
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="tweetText"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="cellInnerDiv"],
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="tweetText"] {
         max-width: 100% !important;
       }
 
       @media (max-width: 1599px) and (min-width: 1280px) {
-        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="primaryColumn"] {
+        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="primaryColumn"] {
           width: 720px !important;
           max-width: 720px !important;
           flex: 0 0 720px !important;
@@ -1280,14 +1281,14 @@
       }
 
       @media (max-width: 1279px) and (min-width: 1000px) {
-        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="primaryColumn"] {
+        html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="primaryColumn"] {
           width: 680px !important;
           max-width: 680px !important;
           flex: 0 0 680px !important;
         }
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-xmp-rail-panel] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-xmp-rail-panel] {
         left: 0 !important;
         right: auto !important;
         width: 88px !important;
@@ -1296,30 +1297,30 @@
         z-index: 1000 !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-xmp-rail-panel] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-xmp-rail-panel] {
         width: 240px !important;
         min-width: 240px !important;
         max-width: 240px !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="SideNav_AccountSwitcher_Button"] {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="SideNav_AccountSwitcher_Button"] {
         width: 72px !important;
         min-width: 0 !important;
         padding: 6px !important;
         justify-content: center !important;
       }
 
-      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="SideNav_AccountSwitcher_Button"] {
+      html[data-xmp-enabled="1"][data-xmp-nav-expanded="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="SideNav_AccountSwitcher_Button"] {
         width: 224px !important;
         padding: 12px !important;
         justify-content: flex-start !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:last-child {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:last-child {
         display: none !important;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):not([data-xmp-nav-expanded="1"]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:not(:first-child) {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):not([data-xmp-nav-expanded="1"]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) [data-testid="SideNav_AccountSwitcher_Button"] > div:not(:first-child) {
         display: none !important;
       }
 
@@ -1360,7 +1361,7 @@
         white-space: nowrap;
       }
 
-      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"]) .xmp-nav-toggle {
+      html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="profile"], [data-xmp-route="people"], [data-xmp-route="explore"], [data-xmp-route="search"], [data-xmp-route="notifications"]) .xmp-nav-toggle {
         display: inline-flex;
       }
 
@@ -1397,18 +1398,18 @@
   `;
 
   const NOISE_CSS = `
-    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"]) [data-testid="cellInnerDiv"]:has([data-testid="placementTracking"]),
+    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="notifications"]) [data-testid="cellInnerDiv"]:has([data-testid="placementTracking"]),
     html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="cellInnerDiv"]:has([data-testid="UserCell"]) {
       display: none !important;
     }
   `;
 
   const MEDIA_CSS = `
-    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="profile"]) [data-xmp-media-state="collapsed"] [data-xmp-media-block] {
+    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="profile"], [data-xmp-route="notifications"]) [data-xmp-media-state="collapsed"] [data-xmp-media-block] {
       display: none !important;
     }
 
-    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="profile"]) [data-xmp-media-state="expanded"] [data-xmp-media-block] {
+    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="profile"], [data-xmp-route="notifications"]) [data-xmp-media-state="expanded"] [data-xmp-media-block] {
       max-height: 70vh !important;
       overflow-y: auto !important;
       overscroll-behavior: contain;
@@ -2295,6 +2296,7 @@
     if (pathname.includes('/status/')) return 'status';
     if (pathname === '/explore' || pathname.startsWith('/explore/')) return 'explore';
     if (pathname === '/search' || pathname.startsWith('/search/')) return 'search';
+    if (pathname === '/notifications' || pathname.startsWith('/notifications/')) return 'notifications';
     const match = pathname.match(PROFILE_PATH);
     if (match && !RESERVED_HANDLES.has(match[1].toLowerCase())) return 'profile';
     if (pathname === '/i/connect_people') return 'people';
@@ -2303,7 +2305,12 @@
 
   function isWideRoute(value) {
     return value === 'home' || value === 'status' || value === 'profile' || value === 'people' ||
-      value === 'explore' || value === 'search';
+      value === 'explore' || value === 'search' || value === 'notifications';
+  }
+
+  // 运行 primary 观察器并标注媒体折叠的路由：首页、个人主页和通知页。
+  function isTimelineRoute(value) {
+    return value === 'home' || value === 'profile' || value === 'notifications';
   }
 
   // 探索/搜索保持 X 原生版面，只做主题换肤；这两页的深色表面靠运行时标记，需要跟随流式渲染。
@@ -2561,7 +2568,7 @@
     ensureNavToggle();
     ensureGrokObserver();
     if (!isWideRoute(route)) setNavExpanded(false);
-    if (route === 'home' || route === 'profile') {
+    if (isTimelineRoute(route)) {
       if (!degraded) {
         startObserver();
         scanTimeline();
@@ -2597,6 +2604,16 @@
     }
   }
 
+  // SPA 切路由后 X 会整块替换 primaryColumn：路由回调体检和挂上的观察器都还指向旧节点，
+  // 内层时间线标记随之丢失（正文停在 600px）、观察器也不再触发。流式渲染稳定后再按当前
+  // primary 重新体检、重挂观察器并扫描一次。
+  function syncTimelineRoute() {
+    if (!enabled || degraded || !isTimelineRoute(route) || !widthQuery.matches) return;
+    checkSelectorHealth();
+    startObserver();
+    scanTimeline();
+  }
+
   // X 流式渲染：顶部条、标签栏和回复框可能晚于正文出现，延迟再标一次。
   function scheduleSurfaceRefresh() {
     if (timestampTimer) window.clearTimeout(timestampTimer);
@@ -2609,6 +2626,7 @@
       ensureGrokObserver();
       scheduleGrokScan();
       if (isSurfaceRoute(route)) syncSurfaceRoute(route);
+      safe('timelineRoute', syncTimelineRoute);
     }, 1200);
   }
 
@@ -3097,7 +3115,7 @@
     if (isSurfaceRoute(route)) safe('exploreSurfaces', markExploreSurfaces);
     ensureNavToggle();
     ensureGrokObserver();
-    if (route === 'home' || route === 'profile') {
+    if (isTimelineRoute(route)) {
       if (!degraded) {
         startObserver();
         scanTimeline();
@@ -3240,20 +3258,33 @@
     safe('darkSurface', markDarkSurfaces);
     safe('railPanel', markRailPanel);
     safe('railLayout', markRailLayout);
-    if (route !== 'home' && route !== 'profile') return;
+    if (!isTimelineRoute(route)) return;
     const cells = [...primary.querySelectorAll(CELL)];
     if (cells.length > 0 && !commonAncestor(cells)) return;
     safe('media', () => {
       primary.querySelectorAll(TWEET).forEach(tweet => {
-        if (!tweet.parentElement.closest(TWEET)) annotateTweet(tweet);
+        if (!tweet.parentElement.closest(TWEET)) annotateMediaScope(tweet);
+      });
+      // 通知行是 article[data-testid="notification"]，行内没有 tweet 层级；含嵌套
+      // tweet 的通知交给上面的 tweet 分支，避免同一媒体标两次。
+      if (route !== 'notifications') return;
+      primary.querySelectorAll(NOTIFICATION).forEach(notification => {
+        if (!notification.querySelector(TWEET)) annotateMediaScope(notification);
       });
     });
   }
 
-  function collectMedia(tweet) {
-    return [...tweet.querySelectorAll(MEDIA_SELECTOR)].filter(element => {
-      if (element.closest(TWEET) !== tweet) return false;
-      if (element.closest('[data-testid="card.wrapper"]') && !isQuoteMedia(tweet, element)) return false;
+  // 媒体归属按作用域自身判断：帖子用 tweet，通知行用 notification（行内没有 tweet 层级）。
+  function collectMedia(scope) {
+    const notificationScope = scope.getAttribute('data-testid') === 'notification';
+    const marker = notificationScope ? NOTIFICATION : TWEET;
+    if (notificationScope) markNotificationThumbs(scope);
+    const selectors = notificationScope
+      ? `${MEDIA_SELECTOR}, [data-xmp-notification-thumb]`
+      : MEDIA_SELECTOR;
+    return [...scope.querySelectorAll(selectors)].filter(element => {
+      if (element.closest(marker) !== scope) return false;
+      if (element.closest('[data-testid="card.wrapper"]') && !isQuoteMedia(scope, element)) return false;
       if (element.getAttribute('data-testid') === 'tweetPhoto') {
         // A clip paints its poster through a tweetPhoto shell: the shell either
         // wraps the interstitial or sits inside one. Counting both would report
@@ -3265,9 +3296,27 @@
     });
   }
 
-  function isQuoteMedia(tweet, element) {
+  // 通知行的媒体缩略图是一对叠放的层：内联背景图负责绘制，<img> 负责命中。两层都没有
+  // tweetPhoto 标记；把标记打在包住两层的容器上，折叠和悬停原图预览都以它为准。
+  function markNotificationThumbs(scope) {
+    for (const node of scope.querySelectorAll('[style*="background-image"]')) {
+      let holder = node;
+      for (let level = 0; level < 3 && !holder.querySelector('img'); level += 1) {
+        holder = holder.parentElement;
+        if (!holder || holder === scope) break;
+      }
+      if (!holder || holder === scope || !holder.querySelector('img')) continue;
+      if (holder.hasAttribute('data-xmp-notification-thumb')) continue;
+      if (!getComputedStyle(node).backgroundImage.includes('url(')) continue;
+      const box = holder.getBoundingClientRect();
+      if (box.width < 40 || box.height < 40) continue;
+      holder.setAttribute('data-xmp-notification-thumb', '');
+    }
+  }
+
+  function isQuoteMedia(scope, element) {
     let node = element.parentElement;
-    while (node && node !== tweet) {
+    while (node && node !== scope) {
       if (node.getAttribute('role') === 'link' &&
           node.querySelector('[data-testid="User-Name"]') &&
           node.querySelector('[data-testid="tweetText"]')) {
@@ -3278,31 +3327,34 @@
     return false;
   }
 
-  // Collapse the tweet's own media first. Quoted media is only promoted when
-  // the tweet itself carries no media, so a quote's image can also be folded.
-  function selectMedia(tweet, media) {
-    const own = media.filter(element => !isQuoteMedia(tweet, element));
+  // Collapse the scope's own media first. Quoted media is only promoted when
+  // the scope itself carries no media, so a quote's image can also be folded.
+  function selectMedia(scope, media) {
+    const own = media.filter(element => !isQuoteMedia(scope, element));
     return own.length > 0 ? own : media;
   }
 
   const MEDIA_BLOCK_STOP =
     '[data-testid="tweetText"], [data-testid="User-Name"], [data-testid="card.wrapper"], ' +
-    '[data-testid="tweet"], [role="group"]';
+    '[data-testid="tweet"], [data-testid="caret"], [role="group"]';
 
-  function findMediaBlock(tweet, media) {
+  function findMediaBlock(scope, media) {
     const carousel = media[0].closest('[data-testid="ScrollSnap-List"]');
-    if (carousel && tweet.contains(carousel) &&
+    if (carousel && scope.contains(carousel) &&
         media.every(item => carousel.contains(item)) &&
         !carousel.querySelector('[data-testid="tweetText"]') &&
         !carousel.querySelector('[role="group"]')) {
-      return liftMediaBlock(tweet, carousel);
+      return liftMediaBlock(scope, carousel);
     }
-    let candidate = media[0].parentElement;
-    while (candidate && candidate !== tweet) {
+    // 通知缩略图的标记就在媒体容器自身上，从它开始；帖子从媒体元素的父级开始。
+    let candidate = media[0].hasAttribute('data-xmp-notification-thumb')
+      ? media[0]
+      : media[0].parentElement;
+    while (candidate && candidate !== scope) {
       if (media.every(item => candidate.contains(item)) &&
           !candidate.querySelector('[data-testid="tweetText"]') &&
           !candidate.querySelector('[role="group"]')) {
-        return liftMediaBlock(tweet, candidate);
+        return liftMediaBlock(scope, candidate);
       }
       candidate = candidate.parentElement;
     }
@@ -3312,11 +3364,11 @@
   // The nearest media wrapper often carries no height; the sized figure shell
   // sits higher up. Lift the block to the highest ancestor that still contains
   // only media: text, the author row, cards, quoted tweets and the action bar
-  // all stop the climb before it reaches the rest of the tweet.
-  function liftMediaBlock(tweet, block) {
+  // all stop the climb before it reaches the rest of the scope.
+  function liftMediaBlock(scope, block) {
     let lifted = block;
     let probe = block;
-    while (probe.parentElement && probe.parentElement !== tweet) {
+    while (probe.parentElement && probe.parentElement !== scope) {
       const parent = probe.parentElement;
       if (parent.querySelector(MEDIA_BLOCK_STOP)) break;
       if (parent.querySelector('.xmp-media-toggle')) break;
@@ -3327,8 +3379,8 @@
   }
 
   function describeMedia(media) {
-    const images = media.filter(element => element.getAttribute('data-testid') === 'tweetPhoto');
     const videos = media.filter(element => element.getAttribute('data-testid') === 'previewInterstitial');
+    const images = media.filter(element => element.getAttribute('data-testid') !== 'previewInterstitial');
     if (images.length > 0 && videos.length > 0) {
       return { kind: 'mixed', count: media.length, ...STR.mediaMixed(media.length) };
     }
@@ -3445,14 +3497,14 @@
     });
   }
 
-  function toggleMedia(tweet, toggle) {
-    const currentMedia = selectMedia(tweet, collectMedia(tweet));
+  function toggleMedia(scope, toggle) {
+    const currentMedia = selectMedia(scope, collectMedia(scope));
     if (currentMedia.length === 0) return;
     const currentInfo = describeMedia(currentMedia);
     const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
-    if (tweet.dataset.xmpMediaState === 'expanded') {
-      tweet.dataset.xmpMediaState = 'collapsed';
-      rememberHomeMedia(tweet, false);
+    if (scope.dataset.xmpMediaState === 'expanded') {
+      scope.dataset.xmpMediaState = 'collapsed';
+      rememberHomeMedia(scope, false);
       hidePhotoPreview();
       if (block) {
         mediaReveals.set(block, (mediaReveals.get(block) || 0) + 1);
@@ -3461,17 +3513,17 @@
       renderButton(toggle, currentInfo, 'collapsed');
       return;
     }
-    if (!block || !tweet.contains(block)) {
-      tweet.dataset.xmpMediaState = 'expanded';
-      rememberHomeMedia(tweet, true);
+    if (!block || !scope.contains(block)) {
+      scope.dataset.xmpMediaState = 'expanded';
+      rememberHomeMedia(scope, true);
       renderButton(toggle, currentInfo, 'expanded');
       return;
     }
     const reveal = (mediaReveals.get(block) || 0) + 1;
     mediaReveals.set(block, reveal);
     block.setAttribute('data-xmp-media-loading', '');
-    tweet.dataset.xmpMediaState = 'expanded';
-    rememberHomeMedia(tweet, true);
+    scope.dataset.xmpMediaState = 'expanded';
+    rememberHomeMedia(scope, true);
     renderButton(toggle, currentInfo, 'expanded');
     warmMedia(block);
     waitForMediaPaint(block).then(() => {
@@ -3480,32 +3532,32 @@
     });
   }
 
-  function annotateTweet(tweet) {
-    const media = selectMedia(tweet, collectMedia(tweet));
+  function annotateMediaScope(scope) {
+    const media = selectMedia(scope, collectMedia(scope));
     if (media.length === 0) {
-      cleanupTweet(tweet);
+      cleanupMediaScope(scope);
       return;
     }
     const info = describeMedia(media);
-    const existingButton = tweet.querySelector('.xmp-media-toggle');
+    const existingButton = scope.querySelector('.xmp-media-toggle');
     const existingBlock = existingButton
       ? document.getElementById(existingButton.getAttribute('aria-controls') || '')
       : null;
-    if (existingButton && existingBlock && tweet.contains(existingBlock) &&
+    if (existingButton && existingBlock && scope.contains(existingBlock) &&
         media.every(item => existingBlock.contains(item))) {
-      if (!tweet.hasAttribute('data-xmp-media-state')) {
-        tweet.dataset.xmpMediaState = wantsExpandedMedia(tweet) ? 'expanded' : 'collapsed';
+      if (!scope.hasAttribute('data-xmp-media-state')) {
+        scope.dataset.xmpMediaState = wantsExpandedMedia(scope) ? 'expanded' : 'collapsed';
       }
       if (existingButton.dataset.xmpKind !== info.kind ||
           existingButton.dataset.xmpCount !== String(info.count)) {
-        renderButton(existingButton, info, tweet.dataset.xmpMediaState);
+        renderButton(existingButton, info, scope.dataset.xmpMediaState);
       }
       return;
     }
-    if (existingButton || existingBlock) cleanupTweet(tweet);
-    const mediaBlock = findMediaBlock(tweet, media);
+    if (existingButton || existingBlock) cleanupMediaScope(scope);
+    const mediaBlock = findMediaBlock(scope, media);
     if (!mediaBlock) {
-      cleanupTweet(tweet);
+      cleanupMediaScope(scope);
       return;
     }
     const existingId = mediaBlock.id;
@@ -3518,7 +3570,7 @@
     toggle.type = 'button';
     toggle.className = 'xmp-media-toggle';
     toggle.setAttribute('aria-controls', id);
-    toggle.addEventListener('click', () => toggleMedia(tweet, toggle));
+    toggle.addEventListener('click', () => toggleMedia(scope, toggle));
     toggle.addEventListener('pointerenter', () => {
       const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
       if (block) warmMedia(block);
@@ -3527,15 +3579,15 @@
       const block = document.getElementById(toggle.getAttribute('aria-controls') || '');
       if (block) warmMedia(block);
     });
-    tweet.dataset.xmpMediaState = wantsExpandedMedia(tweet) ? 'expanded' : 'collapsed';
-    renderButton(toggle, info, tweet.dataset.xmpMediaState);
+    scope.dataset.xmpMediaState = wantsExpandedMedia(scope) ? 'expanded' : 'collapsed';
+    renderButton(toggle, info, scope.dataset.xmpMediaState);
     mediaBlock.parentElement.insertBefore(toggle, mediaBlock);
   }
 
-  function cleanupTweet(tweet) {
-    tweet.querySelectorAll('.xmp-media-toggle').forEach(button => button.remove());
-    delete tweet.dataset.xmpMediaState;
-    tweet.querySelectorAll('[data-xmp-media-block]').forEach(block => {
+  function cleanupMediaScope(scope) {
+    scope.querySelectorAll('.xmp-media-toggle').forEach(button => button.remove());
+    delete scope.dataset.xmpMediaState;
+    scope.querySelectorAll('[data-xmp-media-block]').forEach(block => {
       block.removeAttribute('data-xmp-media-block');
       block.removeAttribute('data-xmp-media-loading');
       if (block.id.startsWith('xmp-media-block-')) block.removeAttribute('id');
@@ -3555,7 +3607,7 @@
     });
   }
 
-  const PHOTO_SELECTOR = '[data-testid="tweetPhoto"]';
+  const PHOTO_SELECTOR = '[data-testid="tweetPhoto"], [data-xmp-notification-thumb]';
   const PREVIEW_SHOW_DELAY = 220;
   const PREVIEW_ORIG_TIMEOUT = 800;
   let previewEl = null;
@@ -3598,11 +3650,15 @@
   }
 
   function mediaPhotos(scope) {
-    return [...scope.querySelectorAll(PHOTO_SELECTOR)].filter(photo => !isVideoPoster(photo));
+    const photos = [...scope.querySelectorAll(PHOTO_SELECTOR)];
+    if (scope.matches(PHOTO_SELECTOR)) photos.unshift(scope);
+    return photos.filter(photo => !isVideoPoster(photo));
   }
 
   function mediaStills(scope) {
-    return [...scope.querySelectorAll(PHOTO_SELECTOR)];
+    const stills = [...scope.querySelectorAll(PHOTO_SELECTOR)];
+    if (scope.matches(PHOTO_SELECTOR)) stills.unshift(scope);
+    return stills;
   }
 
   function stillsLabel(stills) {
@@ -3727,7 +3783,8 @@
       }
       const photo = hoveredPhoto(event.target);
       if (!photo) return;
-      const group = photo.closest('[data-xmp-media-block]') || photo.closest(TWEET) || photo.parentElement;
+      const group = photo.closest('[data-xmp-media-block]') || photo.closest(TWEET) ||
+        photo.closest(NOTIFICATION) || photo.parentElement;
       const photos = group ? mediaPhotos(group) : [photo];
       const index = photos.indexOf(photo);
       const label = photos.length > 1 && index >= 0
@@ -3738,11 +3795,12 @@
     document.addEventListener('pointerout', event => {
       if (!previewKey) return;
       const from = event.target instanceof Element
-        ? event.target.closest('.xmp-media-toggle, [data-testid="tweetPhoto"]')
+        ? event.target.closest('.xmp-media-toggle, [data-testid="tweetPhoto"], [data-xmp-notification-thumb]')
         : null;
       if (from !== previewKey) return;
       const to = event.relatedTarget;
-      if (to instanceof Element && to.closest('.xmp-media-toggle, [data-testid="tweetPhoto"]') === previewKey) return;
+      if (to instanceof Element &&
+          to.closest('.xmp-media-toggle, [data-testid="tweetPhoto"], [data-xmp-notification-thumb]') === previewKey) return;
       hidePhotoPreview();
     });
     // 点击进入 X 自己的大图查看器或展开媒体，预览先让位。
@@ -3761,7 +3819,7 @@
       cleanupAllMedia();
       setNavExpanded(false);
     }
-    if (widthQuery.matches && (route === 'home' || route === 'profile') && !degraded) {
+    if (widthQuery.matches && isTimelineRoute(route) && !degraded) {
       startObserver();
       scanTimeline();
     }
@@ -4879,7 +4937,8 @@
       if (!target) return;
       const reply = target.closest('[data-testid="reply"]');
       if (!reply || target.closest('[role="dialog"]')) return;
-      if (route !== 'home' && route !== 'profile' && route !== 'explore' && route !== 'search') return;
+      if (route !== 'home' && route !== 'profile' && route !== 'explore' && route !== 'search' &&
+          route !== 'notifications') return;
       const tweet = reply.closest(TWEET);
       if (!tweet) return;
       const link = cellStatusLink(tweet.closest(CELL));
@@ -4893,10 +4952,8 @@
     }, true);
   }
 
-  // 设置开启时，主帖正文/时间戳在新标签页打开，home 不卸载；引用帖、正文内链接、媒体和按钮
-  // 仍交给 X。只覆盖 home/profile/explore/search 的主帖，其他入口继续走同标签和位置恢复兜底。
-  // 设置开启时，主帖正文/时间戳、tweet 头部的头像/用户名在新标签页打开，home 不卸载；
-  // 引用帖、正文内链接、媒体和按钮仍交给 X。只覆盖 home/profile/explore/search，
+  // 主帖正文/时间戳、tweet 头部的头像/用户名在新标签页打开，home 不卸载；引用帖、正文内链接、
+  // 媒体和按钮仍交给 X。覆盖 home/profile/explore/search 和通知页；引用帖、列表、外部链接等
   // 其他入口继续走同标签和位置恢复兜底。
   function isProfileHref(href) {
     try {
@@ -4935,8 +4992,25 @@
         }
         return;
       }
-      if (route !== 'home' && route !== 'profile' && route !== 'explore' && route !== 'search') return;
+      if (route !== 'home' && route !== 'profile' && route !== 'explore' && route !== 'search' &&
+          route !== 'notifications') return;
       if (target.closest('[role="dialog"], [data-testid="reply"]')) return;
+      // 通知行是 article[data-testid="notification"]，行内没有 status 链接，正文和整行跳转
+      // 仍交给 X；只有行内头像的 /<handle> 链接按主页入口开新标签页。
+      if (route === 'notifications') {
+        const notification = target.closest(NOTIFICATION);
+        if (notification && !notification.querySelector(TWEET)) {
+          const anchor = target.closest('a[href]');
+          if (anchor && anchor.closest('[data-testid^="UserAvatar-Container-"]') &&
+              isProfileHref(anchor.getAttribute('href'))) {
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            openInNewTab(anchor.href);
+          }
+          return;
+        }
+      }
       const tweet = target.closest(TWEET);
       if (!tweet) return;
       // 引用帖内部仍由 X 处理，避免把外层帖的 status 当成引用帖目标。

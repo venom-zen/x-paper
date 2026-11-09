@@ -25,8 +25,9 @@
 - 已经落地的、与初版设计不同的行为：无日期刊头、无操作栏上分割线、无正文列左右框线、
   无头像框线、引用帖媒体折叠、帖子时间显示具体时刻、通知/Toast 纸面化、左轨点击展开、
   图片悬浮原图预览、详情页/文章页表面纸面化、探索/搜索共用宽版面（右栏隐藏、左轨发帖入口
-  收成 FAB）、评论按钮打开页面内纸面弹窗、Grok 抽屉纸面化。不要按旧设计回退（尤其不要把
-  左轨改回 hover/focus-within 自动展开）。
+  收成 FAB）、通知页共用宽版面（右栏隐藏、FAB、缩略图折叠为「🖼️ 图片」）、评论按钮打开
+  页面内纸面弹窗、Grok 抽屉纸面化。不要按旧设计回退（尤其不要把左轨改回 hover/focus-within
+  自动展开）。
 
 ## 工作方式
 
@@ -54,7 +55,8 @@
    重扫，标签页不可见时浏览器会节流定时器。截图/检查前等待 3–5s，确认扫描完成，必要时再查询
    一次 DOM。SPA 进入探索/搜索后至少等 1.5s 再判定模块是否已换纸面。
 5. **状态矩阵**：真实 X 的 1920×953、1440×900；X 深色/浅色设置；中文/英文界面；首页、详情、
-   探索/搜索（宽版面）、通知；单图、网格、轮播、视频、引用帖、引用卡片、混合媒体；hover、focus、
+   探索/搜索（宽版面）、通知（宽版面、缩略图折叠、SPA 进入与返回首页）；单图、网格、轮播、视频、
+   引用帖、引用卡片、混合媒体；hover、focus、
    媒体折叠/展开；
    Grok 抽屉打开/关闭/输入卡；评论弹窗打开/关闭、首页滚动位置、正文跳转仍进入状态页；
    评论点赞/取消（空心→暖橙实心）、资料卡、弹窗内回复输入框、嵌套楼层连接线/圆角终点、
@@ -62,6 +64,7 @@
 6. **边界**：999/1000px 是版面分界；1000px 应用轨道/680 列/媒体按钮，999px 只应用主题。
 7. **fixture**：`node --check x-morning-paper.user.js`；`python -m http.server 8765` 后打开
    `http://127.0.0.1:8765/test/fixture.html`，检查媒体、路由、降级、存储回退和 1920/1000/999。
+   `?route=notifications` 切到通知页 mock（通知行缩略图折叠、推广隐藏、UserCell 保留），
    `?lang=en` 覆盖 fixture 的 `html[lang]`，用于验证英文界面；`?theme=light` 验证浅色。
    fixture 是 mock，不能替代真实 X。
 8. **机械检查**：`impeccable detect --json x-morning-paper.user.js`；修复后再提交。
@@ -94,8 +97,8 @@
   X 内联浅色，必须用行级规则 + `svg` 图标色覆盖，不要按 testid 逐个补。
 - 个人主页（`/<handle>`，含 `/handle/media` 等子页）归为 `profile` 路由，和 home/status 共用宽版面；
   `RESERVED_HANDLES` 必须覆盖 X 自己的保留一级路径（home/explore/notifications/i/...），否则
-  `/explore` 之类会被误判成个人主页。观察器只在 home/profile 运行；媒体折叠在首页和个人主页都生效
-  （详情页不折叠）。关注/正在关注/私信/更多按 testid 后缀主题化，
+  `/explore` 之类会被误判成个人主页。观察器只在 home/profile/notifications 运行；媒体折叠在
+  首页、个人主页和通知页都生效（详情页不折叠）。关注/正在关注/私信/更多按 testid 后缀主题化，
   关注用暖橙实心；注意「非帖子单元格的 [role=button] span」暖橙规则会把关注按钮文字染成与
   背景同色，必须同时排除自身/后代带 `-follow`、`-unfollow` testid 的按钮。
 - `/i/connect_people`（推荐关注整页）归为 `people` 路由，共用宽版面；该页没有内层 600px
@@ -229,7 +232,7 @@
 
 - `/explore`（含子路径）和 `/search` 归为 `explore` / `search`，并加入 `isWideRoute`：≥1000px 时
   与首页共用 88px 轨道、680/720/760px 居中正文列和隐藏右栏；<1000px 回到 X 原生布局。
-  `isSurfaceRoute()` 只用于主题表面的运行时标记，媒体折叠仍只在 home/profile 运行。
+  `isSurfaceRoute()` 只用于主题表面的运行时标记，媒体折叠只在 home/profile/notifications 运行。
 - 探索/搜索没有首页发帖框：`SideNav_NewTweet_Button` 在这两页保留，CSS 收成 52px 圆形 FAB
   （left 18、bottom 96、暖橙底、纸色笔形 mask），隐藏文本子 div，原生 `href` 不变；首页/详情/
   个人主页/推荐关注页继续隐藏。只改样式，不要重新创建按钮。
@@ -252,7 +255,32 @@
   模块卡内按钮统一细线描边、图标改墨色，避免白字/白图标留在纸上不可见。
 - 侧栏卡宽 ≥200、高 ≥20 才按卡片处理；头像的黑色底层、单选按钮等小元素保持原样。
   搜索过滤 radio 用 `input:checked` + 纸面细线重绘，选中态暖橙实心 + 纸色勾。
-- 探索/搜索的帖子媒体保持 X 原生展开，不注入媒体按钮；媒体折叠只在首页和个人主页生效。
+- 探索/搜索的帖子媒体保持 X 原生展开，不注入媒体按钮；媒体折叠在首页、个人主页和通知页生效。
+
+### 通知页
+
+- 通知行是 `article[data-testid="notification"]`，**不是** `[data-testid="tweet"]`。行内没有
+  `User-Name`、操作栏、`[data-testid="reply"]` 或 `/status/` 链接，只有通知图标、头像链接
+  （`UserAvatar-Container-<handle>` → `/<handle>`）、标题行 + `time[datetime]`、`tweetText`
+  预览、`caret`（更多）和 64px 缩略图。媒体作用域、媒体按钮和新标签页判断都要按这个结构写，
+  不要假设通知行能复用 tweet 选择器。
+- 缩略图是内联 `background-image`（`pbs.twimg.com`，`name=120x120`）+ 同名 `<img>`，**没有**
+  `tweetPhoto`。`markNotificationThumbs()` 把 `data-xmp-notification-thumb` 打在**包住绘制层和
+  命中层 `<img>` 的容器**上（≥40px，背景图必须是 `url(...)`）：标记落在媒体自身上，`findMediaBlock()`
+  必须从该元素开始而不是父级，否则会把 76px 缩略图列（含「更多」）当成媒体块；`MEDIA_BLOCK_STOP`
+  包含 `[data-testid="caret"]`，提升也会停在缩略图外壳。
+- 预览：`PHOTO_SELECTOR` 同时匹配 `tweetPhoto` 和 `data-xmp-notification-thumb`，
+  `mediaStills()`/`mediaPhotos()` 在作用域自身命中时把它计入，折叠按钮和展开后的缩略图都能悬停
+  预览原图（`name=orig`）。改这两个函数时不要只查后代节点。
+- 通知行没有 status 链接：评论弹窗和「正文/时间戳新标签页」在这些行上没有锚点可用，只有
+  头像链接走 `isProfileHref` 新标签页；整行点击交给 X 当前标签打开。含内嵌 tweet 的通知
+  类型仍由 tweet 分支处理。
+- SPA 切路由后 X 会整块替换 `primaryColumn`：路由回调里的 `checkSelectorHealth()` 和
+  `startObserver()` 指向旧节点，内层 600px 容器标记丢失（通知页/首页正文停在 600px）、
+  观察器不再触发。`syncTimelineRoute()` 在 1.2s 刷新时按当前 primary 重新体检、重挂观察器并
+  扫描；新增宽版面路由时务必确认这条路径。用注入了脚本的标签页验证 SPA 往返，不要只测刷新。
+- 后台标签页里通知缩略图不会加载（媒体外壳为空），探针前先 `Page.bringToFront`；否则会把
+  「缩略图没有 testid」误判成「没有缩略图」。
 
 ### Grok 抽屉
 
@@ -271,7 +299,8 @@
 - 只拦截 `[data-testid="reply"]`（评论按钮）的点击；在 **window 捕获阶段**（不是 document，
   确保先于 X 和可能仍在运行的旧版脚本）`preventDefault + stopPropagation +
   stopImmediatePropagation`，阻止 X 跳到 `/compose/post`。帖子正文/时间链接不拦截，仍然进入
-  状态页。只对 home/profile/explore/search 生效；弹窗内和 `[role="dialog"]` 内不拦截。
+  状态页。只对 home/profile/explore/search/notifications 生效；弹窗内和 `[role="dialog"]`
+  内不拦截。通知行需要内嵌带操作栏的 tweet 才有评论按钮。
 - 节点定位：`reply.closest('[data-testid="tweet"]')` 取顶层帖子，再用 `cellStatusLink(cell)`
   找带 `time[datetime]` 的 `/handle/status/id` 链接；不要取引用帖链接。
 - 数据：`/i/api/graphql/<queryId>/TweetDetail`。当前 queryId 为
@@ -361,8 +390,9 @@
   `previewInterstitial`/`card.wrapper`；有文本选区时也不拦截。
 - 打开方式：`openInNewTab()` 新建临时 `<a target="_blank" rel="noopener noreferrer">` 并 click，
   避免 `window.open(..., 'noopener')` 返回 null 无法判断是否成功；打开后移除。
-- 主帖/头部资料链接只覆盖 home/profile/explore/search；资料卡覆盖所有路由。引用帖、通知、
-  列表、外部链接等仍走 X 原行为。`restoreHomeReturn` 继续保留给这些同标签入口兜底。
+- 主帖/头部资料链接覆盖 home/profile/explore/search 和通知页（通知行内头像）；资料卡覆盖所有路由。
+  引用帖、列表、外部链接等仍走 X 原行为；通知行本身没有 status 链接，整行继续由 X 同标签打开。
+  `restoreHomeReturn` 继续保留给这些同标签入口兜底。
 - 评论按钮仍由后注册的 `watchComments` 处理（`watchOpenTargets` 先 return）。
 
 ### 时间
@@ -409,13 +439,19 @@
   对话里混入的推荐/广告帖按 conversation id 过滤；X 若改变 conversation 字段，需要补过滤规则。
 - Grok 抽屉的对话气泡按最近底色翻色；如果 X 给消息加新的彩色表面，白字/白图标会按“彩色气泡”
   保持原样，需要时再在 `nearestPaperBackground` 的白名单里补规则。
+- 通知行没有 status 链接，点正文/整行仍由 X 在当前标签打开帖子；只有行内头像链接走新标签页。
+  评论弹窗需要通知行内嵌带操作栏的 tweet，当前「最新帖子」类通知不显示操作栏。
+- 通知缩略图折叠和预览按 64px 内联背景图识别；X 若改用 `tweetPhoto` 或新增缩略图尺寸，需要
+  调整 `markNotificationThumbs()` 的尺寸/地址阈值。预览用 `name=orig` 变体，其他 CDN 保持原样。
 - X 的 A/B 布局、实验性卡片和生成 class 会继续变化；`docs/selectors.md` 是维护入口。
 
 ## 提交前检查
 
 - [ ] `node --check x-morning-paper.user.js`
-- [ ] fixture 的 1920 / 1000 / 999、媒体、路由、降级、中英文通过
+- [ ] fixture 的 1920 / 1000 / 999、媒体、路由（含 `?route=notifications`）、降级、中英文通过
 - [ ] 真实 X 的 1920/1440、深色/浅色、中英文、首页/详情、媒体/时间/通知检查
+- [ ] 通知页检查 SPA 进入（从首页点通知）和返回首页：`data-xmp-inner-timeline` 存在、正文列
+      与 cell 同宽、时间已格式化
 - [ ] `impeccable detect --json x-morning-paper.user.js` 无新增发现
 - [ ] README、`docs/selectors.md`、截图与当前行为一致
 - [ ] 无旧插件名、调试截图、临时文件、cookie 或会话数据进入 diff
