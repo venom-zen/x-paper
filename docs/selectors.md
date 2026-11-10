@@ -302,13 +302,17 @@
 
 - 抽屉根是 `[data-testid="GrokDrawer"]`，在 `body` 末尾、`primaryColumn` 外；入口按钮是
   `[data-testid="GrokDrawerHeader"]`（`aria-label="Grok"`），聊天按钮是
-  `[data-testid="chat-drawer-main"]`。
-- X 打开/关闭抽屉时会**整块替换根节点**，挂在旧根上的观察器会失效。`watchGrokDrawer()` 在
-  document 捕获阶段监听入口点击，点击后 300ms/1500ms 重新 `ensureGrokObserver()` 并扫描；
-  抽屉根上的 MutationObserver 负责之后的流式内容（200ms 防抖）。
+  `[data-testid="chat-drawer-main"]`。帖子头部的 Grok 总结入口**没有 testid**，`aria-label`
+  随界面语言变化（中文「Grok 操作」），不能靠它做点击重挂。
+- X 打开/关闭抽屉时会**替换根节点和它上面两层包装**，挂在旧根上的观察器会失效；但 `#layers`
+  的直接子层（`drawer.closest('#layers > div')`，含 Grok、聊天、BottomBar 三个抽屉层）保持不变。
+  `ensureGrokObserver()` 观察这一层（`childList + subtree`，200ms 防抖）接住根节点替换和流式内容。
+  开合瞬间抽屉会短暂缺席，`grokLayer()` 此时沿用仍 `isConnected` 的旧层，否则移除变更触发的扫描
+  会把观察器断掉、抽屉回来后停在深色。
 - `markGrokSurfaces()` 复用 `scanPaperSurfaces()` 标记深色面板/输入卡，再用
   `nearestPaperBackground()` 只翻转最近底色为纸面或深底的文字/图标；用户消息的彩色气泡
-  （例如蓝色气泡）里的白字和白图标保持原样。图标标记为 `data-xmp-paper-icon`。
+  （例如蓝色气泡）里的白字和白图标保持原样。图标标记为 `data-xmp-paper-icon`。文字选择器额外
+  包含不带 `dir` 的纯 `div`（引用帖卡片的作者名是裸 `div`，默认 `div[dir]` 会漏标留下白字）。
 - Grok 抽屉的深色面板是 `[data-testid="GrokDrawer"]` 的第一个 div（无边框，标
   `data-xmp-paper-chip`）；输入卡是 376×104、`border-radius:24px`、1px 边框的 div（标
   `data-xmp-paper-surface`）；编辑器是 `div[role="textbox"][aria-label="Ask anything"]`。

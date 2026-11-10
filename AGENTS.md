@@ -26,7 +26,7 @@
   无头像框线、引用帖媒体折叠、帖子时间显示具体时刻、通知/Toast 纸面化、左轨点击展开、
   图片悬浮原图预览、详情页/文章页表面纸面化、探索/搜索共用宽版面（右栏隐藏、左轨发帖入口
   收成 FAB）、通知页共用宽版面（右栏隐藏、FAB、缩略图折叠为「🖼️ 图片」）、评论按钮打开
-  页面内纸面弹窗、Grok 抽屉纸面化。不要按旧设计回退（尤其不要把左轨改回 hover/focus-within
+  页面内纸面弹窗、Grok 抽屉与帖子 Grok 总结面板纸面化。不要按旧设计回退（尤其不要把左轨改回 hover/focus-within
   自动展开）。
 
 ## 工作方式
@@ -58,7 +58,7 @@
    探索/搜索（宽版面）、通知（宽版面、缩略图折叠、SPA 进入与返回首页）；单图、网格、轮播、视频、
    引用帖、引用卡片、混合媒体；hover、focus、
    媒体折叠/展开；
-   Grok 抽屉打开/关闭/输入卡；评论弹窗打开/关闭、首页滚动位置、正文跳转仍进入状态页；
+   Grok 抽屉打开/关闭/输入卡、帖子 Grok 总结入口（头部无 testid 按钮）与收起重开；评论弹窗打开/关闭、首页滚动位置、正文跳转仍进入状态页；
    评论点赞/取消（空心→暖橙实心）、资料卡、弹窗内回复输入框、嵌套楼层连接线/圆角终点、
    非评论内容过滤。
 6. **边界**：999/1000px 是版面分界；1000px 应用轨道/680 列/媒体按钮，999px 只应用主题。
@@ -285,14 +285,20 @@
 ### Grok 抽屉
 
 - Grok 抽屉在 `body` 末尾、`primaryColumn` 外；根节点是 `[data-testid="GrokDrawer"]`，
-  打开/关闭时会**整块替换根节点**，挂在旧根上的 MutationObserver 会失效。入口按钮是
-  `[data-testid="GrokDrawerHeader"]`（也匹配 `[aria-label="Grok"]`），在 document 捕获阶段
-  监听点击，点击后 300ms/1500ms 重新挂观察器并扫描。
+  打开/关闭时会**替换根节点和它上面两层包装**，挂在旧根上的 MutationObserver 会失效。但
+  `#layers` 的直接子层（`drawer.closest('#layers > div')`，含 Grok/聊天/BottomBar 三个抽屉层）
+  保持不变，`ensureGrokObserver()` 观察这一层接住替换和流式内容。不要在 `body` 上挂全量观察器。
+- 帖子头部的 Grok 总结入口**没有 testid**、`aria-label` 随界面语言变化（中文「Grok 操作」），
+  不能靠点击入口的 `aria-label` 重挂观察器（旧 `watchGrokDrawer` 只认 `[aria-label="Grok"]`，
+  从帖子打开时漏挂，面板停在深色）。
+- 开合瞬间 `GrokDrawer` 会**短暂缺席**：移除变更触发的扫描若发现抽屉不在就断开观察器，抽屉回来
+  后没人重挂。`grokLayer()` 在抽屉缺席时沿用仍 `isConnected` 的旧层，避免观察器被自己的扫描断掉。
 - 抽屉的深色面板和输入卡按计算样式标记（复用 `scanPaperSurfaces`）；文字/图标只翻**最近底色**
   是纸面或深底的，用户消息的彩色气泡里的白字/白图标保持原样（`nearestPaperBackground`）。
   标记属性是 `data-xmp-paper-surface/chip/text/icon`，图标属性新增 `data-xmp-paper-icon`。
-- 抽屉内容流式更新由 `[data-testid="GrokDrawer"]` 子树的 MutationObserver 防抖重扫；关闭/重开
-  由点击后的延迟重挂兜底。不要在 `body` 上挂全量观察器。
+- 引用帖卡片的作者名是**不带 `dir` 的纯 `div`**，默认 `SURFACE_TEXT_SELECTOR` 的 `div[dir]`
+  漏标会在纸面上留下白字；`markGrokSurfaces()` 传入了包含裸 `div` 的选择器。改 `markPaperText`
+  时保持默认选择器不变，避免影响探索/搜索的无 boundary 调用。
 
 ### 评论弹窗
 

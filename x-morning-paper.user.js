@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.8.0
+// @version      0.8.1
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -2187,7 +2187,6 @@
   let grokObserver = null;
   let grokTimer = null;
   let grokRoot = null;
-  let grokClickBound = false;
   let commentsModal = null;
   let commentsAbort = null;
   let commentsReturnFocus = null;
@@ -2786,8 +2785,8 @@
 
   // 只处理带直接文字的元素：品牌色（党派色、比分绿勾）不在浅色阈值内，保持原样。
   // 传入 boundary 时跳过落在彩色（非纸面/非深底）气泡里的浅色文字。
-  function markPaperText(root, boundary) {
-    for (const node of root.querySelectorAll(SURFACE_TEXT_SELECTOR)) {
+  function markPaperText(root, boundary, selector = SURFACE_TEXT_SELECTOR) {
+    for (const node of root.querySelectorAll(selector)) {
       if (node.closest('[role="dialog"]')) continue;
       if (node.closest('img, [style*="background-image"], [data-testid="tweetPhoto"], [data-testid="previewInterstitial"]')) continue;
       let hasOwnText = false;
@@ -2866,7 +2865,8 @@
     const drawer = document.querySelector('[data-testid="GrokDrawer"]');
     if (!drawer) return;
     scanPaperSurfaces(drawer, 40);
-    markPaperText(drawer, drawer);
+    // 引用帖卡片的作者名是不带 dir 的纯 div，默认选择器只覆盖 div[dir]，会留下纸面上的白字。
+    markPaperText(drawer, drawer, 'span, p, div, h1, h2, h3, a');
     for (const icon of drawer.querySelectorAll('svg')) {
       const bg = nearestPaperBackground(icon, drawer);
       if (bg && !bg.paper && !bg.dark) continue;
@@ -2962,10 +2962,22 @@
     }, 200);
   }
 
+  // X 打开抽屉时会替换 GrokDrawer 根节点和它上面两层包装，挂在根上的观察器随之失效；
+  // #layers 的直接子层（Grok、聊天、BottomBar 三个抽屉层）保持不变，观察它才能接住根节点替换。
+  // 帖子头部的 Grok 入口没有 testid、aria-label 随界面语言变化，不能靠点击入口重挂。
+  // 开合瞬间抽屉会短暂缺席，此时沿用仍挂在文档上的层：否则移除变更触发的扫描会把观察器断掉，
+  // 抽屉回来后没人重挂，面板停在深色。
+  function grokLayer() {
+    const drawer = document.querySelector('[data-testid="GrokDrawer"]');
+    const layer = drawer && drawer.closest('#layers > div');
+    if (layer) return layer;
+    return grokRoot && grokRoot.isConnected ? grokRoot : null;
+  }
+
   function ensureGrokObserver() {
     if (!enabled) return;
-    const drawer = document.querySelector('[data-testid="GrokDrawer"]');
-    if (!drawer) {
+    const layer = grokLayer();
+    if (!layer) {
       if (grokObserver) {
         grokObserver.disconnect();
         grokObserver = null;
@@ -2973,32 +2985,12 @@
       }
       return;
     }
-    if (grokObserver && grokRoot === drawer) return;
+    if (grokObserver && grokRoot === layer) return;
     if (grokObserver) grokObserver.disconnect();
-    grokRoot = drawer;
+    grokRoot = layer;
     grokObserver = new MutationObserver(scheduleGrokScan);
-    grokObserver.observe(drawer, { childList: true, subtree: true });
+    grokObserver.observe(layer, { childList: true, subtree: true });
     scheduleGrokScan();
-  }
-
-  // X 打开/关闭 Grok 抽屉时会整块替换 GrokDrawer 根节点，原来挂在根上的观察器会失效。
-  // 在 Grok 入口点击后延迟重挂并扫描一次，之后由新根上的观察器接管流式内容。
-  function watchGrokDrawer() {
-    if (grokClickBound) return;
-    grokClickBound = true;
-    const sync = () => {
-      if (!enabled) return;
-      safe('grok', () => {
-        ensureGrokObserver();
-        scheduleGrokScan();
-      });
-    };
-    document.addEventListener('click', event => {
-      const target = event.target instanceof Element ? event.target : null;
-      if (!target || !target.closest('[data-testid="GrokDrawerHeader"], [aria-label="Grok"]')) return;
-      window.setTimeout(sync, 300);
-      window.setTimeout(sync, 1500);
-    }, true);
   }
 
   // 探索/搜索只做换肤不做版面：进入这两页起表面观察器，离开时停掉并清标记（DOM 复用时不留纸面样式）。
@@ -5055,7 +5047,6 @@
     watchComments();
     document.documentElement.dataset.xmpEnabled = '1';
     injectStyles();
-    watchGrokDrawer();
     if (typeof widthQuery.addEventListener === 'function') {
       widthQuery.addEventListener('change', handleWidthChange);
     }
