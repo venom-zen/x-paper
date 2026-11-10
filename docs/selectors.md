@@ -85,7 +85,7 @@
 | 通知缩略图 | 通知行尾部 64px 内联 `background-image`（`pbs.twimg.com`，`name=120x120`） | 没有 `tweetPhoto` 标记；按尺寸和地址打 `data-xmp-notification-thumb` |
 | 图片 / 视频预览 | `[data-testid="tweetPhoto"]` / `[data-testid="previewInterstitial"]` | 媒体收集目标 |
 | 链接卡片 | `[data-testid="card.wrapper"]` | 卡片内媒体不折叠 |
-| 推广单元格 | `[data-testid="placementTracking"]` | 首页和详情/文章页 `cellInnerDiv:has(...)` 隐藏；详情页的推广回复用同一标记 |
+| 推广单元格 | 包住帖子的 `[data-testid="placementTracking"]`（在 `[data-testid="tweet"]` 之外） | 首页和详情/文章页 `cellInnerDiv:has(...)` 隐藏；视频播放器的 `placementTracking` 在 `tweetPhoto` 内、帖子之内，不算推广 |
 | 推荐关注 | `[data-testid="UserCell"]` | 首页隐藏；搜索/通知页保持可见 |
 | 操作组 | `[role="group"]` | 媒体块祖先不得包含它；图标 16px、计数 13px |
 | 搜索框 / 趋势 | `SearchBox_Search_Input` / `trend` | 其他页面主题表面；探索/搜索页的搜索框外壳由 `markSearchChrome()` 按圆角 + 边框标记 |
@@ -275,7 +275,9 @@
 - SPA 切换：X 会在 `pushState` 之后整块替换 `primaryColumn`，路由回调体检到的是旧节点，内层
   600px 容器标记和 primary 观察器都会失效（通知页正文停在 600px、时间不再刷新）。`syncTimelineRoute()`
   在 1.2s 刷新时按当前 primary 重新 `checkSelectorHealth()`、重挂观察器并扫描。
-- 降噪：`placementTracking` 单元格在 home/status/notifications 隐藏；`UserCell`（推荐关注）
+- 降噪：包住帖子的 `placementTracking` 外壳在 home/status/notifications 隐藏；`placementTracking`
+  也是视频播放器的通用可见性容器（播放开始后出现在 `tweetPhoto` 内），匹配时必须排除
+  `[data-testid="tweet"]` 内的实例，否则整条帖子会被当成推广隐藏。`UserCell`（推荐关注）
   只在首页隐藏，通知页保持可见。
 - 主题：通知行沿用全局墨色/纸面规则；通知类型图标保留 X 自己的颜色（紫、蓝等品牌色），
   时间与预览文本使用 X 的内联次要色。

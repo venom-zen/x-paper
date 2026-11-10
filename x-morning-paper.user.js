@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.8.1
+// @version      0.8.2
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -1398,7 +1398,9 @@
   `;
 
   const NOISE_CSS = `
-    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="notifications"]) [data-testid="cellInnerDiv"]:has([data-testid="placementTracking"]),
+    /* placementTracking 也是 X 的通用可见性容器：视频播放器就包在里面，位于 tweetPhoto 内。
+       只有包住整条帖子的推广外壳（在 tweet 之外）才隐藏。 */
+    html[data-xmp-enabled="1"]:not([data-xmp-degraded]):is([data-xmp-route="home"], [data-xmp-route="status"], [data-xmp-route="notifications"]) [data-testid="cellInnerDiv"]:has([data-testid="placementTracking"]:not([data-testid="tweet"] *)),
     html[data-xmp-enabled="1"]:not([data-xmp-degraded])[data-xmp-route="home"] [data-testid="cellInnerDiv"]:has([data-testid="UserCell"]) {
       display: none !important;
     }

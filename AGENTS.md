@@ -137,8 +137,10 @@
   `-follow`/`-unfollow` 后代，否则按钮文字会被改回墨色。
 - 已认证徽章 `[data-testid="icon-verified"]` 保持 X 原本的蓝色，不要随强调色染色。
 - 强调色 token 从 `--xmp-pine*` 更名为 `--xmp-accent*`（暖橙 `#B4531F`），改名后所有引用与文档同步。
-- 详情页/文章页的推广回复和首页推广帖用同一个标记（`cellInnerDiv` 内含
-  `[data-testid="placementTracking"]`），`NOISE_CSS` 的推广规则要覆盖 home 和 status 两个路由；
+- 详情页/文章页的推广回复和首页推广帖的外壳在 `cellInnerDiv` 内、帖子之外（`placementTracking`
+  包住 `[data-testid="tweet"]`），`NOISE_CSS` 的推广规则要覆盖 home 和 status 两个路由。
+  `placementTracking` 同时是视频播放器的通用可见性容器：播放开始后出现在 `tweetPhoto` 内并
+  包住 `videoPlayer`，必须排除 `[data-testid="tweet"]` 内的实例，否则播放视频会让整条帖子消失。
   推荐关注（`UserCell`）只在首页隐藏，搜索/通知页的用户列表保持可见。
 
 ### 主题与排版
