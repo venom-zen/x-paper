@@ -453,6 +453,19 @@
   调整 `markNotificationThumbs()` 的尺寸/地址阈值。预览用 `name=orig` 变体，其他 CDN 保持原样。
 - X 的 A/B 布局、实验性卡片和生成 class 会继续变化；`docs/selectors.md` 是维护入口。
 
+## 发版
+
+- 版本号在 userscript 头部的 `@version`，Greasy Fork 以它作为发布版本：修复递增补丁位
+  （0.8.0 → 0.8.1），功能递增次版本位（0.7.9 → 0.8.0）。commit 信息用 `feat:` / `fix:` 前缀。
+- Greasy Fork 已配置从 GitHub 自动同步：脚本页 → Admin → Source Syncing 指向
+  `https://raw.githubusercontent.com/venom-zen/x-paper/main/x-morning-paper.user.js`，方式为
+  Automatic，约每小时检查一次。同步只取代码；脚本页的 Additional info 不随同步更新。
+- push 到 `main` 且 `x-morning-paper.user.js` 有变化时，Greasy Fork 按文件里的 `@version`
+  发布新版本。只改 README / docs / AGENTS 不影响同步，因为同步 URL 只指向 userscript 文件；
+  改了脚本却不递增 `@version` 时无法作为新版本发布。
+- 需要 push 后立即发布时，在仓库 Settings → Webhooks 配置 Greasy Fork 提供的 webhook
+  （见 Admin 页 Source Syncing 区的说明）。
+
 ## 提交前检查
 
 - [ ] `node --check x-morning-paper.user.js`
@@ -461,6 +474,7 @@
 - [ ] 通知页检查 SPA 进入（从首页点通知）和返回首页：`data-xmp-inner-timeline` 存在、正文列
       与 cell 同宽、时间已格式化
 - [ ] `impeccable detect --json x-morning-paper.user.js` 无新增发现
+- [ ] `@version` 已按本轮类型递增（fix → 补丁位，feat → 次版本位）
 - [ ] README、`docs/selectors.md`、截图与当前行为一致
 - [ ] 无旧插件名、调试截图、临时文件、cookie 或会话数据进入 diff
 - [ ] commit 信息只覆盖本轮改动
