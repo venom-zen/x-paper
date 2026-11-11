@@ -354,6 +354,20 @@
     资料卡还用 `profile_bio.description`、`location.location`、`relationship_counts`。
   - 正文：`note_tweet.note_tweet_results.result.text` 优先，否则 `legacy.full_text`；
     媒体：`legacy.extended_entities.media`；查看数：`views.count`；时间：`legacy.created_at`。
+- 自动翻译：`legacy.lang` 不是 `en`/`zh`、不等于 `html[lang]` 主标签且
+  `is_translatable !== false` 的帖子和评论，在原文下方显示译文。
+  - 优先用 `grok_translated_post_with_availability.data.translation`（`is_available` 且
+    `destination_language` 与目标一致；与原文相同或仍含较高比例假名/汉字时视为未翻译），
+    否则 POST `https://api.x.com/2/grok/translation.json`，body
+    `{"content_type":"POST","id":"<rest_id>","dst_lang":"<zh|en|…>"}`。
+  - 头部同 TweetDetail，另加 `x-client-transaction-id`（path 为
+    `/2/grok/translation.json`），`content-type: text/plain;charset=UTF-8`，
+    `credentials: 'include'`。
+  - 响应是逐行 JSON：拼接每行 `result.text`；只含 `entities` 的行没有文本。
+  - 并发 4，按 `id|dst_lang` 缓存，弹窗关闭时随 AbortController 取消；失败静默保留原文。
+  - 译文块包含标签行（`翻译自 日语` + 切换按钮）和译文，默认只显示译文；原文放在
+    `.xmp-comments-original-quote.is-translation-hidden` 中隐藏。点「显示原文」在译文下方
+    以左侧引用竖线展开原文，按钮变「收起原文」；再点收起。译文块替换原文的位置，媒体仍在后面。
 - 过滤与层级：
   - 只保留 `focal` 之后、`legacy.conversation_id_str === focal.conversation_id_str` 的推文，
     并跳过 `promotedMetadata`/`legacy.promoted`。X 会在对话模块里混入其他帖子，不能全当评论。

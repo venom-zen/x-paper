@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.8.3
+// @version      0.8.4
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -163,6 +163,9 @@
       commentsTitle: count => count > 0 ? `评论 · ${count}` : '评论',
       comments: '评论',
       originalPost: '原帖',
+      translatedFrom: language => `翻译自 ${language}`,
+      showOriginal: '显示原文',
+      hideOriginal: '收起原文',
       noComments: '暂无评论',
       firstPage: '仅显示首屏评论',
       commentsLoadFailed: '评论加载失败，可能是 X 接口已更新。',
@@ -238,6 +241,9 @@
       commentsTitle: count => count > 0 ? `Comments · ${count}` : 'Comments',
       comments: 'Comments',
       originalPost: 'Original post',
+      translatedFrom: language => `Translated from ${language}`,
+      showOriginal: 'Show original',
+      hideOriginal: 'Hide original',
       noComments: 'No comments yet',
       firstPage: 'Showing the first page of comments',
       commentsLoadFailed: "Couldn't load comments. X may have updated its API.",
@@ -1820,6 +1826,60 @@
       text-decoration: underline;
     }
 
+    .xmp-comments-translation {
+      margin-top: 4px;
+      padding: 0 0 2px;
+      color: var(--xmp-ink);
+      font-size: 14px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+    }
+
+    .xmp-comments-original-quote {
+      margin-top: 8px;
+      padding-left: 10px;
+      border-left: 2px solid var(--xmp-hairline);
+      font-size: 15px;
+      line-height: 1.65;
+    }
+
+    .xmp-comments-original-quote .xmp-comments-text {
+      margin-top: 0;
+    }
+
+    .xmp-comments-translation-head {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 2px;
+    }
+
+    .xmp-comments-translation-label {
+      color: var(--xmp-ink-secondary);
+      font-size: 11px;
+      line-height: 1.4;
+    }
+
+    .xmp-comments-translation-toggle {
+      border: 0;
+      background: none;
+      padding: 0;
+      color: var(--xmp-accent);
+      font: inherit;
+      font-size: 11px;
+      line-height: 1.4;
+      cursor: pointer;
+    }
+
+    .xmp-comments-translation-toggle:hover {
+      text-decoration: underline;
+    }
+
+    .xmp-comments-original-quote.is-translation-hidden {
+      display: none;
+    }
+
     .xmp-comments-media {
       display: grid;
       gap: 4px;
@@ -2215,6 +2275,11 @@
   let commentsComposer = null;
   let commentsTweetId = null;
   let commentsHref = null;
+  const TRANSLATION_CONCURRENCY = 4;
+  const translationCache = new Map();
+  const translationRequests = new Map();
+  const translationQueue = [];
+  let activeTranslations = 0;
   let profileShowTimer = null;
   let profileHideTimer = null;
   const warned = new Set();
@@ -3938,6 +4003,166 @@
     return tweet.note_tweet?.note_tweet_results?.result?.entity_set || tweet.legacy?.entities || {};
   }
 
+  // X 的自动翻译走 Grok：POST https://api.x.com/2/grok/translation.json，
+  // 响应是按行返回的 JSON 流，每行 result.text 是一段译文；事务头与 GraphQL 写入共用生成器。
+  function translationDestination() {
+    return (document.documentElement.lang || 'en').split('-')[0].toLowerCase();
+  }
+
+  function translationLanguageName(code) {
+    try {
+      return new Intl.DisplayNames([document.documentElement.lang || 'en'], { type: 'language' }).of(code) || code;
+    } catch (error) {
+      return code;
+    }
+  }
+
+  // 预取译文偶尔仍是原文（例如日语假名还在）；按假名/汉字比例判断是否真的翻译过。
+  function looksUntranslated(text, destination) {
+    const sample = String(text || '').trim();
+    if (!sample) return true;
+    if (destination === 'zh') {
+      const kana = (sample.match(/[぀-ヿ]/g) || []).length;
+      return kana > Math.max(6, sample.length * 0.15);
+    }
+    if (destination === 'en') {
+      const cjk = (sample.match(/[぀-ヿ㐀-鿿]/g) || []).length;
+      return cjk > Math.max(6, sample.length * 0.15);
+    }
+    return false;
+  }
+
+  // X 只为非中英文内容自动翻译；目的地跟随 X 界面语言（与注入文案的语言来源一致）。
+  function commentTranslation(tweet) {
+    const lang = (tweet.legacy?.lang || '').toLowerCase();
+    const destination = translationDestination();
+    if (!lang || lang === destination || lang === 'en' || lang === 'zh') return null;
+    if (tweet.is_translatable === false) return null;
+    const original = commentText(tweet).trim();
+    if (!original) return null;
+    const prefetched = tweet.grok_translated_post_with_availability;
+    const prefetchedText = prefetched?.data?.translation || '';
+    // Grok 偶尔把原文当译文返回，目标语言一致但内容没变；这种不直接用，改走请求。
+    if (prefetched?.is_available && prefetchedText &&
+        prefetched.data?.destination_language === destination &&
+        prefetchedText.replace(/\s+/g, '') !== original.replace(/\s+/g, '') &&
+        !looksUntranslated(prefetchedText, destination)) {
+      return {
+        text: prefetchedText,
+        source: prefetched.data.source_language || lang,
+        destination,
+      };
+    }
+    return { text: null, source: lang, destination };
+  }
+
+  function drainTranslationQueue() {
+    while (activeTranslations < TRANSLATION_CONCURRENCY && translationQueue.length > 0) {
+      const { task, signal, resolve, reject } = translationQueue.shift();
+      if (signal?.aborted) {
+        reject(new Error('aborted'));
+        continue;
+      }
+      activeTranslations += 1;
+      task()
+        .then(resolve, reject)
+        .finally(() => {
+          activeTranslations -= 1;
+          drainTranslationQueue();
+        });
+    }
+  }
+
+  function runTranslationTask(task, signal) {
+    return new Promise((resolve, reject) => {
+      translationQueue.push({ task, signal, resolve, reject });
+      drainTranslationQueue();
+    });
+  }
+
+  function requestTranslation(tweet, signal) {
+    const id = tweet.rest_id;
+    const destination = translationDestination();
+    const key = `${id}|${destination}`;
+    if (translationCache.has(key)) return Promise.resolve(translationCache.get(key));
+    if (translationRequests.has(key)) return translationRequests.get(key);
+    const request = runTranslationTask(async () => {
+      const path = '/2/grok/translation.json';
+      const headers = tweetDetailHeaders();
+      headers['content-type'] = 'text/plain;charset=UTF-8';
+      try {
+        headers['x-client-transaction-id'] = await generateClientTransactionId('POST', path);
+      } catch (error) {
+        warnOnce('translation-transaction', `翻译事务头生成失败：${error}`);
+      }
+      const response = await fetch(`https://api.x.com${path}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({ content_type: 'POST', id, dst_lang: destination }),
+        signal,
+      });
+      if (!response.ok) throw new Error(`translate HTTP ${response.status}`);
+      const raw = await response.text();
+      let text = '';
+      for (const line of raw.split('\n')) {
+        if (!line.trim()) continue;
+        try {
+          const part = JSON.parse(line);
+          if (part?.result?.text) text += part.result.text;
+        } catch (error) {}
+      }
+      if (!text.trim()) throw new Error('empty translation');
+      const value = {
+        text,
+        source: (tweet.legacy?.lang || '').toLowerCase(),
+        destination,
+      };
+      translationCache.set(key, value);
+      return value;
+    }, signal);
+    translationRequests.set(key, request);
+    return request.finally(() => translationRequests.delete(key));
+  }
+
+  function appendCommentTranslation(textElement, tweet) {
+    const info = commentTranslation(tweet);
+    if (!info) return;
+    const render = translated => {
+      // 行在 renderComment 里构建完才挂到弹窗上，构建期间 isConnected 仍是 false；
+      // 用 parentNode 判断行是否已被丢弃即可。
+      if (!textElement.parentNode) return;
+      if (looksUntranslated(translated.text, translated.destination)) return;
+      const block = commentsEl('div', 'xmp-comments-translation');
+      const head = commentsEl('div', 'xmp-comments-translation-head');
+      head.appendChild(commentsEl('span', 'xmp-comments-translation-label',
+        STR.translatedFrom(translationLanguageName(translated.source))));
+      const toggle = commentsEl('button', 'xmp-comments-translation-toggle', STR.showOriginal);
+      toggle.type = 'button';
+      const body = commentsEl('div', 'xmp-comments-translation-body', translated.text);
+      body.lang = translated.destination;
+      const original = commentsEl('div', 'xmp-comments-original-quote is-translation-hidden');
+      // 默认只显示译文；展开后在译文下方以引用竖线显示原文。
+      toggle.addEventListener('click', () => {
+        const hidden = original.classList.contains('is-translation-hidden');
+        original.classList.toggle('is-translation-hidden', !hidden);
+        toggle.textContent = hidden ? STR.hideOriginal : STR.showOriginal;
+      });
+      head.appendChild(toggle);
+      textElement.before(block);
+      original.appendChild(textElement);
+      block.append(head, body, original);
+    };
+    if (info.text) {
+      render(info);
+      return;
+    }
+    const signal = commentsAbort?.signal;
+    requestTranslation(tweet, signal).then(render).catch(error => {
+      if (error?.name !== 'AbortError') warnOnce('translation', `评论翻译失败：${error.message || error}`);
+    });
+  }
+
   function commentThumbnail(url) {
     if (!url) return '';
     try {
@@ -4618,7 +4843,10 @@
 
     const text = commentsEl('div', 'xmp-comments-text');
     appendCommentText(text, tweet);
-    if (text.textContent.trim() || text.children.length > 0) main.appendChild(text);
+    if (text.textContent.trim() || text.children.length > 0) {
+      main.appendChild(text);
+      appendCommentTranslation(text, tweet);
+    }
     appendCommentMedia(main, tweet);
 
     const stats = [];

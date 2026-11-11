@@ -11,11 +11,13 @@
 - 入口：`x-morning-paper.user.js`。文档：`README.md`、`docs/selectors.md`。测试：
   `test/fixture.html`。截图：`screenshots/`。
 - 只使用 `GM_addStyle`，不保存任何开关或设置；脚本安装即启用。网络请求只有：
-  评论弹窗的 `TweetDetail` 读取，用户主动点击评论弹窗「喜欢」时的 `FavoriteTweet` /
-  `UnfavoriteTweet`，用户主动提交回复时的 `CreateTweet`，以及首次回复时读取 X 的公开
-  `/i/jf/` app shell 和 `abs.twimg.com` 上的 `ondemand.s`（生成 `x-client-transaction-id`；
-  `/i/jf/` 使用 `credentials: omit`）。CreateTweet 使用当前浏览器会话（`ct0` cookie）和
-  X Web 的公开 bearer；不发布其他内容，不关注、不私信、不修改其他账号状态。
+  评论弹窗的 `TweetDetail` 读取，评论弹窗对非中英文帖子和评论的 Grok 翻译
+  （`POST https://api.x.com/2/grok/translation.json`），用户主动点击评论弹窗「喜欢」时的
+  `FavoriteTweet` / `UnfavoriteTweet`，用户主动提交回复时的 `CreateTweet`，以及首次回复或
+  翻译时读取 X 的公开 `/i/jf/` app shell 和 `abs.twimg.com` 上的 `ondemand.s`（生成
+  `x-client-transaction-id`；`/i/jf/` 使用 `credentials: omit`）。写入类请求和翻译都使用
+  当前浏览器会话（`ct0` cookie）和 X Web 的公开 bearer；不发布其他内容，不关注、不私信、
+  不修改其他账号状态。
 - 注入的界面文案（轨道按钮、媒体按钮、原图预览、评论弹窗、资料卡、错误提示）和时间/计数格式
   跟随 X 的界面语言（`html[lang]`，回退 `navigator.language`）：`zh*` 用 `TEXT.zh`，其余用
   `TEXT.en`。X 自身的界面仍由 X 本地化；脚本不保存语言设置。新增可见文案必须同时补两个语言
@@ -344,6 +346,22 @@
   `border-bottom-left-radius: 8px` 在头像中心圆角转弯并停止，不能延伸到最后一个头像下方；
   每条非原帖评论显示回复对象（中文「回复 @parentHandle」，英文「Reply to @parentHandle」）。
   不要退回扁平列表。
+- **自动翻译**：`legacy.lang` 不是 `en`/`zh`、也不等于 X 界面语言（`html[lang]` 主标签）且
+  `is_translatable !== false` 的帖子和评论，默认只显示 Grok 译文。`TweetDetail` 已返回
+  `grok_translated_post_with_availability.data.translation` 且 `destination_language` 与目标
+  一致时直接使用（预取译文与原文相同，或译文仍含较高比例假名/汉字时，视为未翻译，
+  改走请求；请求结果仍像原文则不显示译文块）；否则异步 POST
+  `https://api.x.com/2/grok/translation.json`，body
+  `{content_type:'POST', id, dst_lang}`，把响应逐行的 `result.text` 拼成译文。头部与
+  CreateTweet 共用 `tweetDetailHeaders()` 和 `x-client-transaction-id`（path 为
+  `/2/grok/translation.json`），Content-Type 用 `text/plain;charset=UTF-8`。并发 4，按
+  `id|dst_lang` 缓存，弹窗关闭时随 AbortController 取消；失败静默保留原文。
+  译文块包含标签行（`翻译自 日语` + 切换按钮）和译文，默认只显示译文；原文放在
+  `.xmp-comments-original-quote.is-translation-hidden` 中隐藏。点「显示原文」在译文下方
+  以左侧引用竖线展开原文，按钮变「收起原文」；再点收起。译文块替换原文的位置，媒体仍在后面；
+  标签用 `Intl.DisplayNames` 显示来源语言。
+  行在 `renderComment` 构建期间尚未 connected，预取译文同步渲染必须用 `parentNode` 判断，
+  用 `isConnected` 会永远不显示。
 - 互动：
   - 点赞/取消点赞：`FavoriteTweet`（`lI07N6Otwv1PhnEgXILM7A`）/
     `UnfavoriteTweet`（`ZYKSe-w7KEslx3JhSIk5LA`），POST body
@@ -453,6 +471,10 @@
 - 回复依赖 `x-client-transaction-id` 生成器（`/i/jf/` + `ondemand.s` + `loading-x-anim`）。
   X 改版导致 key/indices/动画帧结构变化时，生成器会失效并在输入框显示「生成 X 写入校验头
   失败」；如果生成的头仍被 X 拒绝，可能再次出现 344。需要更新生成器，或临时改用 X 原生 composer。
+- 评论弹窗的翻译依赖 Grok 接口 `api.x.com/2/grok/translation.json`、`x-client-transaction-id`
+  和当前请求体（`content_type`/`id`/`dst_lang`）；X 改版后可能失败，脚本会静默保留原文。
+  只翻译中英文以外的内容，目标语言取 `html[lang]` 的主标签；原文和译文同时显示，且只处理
+  首屏评论。
 - 评论层级按 `in_reply_to_status_id_str` 建树；父评论不在首屏的回复直接丢弃（推荐/旁支）。
   对话里混入的推荐/广告帖按 conversation id 过滤；X 若改变 conversation 字段，需要补过滤规则。
 - Grok 抽屉的对话气泡按最近底色翻色；如果 X 给消息加新的彩色表面，白字/白图标会按“彩色气泡”
