@@ -2,7 +2,7 @@
 // @name         x-paper
 // @name:zh-CN   x-paper（X 纸面版）
 // @namespace    x-paper
-// @version      0.8.2
+// @version      0.8.3
 // @description  A quiet paper layout for X: icon rail, wide reading column, emoji media controls
 // @description:zh-CN  把 X 改成安静纸面版面：图标轨、宽阅读列、媒体折叠与悬停原图预览
 // @author       venom
@@ -130,6 +130,7 @@
       previewVideoCovers: count => count > 1 ? `${count} 个视频封面` : '视频封面',
       previewOriginals: count => count > 1 ? `${count} 张 · 原图` : '原图',
       previewIndex: (index, count) => `第 ${index} / ${count} 张 · 原图`,
+      previewAvatar: '头像',
       unknownUser: '未知用户',
       videoBadge: '视频',
       followers: (count, text) => `${text} 关注者`,
@@ -204,6 +205,7 @@
       previewVideoCovers: count => count > 1 ? `${count} video covers` : 'Video cover',
       previewOriginals: count => count > 1 ? `${count} images · originals` : 'Original',
       previewIndex: (index, count) => `${index} / ${count} · Original`,
+      previewAvatar: 'Avatar',
       unknownUser: 'Unknown user',
       videoBadge: 'Video',
       followers: (count, text) => `${text} ${Number(count) === 1 ? 'Follower' : 'Followers'}`,
@@ -843,7 +845,7 @@
       color: var(--xmp-accent) !important;
     }
 
-    html[data-xmp-enabled="1"] [data-testid="HoverCard"] svg {
+    html[data-xmp-enabled="1"] [data-testid="HoverCard"] svg:not([data-testid="icon-verified"]) {
       color: var(--xmp-ink-secondary) !important;
       fill: var(--xmp-ink-secondary) !important;
     }
@@ -1542,6 +1544,18 @@
       line-height: 1.4;
       color: var(--xmp-ink-secondary);
     }
+
+    /* 头像预览：圆形大图；评论弹窗（2000）和资料卡（2100）之上也能显示。 */
+    html[data-xmp-enabled="1"] .xmp-photo-preview[data-xmp-preview-kind="avatar"] {
+      z-index: 2300;
+    }
+
+    html[data-xmp-enabled="1"] .xmp-photo-preview[data-xmp-preview-kind="avatar"] img {
+      width: min(320px, 60vw);
+      height: min(320px, 60vw);
+      border-radius: 9999px;
+      object-fit: cover;
+    }
   `;
 
   const COMMENTS_CSS = `
@@ -2110,9 +2124,13 @@
     }
 
     .xmp-comments-profile-verified {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
       margin-left: 4px;
+      vertical-align: -3px;
       color: #1D9BF0;
-      font-size: 13px;
+      fill: #1D9BF0;
     }
 
     .xmp-comments-profile-handle {
@@ -3602,6 +3620,9 @@
   }
 
   const PHOTO_SELECTOR = '[data-testid="tweetPhoto"], [data-xmp-notification-thumb]';
+  // 只有资料卡片里的头像预览大图：X 原生悬浮卡和脚本的评论资料卡。
+  const AVATAR_PREVIEW_SCOPE = '[data-testid="HoverCard"] [data-testid^="UserAvatar-Container-"], .xmp-comments-profile-avatar';
+  const PREVIEW_OWNER_SELECTOR = '.xmp-media-toggle, [data-testid="tweetPhoto"], [data-xmp-notification-thumb], [data-testid^="UserAvatar-Container-"], .xmp-comments-avatar-button, .xmp-comments-profile-avatar';
   const PREVIEW_SHOW_DELAY = 220;
   const PREVIEW_ORIG_TIMEOUT = 800;
   let previewEl = null;
@@ -3620,12 +3641,14 @@
     return previewEl;
   }
 
-  function photoUrl(photo) {
-    for (const node of photo.querySelectorAll('[style*="background-image"]')) {
-      const match = (node.getAttribute('style') || '').match(/url\((["']?)(.*?)\1\)/);
+  function photoUrl(node) {
+    for (const item of [node, ...node.querySelectorAll('[style*="background-image"]')]) {
+      const style = item.getAttribute('style') || '';
+      if (!style.includes('background-image')) continue;
+      const match = style.match(/url\((["']?)(.*?)\1\)/);
       if (match && match[2]) return match[2];
     }
-    const image = photo.querySelector('img[src]');
+    const image = node.matches('img[src]') ? node : node.querySelector('img[src]');
     return image ? image.currentSrc || image.src : '';
   }
 
@@ -3634,6 +3657,12 @@
     if (!/^https?:\/\/pbs\.twimg\.com\//.test(url)) return url;
     if (/[?&]name=/.test(url)) return url.replace(/([?&]name=)[^&#]*/i, '$1orig');
     return `${url}${url.includes('?') ? '&' : '?'}name=orig`;
+  }
+
+  // 头像走 profile_images：没有 name=orig 变体（404），最大尺寸是 _400x400。
+  function avatarOriginalUrl(url) {
+    if (!/^https?:\/\/pbs\.twimg\.com\/profile_images\//.test(url)) return url;
+    return url.replace(/_[a-z0-9]+(\.[a-z]+)(\?.*)?$/i, '_400x400$1');
   }
 
   // 视频的海报层是包住（或位于）previewInterstitial 的 tweetPhoto。折叠按钮悬停时
@@ -3675,9 +3704,16 @@
 
   // waitForOriginal: 折叠块里只有 120px 缩略图，放大后一片模糊；
   // 等原图解码（或 800ms 超时）再弹出。展开后的图片已有较大尺寸，立即显示再替换原图。
-  function openPreview(key, photos, label, waitForOriginal) {
-    const urls = [...new Set(photos.map(photoUrl).filter(Boolean))];
-    if (!urls.length) return;
+  // toLarge: 大图变体；图片用 name=orig，头像用 _400x400（profile_images 不支持 name=orig）。
+  function openPreview(key, photos, label, waitForOriginal, kind = 'media', toLarge = originalUrl) {
+    const pairs = [];
+    for (const photo of photos) {
+      const thumb = photoUrl(photo);
+      if (!thumb) continue;
+      const large = toLarge(thumb);
+      if (!pairs.some(pair => pair.large === large)) pairs.push({ thumb, large });
+    }
+    if (!pairs.length) return;
     previewKey = key;
     const token = ++previewToken;
     const el = ensurePreview();
@@ -3685,21 +3721,21 @@
       if (token !== previewToken || previewKey !== key) return;
       const body = el.querySelector('.xmp-photo-preview-body');
       body.textContent = '';
-      el.dataset.xmpPreviewCount = urls.length === 1 ? '1' : urls.length <= 4 ? String(urls.length) : 'many';
+      el.dataset.xmpPreviewCount = pairs.length === 1 ? '1' : pairs.length <= 4 ? String(pairs.length) : 'many';
+      el.dataset.xmpPreviewKind = kind;
       el.querySelector('span').textContent = label;
-      for (const url of urls) {
+      for (const { thumb, large } of pairs) {
         const image = document.createElement('img');
         image.alt = '';
-        const orig = originalUrl(url);
-        image.src = previewReady.has(orig) ? orig : url;
+        image.src = previewReady.has(large) ? large : thumb;
         body.appendChild(image);
-        if (orig !== url && !previewReady.has(orig)) {
+        if (large !== thumb && !previewReady.has(large)) {
           const loader = new Image();
           loader.onload = () => {
-            previewReady.add(orig);
-            if (token === previewToken) image.src = orig;
+            previewReady.add(large);
+            if (token === previewToken) image.src = large;
           };
-          loader.src = orig;
+          loader.src = large;
         }
       }
       el.setAttribute('data-xmp-preview-open', '1');
@@ -3708,7 +3744,7 @@
       build();
       return;
     }
-    const pending = [...new Set(urls.map(originalUrl))].filter(url => !previewReady.has(url));
+    const pending = pairs.map(pair => pair.large).filter(url => !previewReady.has(url));
     if (pending.length === 0) {
       build();
       return;
@@ -3753,6 +3789,15 @@
     return toggle && toggle.closest(PRIMARY) ? toggle : null;
   }
 
+  function hoveredAvatar(target) {
+    if (!enabled || degraded || !widthQuery.matches || !(target instanceof Element)) return null;
+    const avatar = target.closest(AVATAR_PREVIEW_SCOPE);
+    if (!avatar || avatar.closest('.xmp-photo-preview')) return null;
+    const box = avatar.getBoundingClientRect();
+    if (box.width < 16 || box.width > 200) return null;
+    return photoUrl(avatar) ? avatar : null;
+  }
+
   function schedulePreview(key, open) {
     if (key === previewKey) return;
     if (previewTimer) window.clearTimeout(previewTimer);
@@ -3776,25 +3821,32 @@
         return;
       }
       const photo = hoveredPhoto(event.target);
-      if (!photo) return;
-      const group = photo.closest('[data-xmp-media-block]') || photo.closest(TWEET) ||
-        photo.closest(NOTIFICATION) || photo.parentElement;
-      const photos = group ? mediaPhotos(group) : [photo];
-      const index = photos.indexOf(photo);
-      const label = photos.length > 1 && index >= 0
-        ? STR.previewIndex(index + 1, photos.length)
-        : STR.previewOriginals(1);
-      schedulePreview(photo, () => openPreview(photo, [photo], label, false));
+      if (photo) {
+        const group = photo.closest('[data-xmp-media-block]') || photo.closest(TWEET) ||
+          photo.closest(NOTIFICATION) || photo.parentElement;
+        const photos = group ? mediaPhotos(group) : [photo];
+        const index = photos.indexOf(photo);
+        const label = photos.length > 1 && index >= 0
+          ? STR.previewIndex(index + 1, photos.length)
+          : STR.previewOriginals(1);
+        schedulePreview(photo, () => openPreview(photo, [photo], label, false));
+        return;
+      }
+      const avatar = hoveredAvatar(event.target);
+      if (!avatar) return;
+      schedulePreview(avatar, () =>
+        openPreview(avatar, [avatar], STR.previewAvatar, true, 'avatar', avatarOriginalUrl));
     });
     document.addEventListener('pointerout', event => {
       if (!previewKey) return;
-      const from = event.target instanceof Element
-        ? event.target.closest('.xmp-media-toggle, [data-testid="tweetPhoto"], [data-xmp-notification-thumb]')
-        : null;
-      if (from !== previewKey) return;
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      // 只判断指针是否离开了当前悬停的媒体/头像：React 会替换节点，previewKey 的节点
+      // 同一性不可靠，节点被替换后按旧逻辑会永远不收起。
+      const from = target.closest(PREVIEW_OWNER_SELECTOR);
+      if (!from) return;
       const to = event.relatedTarget;
-      if (to instanceof Element &&
-          to.closest('.xmp-media-toggle, [data-testid="tweetPhoto"], [data-xmp-notification-thumb]') === previewKey) return;
+      if (to instanceof Element && to.closest(PREVIEW_OWNER_SELECTOR) === from) return;
       hidePhotoPreview();
     });
     // 点击进入 X 自己的大图查看器或展开媒体，预览先让位。
@@ -3926,10 +3978,12 @@
   const COMMENT_HEART_OUTLINE_PATH = 'M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z';
   const COMMENT_REPLY_PATH = 'M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z';
   const COMMENT_PROFILE_PATH = 'M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-7 2-7 5v2h14v-2c0-3-3-5-7-5z';
+  // X 的蓝色认证徽章（22×22）。
+  const COMMENT_VERIFIED_PATH = 'M20.396 11c-.018-.646-.215-1.275-.57-1.816-.354-.54-.852-.972-1.438-1.246.223-.607.27-1.264.14-1.897-.131-.634-.437-1.218-.882-1.687-.47-.445-1.053-.75-1.687-.882-.633-.13-1.29-.083-1.897.14-.273-.587-.704-1.086-1.245-1.44S11.647 1.62 11 1.604c-.646.017-1.273.213-1.813.568s-.969.854-1.24 1.44c-.608-.223-1.267-.272-1.902-.14-.635.13-1.22.436-1.69.882-.445.47-.749 1.055-.878 1.688-.13.633-.08 1.29.144 1.896-.587.274-1.087.705-1.443 1.245-.356.54-.555 1.17-.574 1.817.02.647.218 1.276.574 1.817.356.54.856.972 1.443 1.245-.224.606-.274 1.263-.144 1.896.13.634.433 1.218.877 1.688.47.443 1.054.747 1.687.878.633.132 1.29.084 1.897-.136.274.586.705 1.084 1.246 1.439.54.354 1.17.551 1.816.569.647-.016 1.276-.213 1.817-.567s.972-.854 1.245-1.44c.604.239 1.266.296 1.903.164.636-.132 1.22-.447 1.68-.907.46-.46.776-1.044.908-1.681s.075-1.299-.165-1.903c.586-.274 1.084-.705 1.439-1.246.354-.54.551-1.17.569-1.816zM9.662 14.85l-3.429-3.428 1.293-1.302 2.072 2.072 4.4-4.794 1.347 1.246z';
 
-  function commentsIcon(path) {
+  function commentsIcon(path, viewBox = '0 0 24 24') {
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('viewBox', viewBox);
     svg.setAttribute('aria-hidden', 'true');
     const shape = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     shape.setAttribute('d', path);
@@ -3950,7 +4004,11 @@
     }
     const who = commentsEl('div');
     const name = commentsEl('div', 'xmp-comments-profile-name', user.name);
-    if (user.verified) name.appendChild(commentsEl('span', 'xmp-comments-profile-verified', '✓'));
+    if (user.verified) {
+      const badge = commentsIcon(COMMENT_VERIFIED_PATH, '0 0 22 22');
+      badge.classList.add('xmp-comments-profile-verified');
+      name.appendChild(badge);
+    }
     who.appendChild(name);
     who.appendChild(commentsEl('div', 'xmp-comments-profile-handle', `@${user.handle}`));
     head.appendChild(who);

@@ -135,7 +135,9 @@
   `--xmp-accent`，关注/正在关注沿用主按钮规则。
 - 个人主页滚动后顶栏的关注按钮落在 `[data-xmp-appbar]` 里，顶栏的文字规则必须排除
   `-follow`/`-unfollow` 后代，否则按钮文字会被改回墨色。
-- 已认证徽章 `[data-testid="icon-verified"]` 保持 X 原本的蓝色，不要随强调色染色。
+- 已认证徽章 `[data-testid="icon-verified"]` 保留 X 自己的颜色：蓝色徽章靠 X 的 class 上色，
+  金色徽章是 `path` 的 `url(#…)` 渐变。`[data-testid="HoverCard"] svg` 的次要色规则必须排除
+  它，否则蓝色徽章会被涂成灰褐色。
 - 强调色 token 从 `--xmp-pine*` 更名为 `--xmp-accent*`（暖橙 `#B4531F`），改名后所有引用与文档同步。
 - 详情页/文章页的推广回复和首页推广帖的外壳在 `cellInnerDiv` 内、帖子之外（`placementTracking`
   包住 `[data-testid="tweet"]`），`NOISE_CSS` 的推广规则要覆盖 home 和 status 两个路由。
@@ -205,6 +207,13 @@
   链接卡片、仍在 `data-xmp-media-loading` 存态的块不预览；视频只在折叠按钮上预览封面。
   **不要用 `scroll` 事件收起预览**：X 加载图片时的滚动锚定会触发 scroll，把刚弹出的预览误关；
   用 `wheel`/`touchmove` 判定用户主动滚动。点击、`Esc`、切路由、宽度跌破 1000px 和关闭脚本也要收起。
+- 头像预览复用同一个浮层，只覆盖资料卡片里的头像：`[data-testid="HoverCard"]` 内的
+  `[data-testid^="UserAvatar-Container-"]` 和脚本资料卡的 `.xmp-comments-profile-avatar`，
+  圆形 320px，标题「头像」，z-index 2300。时间线/通知/评论列表的头像悬停仍只弹资料卡；
+  评论弹窗里头像悬停弹资料卡，只有再悬停卡片内的头像才预览大头像。`profile_images` 不支持
+  `name=orig`（404），把尾部 `_normal`/`_bigger`/`_mini` 换成 `_400x400`。React 悬停时会替换
+  头像节点，`pointerout` 不能比较 `previewKey` 的节点同一性（否则预览永远不收起），要比较指针
+  离开和进入的预览 owner。
 - 操作栏的上分割线在 `[role="group"]` 的 `border-top`；移除时不要误删媒体/正文的边框。
 - 发帖编辑器的背景会盖住 Draft.js placeholder；编辑器必须保持透明。
 - 左轨图标左偏是 nav 标签包装层的 20px/16px 外边距造成的；收起时同时隐藏包装层，并用
@@ -361,8 +370,9 @@
   - 点赞图标：未点赞用空心 path `COMMENT_HEART_OUTLINE_PATH`，点赞后用实心
     `COMMENT_HEART_PATH` 和 `--xmp-accent` 暖橙色；`applyLikeState` 同时更新 `path.d`、
     `aria-pressed` 和计数。
-  - 资料：与主页 HoverCard 一致的悬浮卡。头像/用户名 `pointerenter` 250ms 后展示，离开
-    180ms 收起，进入卡片取消收起；「资料」按钮可点击钉住/取消。卡片挂到 `body`、fixed、
+  - 资料：与主页 HoverCard 一致的悬浮卡。头像/用户名 `pointerenter` 250ms 后展示（头像按钮
+    `focus` 同样），离开 180ms 收起，进入卡片取消收起；悬停资料卡内的头像预览大头像。
+    「资料」按钮可点击钉住/取消。卡片挂到 `body`、fixed、
     z-index 2100，不被弹窗 overflow 裁切；滚动/缩放/外部点击/关闭弹窗都移除。数据来自同一条
     响应（`profile_bio.description`、`location.location`、`relationship_counts`），不额外请求；
     「在 X 打开主页」/「Open profile on X」新标签页打开。只保留一张卡。资料按钮用
@@ -435,7 +445,7 @@
 - 帖子外层的链接卡片媒体保持原生，不参与折叠。
 - 注入的界面文案只提供中文和英文；`html[lang]` 不是 `zh*` 时回退英文，没有手动语言开关。
 - 悬浮原图预览只覆盖图片：视频、GIF 和链接卡片缩略图不预览；预览按悬停的那一张显示，
-  轮播只预览当前可见的 slide，不能在浮层里翻页。
+  轮播只预览当前可见的 slide，不能在浮层里翻页。资料卡片内的头像预览固定为单张 400×400 圆形图。
 - 评论弹窗依赖 X 的私有 `TweetDetail`、`FavoriteTweet`/`UnfavoriteTweet` 和 `CreateTweet`
   接口和当前 `features`/`queryId`；X 改版后可能返回 400/404，脚本会尝试从 `main.*.js` 重新
   发现 queryId 并重试一次，仍失败则显示兜底按钮或输入框错误。只展示第一页评论，不继续加载

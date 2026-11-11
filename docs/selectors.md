@@ -84,6 +84,8 @@
 | 通知行 | `article[data-testid="notification"]` | 行内没有 `tweet`、`User-Name`、操作栏或 status 链接；头像是 `UserAvatar-Container-<handle>` 下的 `/<handle>` 链接 |
 | 通知缩略图 | 通知行尾部 64px 内联 `background-image`（`pbs.twimg.com`，`name=120x120`） | 没有 `tweetPhoto` 标记；按尺寸和地址打 `data-xmp-notification-thumb` |
 | 图片 / 视频预览 | `[data-testid="tweetPhoto"]` / `[data-testid="previewInterstitial"]` | 媒体收集目标 |
+| 用户头像 | `[data-testid^="UserAvatar-Container-"]`；评论弹窗 `.xmp-comments-avatar-button`，脚本资料卡 `.xmp-comments-profile-avatar` | 只有资料卡片内的头像（`HoverCard` 内的 container、`.xmp-comments-profile-avatar`）悬停预览圆形大图；`profile_images` 用 `_400x400`，`name=orig` 变体返回 404 |
+| 认证徽章 | `svg[data-testid="icon-verified"]` | 蓝色徽章靠 X 的 class 上色，金色徽章是 `path` 的 `url(#…)` 渐变；HoverCard 的 `svg` 规则必须排除它 |
 | 链接卡片 | `[data-testid="card.wrapper"]` | 卡片内媒体不折叠 |
 | 推广单元格 | 包住帖子的 `[data-testid="placementTracking"]`（在 `[data-testid="tweet"]` 之外） | 首页和详情/文章页 `cellInnerDiv:has(...)` 隐藏；视频播放器的 `placementTracking` 在 `tweetPhoto` 内、帖子之内，不算推广 |
 | 推荐关注 | `[data-testid="UserCell"]` | 首页隐藏；搜索/通知页保持可见 |
@@ -155,6 +157,12 @@
   浮层是 `position: fixed; left: 50%`，宽度 auto 时 shrink-to-fit 只按右半视口计算；必须设
   `width: max-content` 再加 `max-width: min(1600px, 92vw)`，否则两张竖图并排会被误判放不下而换行，
   卡片高度超过 92vh、图片溢出纸框。3/4 张和 `many` 由 `flex-wrap` 和 `max-width` 决定每行数量。
+- 头像预览：只覆盖资料卡片里的头像——`[data-testid="HoverCard"]` 内的
+  `[data-testid^="UserAvatar-Container-"]` 和脚本资料卡的 `.xmp-comments-profile-avatar`。
+  悬停 220ms 后弹出圆形大图，标题「头像」。时间线、通知和评论列表里的头像悬停仍只弹资料卡，
+  不预览大头像。素材同样取绘制层 URL；`profile_images` 没有 `name=orig`
+  变体（404），把尾部的 `_normal`/`_bigger`/`_mini` 换成 `_400x400`。React 在悬停时会替换头像
+  节点，`pointerout` 不能比较 `previewKey` 的节点同一性，要比较指针离开和进入的预览 owner。
 
 ## 个人主页
 
@@ -295,7 +303,7 @@
   背景（包括深绿的「你尚未通过认证」卡）。未标记的标签页（个人主页、推荐关注）由结构规则兜底：
   容器纸色 + `nav[role="navigation"]` 的底边改细线。
 - 顶部条徽章：`[data-xmp-appbar]` 的文字规则排除 `icon-verified`、`-follow`/`-unfollow` 后代，
-  已认证徽章保持 X 原本的蓝色渐变，关注按钮保持纸色文字。
+  已认证徽章保留 X 自己的颜色（蓝色或金色），关注按钮保持纸色文字。
 - 内联深色卡片：`markDarkSurfaces()` 扫描 primary 里带内联 `background-color` 的元素，亮度 < 90 标
   `data-xmp-dark-surface` 并恢复浅色文字/图标（C 端推广卡在不同账号下颜色可能不同，用它兜底）；
   已知深绿「你尚未通过认证」卡另有 CSS 直接命中（`background-color: rgb(0, 67, 41)`）。
@@ -375,7 +383,8 @@
     TweetDetail 并保留 `.xmp-comments-body` 的滚动位置；失败把接口错误显示在输入框下方。
     只支持纯文字、280 字；不打开 X 原生 composer 独立窗口，也不在同一页用隐藏 anchor。
   - 资料：与主页 HoverCard 一致的悬停卡片。头像/用户名 `pointerenter` 250ms 后展示，
-    离开 180ms 后收起；鼠标进入卡片取消收起。卡片挂到 `body`、`position: fixed`、
+    离开 180ms 后收起；鼠标进入卡片取消收起。悬停资料卡片内的头像预览大头像。
+    卡片挂到 `body`、`position: fixed`、
     `z-index: 2100`，不会被弹窗的 overflow 裁切；滚动（窗口或 `.xmp-comments-body`）、
     resize、点击外部、关闭弹窗都会移除。`.xmp-comments-action` 的「资料」/「Profile」按钮可点击
     钉住/取消，只保留一张卡；该按钮带 `.xmp-comments-action-profile`，外部点击判定依赖这个
